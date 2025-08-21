@@ -2,87 +2,146 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Organiza - Sistema de design para gestão financeira familiar */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
+    /* Background & Surface Colors */
+    --background: 210 20% 98%;
+    --foreground: 215 25% 27%;
+    
+    /* Card & Surface Colors */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
+    --card-foreground: 215 25% 27%;
+    
+    /* Popover Colors */
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-
-    --radius: 0.5rem;
+    --popover-foreground: 215 25% 27%;
+    
+    /* Financial Theme - Blue Primary (Trust & Stability) */
+    --primary: 210 85% 41%;
+    --primary-foreground: 210 20% 98%;
+    --primary-light: 210 85% 85%;
+    
+    /* Income & Success - Green Tones */
+    --success: 142 76% 36%;
+    --success-foreground: 142 84% 95%;
+    --success-light: 142 76% 85%;
+    
+    /* Expense & Danger - Red Tones */  
+    --expense: 0 72% 51%;
+    --expense-foreground: 0 85% 97%;
+    --expense-light: 0 72% 88%;
+    
+    /* Secondary & Neutral */
+    --secondary: 210 20% 95%;
+    --secondary-foreground: 215 25% 27%;
+    
+    /* Muted Colors */
+    --muted: 210 20% 95%;
+    --muted-foreground: 215 16% 47%;
+    
+    /* Accent Colors */
+    --accent: 210 20% 92%;
+    --accent-foreground: 215 25% 27%;
+    
+    /* System Colors */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 85% 97%;
+    
+    /* Border & Input */
+    --border: 210 20% 88%;
+    --input: 210 20% 88%;
+    --ring: 210 85% 41%;
+    
+    /* Financial Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(210 85% 55%));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(142 76% 45%));
+    --gradient-expense: linear-gradient(135deg, hsl(var(--expense)), hsl(0 72% 60%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(210 20% 99%));
+    
+    /* Financial Shadows */
+    --shadow-card: 0 4px 20px -2px hsl(210 20% 88% / 0.3);
+    --shadow-button: 0 2px 8px -1px hsl(var(--primary) / 0.2);
+    --shadow-success: 0 2px 8px -1px hsl(var(--success) / 0.15);
+    --shadow-expense: 0 2px 8px -1px hsl(var(--expense) / 0.15);
+    
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    /* Background & Surface Colors */
+    --background: 215 28% 17%;
     --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
+    
+    /* Card & Surface Colors */
+    --card: 215 28% 17%;
     --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
+    
+    /* Popover Colors */
+    --popover: 215 28% 17%;
     --popover-foreground: 210 40% 98%;
-
+    
+    /* Financial Theme - Blue Primary (Trust & Stability) */
     --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
+    --primary-foreground: 215 28% 17%;
+    --primary-light: 210 85% 25%;
+    
+    /* Income & Success - Green Tones */
+    --success: 142 76% 45%;
+    --success-foreground: 142 84% 95%;
+    --success-light: 142 76% 25%;
+    
+    /* Expense & Danger - Red Tones */  
+    --expense: 0 72% 60%;
+    --expense-foreground: 0 85% 97%;
+    --expense-light: 0 72% 30%;
+    
+    /* Secondary & Neutral */
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
+    
+    /* Muted Colors */
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
+    
+    /* Accent Colors */
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
+    
+    /* System Colors */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
+    
+    /* Border & Input */
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+    
+    /* Financial Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(210 40% 85%));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(142 76% 35%));
+    --gradient-expense: linear-gradient(135deg, hsl(var(--expense)), hsl(0 72% 50%));
+    --gradient-card: linear-gradient(145deg, hsl(215 28% 17%), hsl(215 28% 19%));
+    
+    /* Financial Shadows */
+    --shadow-card: 0 4px 20px -2px hsl(0 0% 0% / 0.3);
+    --shadow-button: 0 2px 8px -1px hsl(var(--primary) / 0.1);
+    --shadow-success: 0 2px 8px -1px hsl(var(--success) / 0.1);
+    --shadow-expense: 0 2px 8px -1px hsl(var(--expense) / 0.1);
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
