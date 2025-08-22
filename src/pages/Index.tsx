@@ -2,6 +2,7 @@ import { Header } from "@/components/Header";
 import { FinancialCard } from "@/components/FinancialCard";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
+import { ScheduledTasks } from "@/components/ScheduledTasks";
 import { Wallet, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 
 const Index = () => {
@@ -50,7 +51,7 @@ const Index = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Transaction Form */}
           <div>
             <TransactionForm />
@@ -60,6 +61,11 @@ const Index = () => {
           <div>
             <TransactionList />
           </div>
+        </div>
+
+        {/* Scheduled Tasks Section */}
+        <div className="mb-8">
+          <ScheduledTasks />
         </div>
 
         {/* Supabase Integration Notice */}
