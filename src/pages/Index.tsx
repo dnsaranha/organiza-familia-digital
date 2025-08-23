@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { FinancialCard } from "@/components/FinancialCard";
@@ -7,26 +7,82 @@ import { TransactionList } from "@/components/TransactionList";
 import { ScheduledTasks } from "@/components/ScheduledTasks";
 import { FamilyGroups } from "@/components/FamilyGroups";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Wallet, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 
+interface FinancialData {
+  balance: number;
+  monthlyIncome: number;
+  monthlyExpenses: number;
+}
+
 const Index = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const [financialData, setFinancialData] = useState<FinancialData | null>(null);
+  const [loadingData, setLoadingData] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (!authLoading && !user) {
       navigate("/auth");
     }
-  }, [user, loading, navigate]);
+  }, [user, authLoading, navigate]);
 
-  // Mock data - será substituído pela integração com Supabase
-  const financialData = {
-    balance: 2548.70,
-    monthlyIncome: 3500.00,
-    monthlyExpenses: 951.30
+  useEffect(() => {
+    if (user) {
+      fetchFinancialData();
+    }
+  }, [user, refreshKey]);
+
+  const fetchFinancialData = async () => {
+    if (!user) return;
+
+    setLoadingData(true);
+    try {
+      const { data: transactions, error } = await supabase
+        .from('transactions')
+        .select('type, amount, date');
+
+      if (error) throw error;
+
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      let balance = 0;
+      let monthlyIncome = 0;
+      let monthlyExpenses = 0;
+
+      for (const t of transactions) {
+        const transactionDate = new Date(t.date);
+        if (t.type === 'income') {
+          balance += t.amount;
+          if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
+            monthlyIncome += t.amount;
+          }
+        } else {
+          balance -= t.amount;
+          if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
+            monthlyExpenses += t.amount;
+          }
+        }
+      }
+
+      setFinancialData({ balance, monthlyIncome, monthlyExpenses });
+    } catch (err) {
+      console.error("Erro ao buscar dados financeiros:", err);
+      // Handle error state in UI if necessary
+    } finally {
+      setLoadingData(false);
+    }
   };
 
-  if (loading) {
+  const handleTransactionAdded = () => {
+    setRefreshKey(prevKey => prevKey + 1);
+  };
+
+  if (authLoading || (loadingData && !financialData)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -60,21 +116,24 @@ const Index = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <FinancialCard
             title="Saldo Atual"
-            value={financialData.balance}
+            value={financialData?.balance ?? 0}
             type="balance"
             icon={Wallet}
+            loading={loadingData}
           />
           <FinancialCard
             title="Receitas do Mês"
-            value={financialData.monthlyIncome}
+            value={financialData?.monthlyIncome ?? 0}
             type="income"
             icon={TrendingUp}
+            loading={loadingData}
           />
           <FinancialCard
             title="Gastos do Mês"
-            value={financialData.monthlyExpenses}
+            value={financialData?.monthlyExpenses ?? 0}
             type="expense"
             icon={TrendingDown}
+            loading={loadingData}
           />
         </div>
 
@@ -82,12 +141,12 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Transaction Form */}
           <div>
-            <TransactionForm />
+            <TransactionForm onTransactionAdded={handleTransactionAdded} />
           </div>
           
           {/* Recent Transactions */}
           <div>
-            <TransactionList />
+            <TransactionList key={refreshKey} />
           </div>
         </div>
 

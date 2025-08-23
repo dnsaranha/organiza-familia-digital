@@ -5,15 +5,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
-export const TransactionForm = () => {
+interface TransactionFormProps {
+  onTransactionAdded: () => void;
+}
+
+export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
+  const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const incomeCategories = [
     'Salário',
@@ -35,10 +43,10 @@ export const TransactionForm = () => {
     'Outros'
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!amount || !category) {
+    if (!amount || !category || !user) {
       toast({
         title: "Campos obrigatórios",
         description: "Por favor, preencha o valor e a categoria.",
@@ -47,16 +55,44 @@ export const TransactionForm = () => {
       return;
     }
 
-    // Aqui será integrado com Supabase
-    toast({
-      title: "Transação adicionada",
-      description: `${type === 'income' ? 'Receita' : 'Despesa'} de R$ ${amount} foi registrada.`,
-    });
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          type,
+          amount: parseFloat(amount),
+          category,
+          description: description || null,
+          date: new Date().toISOString(),
+        });
 
-    // Reset form
-    setAmount('');
-    setCategory('');
-    setDescription('');
+      if (error) throw error;
+
+      toast({
+        title: "Transação adicionada! 🎉",
+        description: `${type === 'income' ? 'Receita' : 'Despesa'} de R$ ${amount} foi registrada com sucesso.`,
+      });
+
+      // Reset form
+      setAmount('');
+      setCategory('');
+      setDescription('');
+
+      // Notify parent component
+      onTransactionAdded();
+
+    } catch (err: any) {
+      console.error("Erro ao adicionar transação:", err);
+      toast({
+        title: "Erro ao adicionar transação",
+        description: "Não foi possível registrar a transação. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -78,6 +114,7 @@ export const TransactionForm = () => {
             type="button"
             variant={type === 'expense' ? 'default' : 'ghost'}
             onClick={() => setType('expense')}
+            disabled={loading}
             className={type === 'expense' ? 'bg-gradient-expense text-expense-foreground shadow-expense' : ''}
           >
             <Minus className="h-4 w-4 mr-2" />
@@ -87,6 +124,7 @@ export const TransactionForm = () => {
             type="button"
             variant={type === 'income' ? 'default' : 'ghost'}
             onClick={() => setType('income')}
+            disabled={loading}
             className={type === 'income' ? 'bg-gradient-success text-success-foreground shadow-success' : ''}
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -109,6 +147,7 @@ export const TransactionForm = () => {
                 onChange={(e) => setAmount(e.target.value)}
                 className="pl-10"
                 required
+                disabled={loading}
               />
             </div>
           </div>
@@ -116,7 +155,7 @@ export const TransactionForm = () => {
           {/* Category */}
           <div className="space-y-2">
             <Label htmlFor="category">Categoria *</Label>
-            <Select value={category} onValueChange={setCategory} required>
+            <Select value={category} onValueChange={setCategory} required disabled={loading}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
@@ -139,14 +178,23 @@ export const TransactionForm = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="resize-none"
+              disabled={loading}
             />
           </div>
 
           <Button 
             type="submit" 
             className="w-full bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
+            disabled={loading}
           >
-            Adicionar Transação
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Adicionando...
+              </>
+            ) : (
+              "Adicionar Transação"
+            )}
           </Button>
         </form>
       </CardContent>
