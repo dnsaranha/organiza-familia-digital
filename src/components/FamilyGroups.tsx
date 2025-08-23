@@ -5,9 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Plus, Copy, UserPlus, Crown, Trash2, Loader2 } from "lucide-react";
+import { Users, Plus, Copy, UserPlus, Crown, Trash2, Loader2, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,11 +43,16 @@ export const FamilyGroups = () => {
   const [members, setMembers] = useState<Record<string, Member[]>>({});
   const [loadingMembers, setLoadingMembers] = useState<Record<string, boolean>>({});
   const [newGroupName, setNewGroupName] = useState("");
+  const [editingGroup, setEditingGroup] = useState<FamilyGroup | null>(null);
+  const [editGroupName, setEditGroupName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingGroups, setLoadingGroups] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingGroup, setDeletingGroup] = useState<FamilyGroup | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -81,6 +96,49 @@ export const FamilyGroups = () => {
       });
     } finally {
       setLoadingGroups(false);
+    }
+  };
+
+  const handleEditClick = (group: FamilyGroup) => {
+    setEditingGroup(group);
+    setEditGroupName(group.name);
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingGroup || !editGroupName.trim()) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('family_groups').update({ name: editGroupName.trim() }).eq('id', editingGroup.id);
+      if (error) throw error;
+      toast({ title: "Grupo atualizado!", description: `O nome do grupo foi alterado para "${editGroupName}".` });
+      setEditDialogOpen(false);
+      setEditingGroup(null);
+      loadGroups();
+    } catch (error) {
+      console.error('Erro ao atualizar grupo:', error);
+      toast({ title: "Erro", description: "Não foi possível atualizar o grupo.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteGroup = async () => {
+    if (!deletingGroup) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('family_groups').delete().eq('id', deletingGroup.id);
+      if (error) throw error;
+      toast({ title: "Grupo excluído!", description: `O grupo "${deletingGroup.name}" foi excluído com sucesso.` });
+      setDeleteDialogOpen(false);
+      setDeletingGroup(null);
+      loadGroups();
+    } catch (error) {
+      console.error('Erro ao excluir grupo:', error);
+      toast({ title: "Erro", description: "Não foi possível excluir o grupo.", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -233,165 +291,122 @@ export const FamilyGroups = () => {
   if (!user) return null;
 
   return (
-    <Card className="bg-gradient-card shadow-card border">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            Grupos Familiares
-          </div>
-          <div className="flex gap-2">
-            <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" variant="outline" disabled={loadingGroups}>
-                  <UserPlus className="h-4 w-4 mr-2" />
-                  Entrar
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Entrar em um Grupo</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={joinGroup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="join-code">Código de Convite</Label>
-                    <Input
-                      id="join-code"
-                      value={joinCode}
-                      onChange={(e) => setJoinCode(e.target.value)}
-                      placeholder="Digite o código de 8 caracteres"
-                      maxLength={8}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Entrando..." : "Entrar no Grupo"}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth" disabled={loadingGroups}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Criar
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Criar Novo Grupo</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={createGroup} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="group-name">Nome do Grupo</Label>
-                    <Input
-                      id="group-name"
-                      value={newGroupName}
-                      onChange={(e) => setNewGroupName(e.target.value)}
-                      placeholder="Ex: Família Silva"
-                      required
-                    />
-                  </div>
-                  <Button type="submit" disabled={loading} className="w-full">
-                    {loading ? "Criando..." : "Criar Grupo"}
-                  </Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {loadingGroups ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 opacity-50" />
-            <p>Carregando grupos...</p>
-          </div>
-        ) : groups.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>Nenhum grupo familiar ainda.</p>
-            <p className="text-sm">Crie um grupo ou entre em um existente!</p>
-          </div>
-        ) : (
-          <Accordion type="single" collapsible className="w-full space-y-4">
-            {groups.map((group) => (
-              <AccordionItem key={group.id} value={group.id} className="bg-muted/50 border-0 rounded-lg overflow-hidden">
-                <AccordionTrigger
-                  className="p-4 hover:no-underline"
-                  onClick={() => toggleGroupMembers(group.id)}
-                >
-                  <div className="flex items-start justify-between w-full">
-                    <div className="flex-1 text-left">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h4 className="font-medium">{group.name}</h4>
-                        {group.is_owner && (
-                          <Badge variant="secondary" className="text-xs">
-                            <Crown className="h-3 w-3 mr-1" />
-                            Proprietário
-                          </Badge>
-                        )}
+    <>
+      <Card className="bg-gradient-card shadow-card border">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Grupos Familiares
+            </div>
+            <div className="flex gap-2">
+              <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
+                <DialogTrigger asChild><Button size="sm" variant="outline" disabled={loadingGroups}><UserPlus className="h-4 w-4 mr-2" />Entrar</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Entrar em um Grupo</DialogTitle></DialogHeader>
+                  <form onSubmit={joinGroup} className="space-y-4">
+                    <div className="space-y-2"><Label htmlFor="join-code">Código de Convite</Label><Input id="join-code" value={joinCode} onChange={(e) => setJoinCode(e.target.value)} placeholder="Digite o código de 8 caracteres" maxLength={8} required /></div>
+                    <Button type="submit" disabled={loading} className="w-full">{loading ? "Entrando..." : "Entrar no Grupo"}</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                <DialogTrigger asChild><Button size="sm" className="bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth" disabled={loadingGroups}><Plus className="h-4 w-4 mr-2" />Criar</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Criar Novo Grupo</DialogTitle></DialogHeader>
+                  <form onSubmit={createGroup} className="space-y-4">
+                    <div className="space-y-2"><Label htmlFor="create-group-name">Nome do Grupo</Label><Input id="create-group-name" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} placeholder="Ex: Família Silva" required /></div>
+                    <Button type="submit" disabled={loading} className="w-full">{loading ? "Criando..." : "Criar Grupo"}</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingGroups ? (
+            <div className="text-center py-8 text-muted-foreground"><Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 opacity-50" /><p>Carregando grupos...</p></div>
+          ) : groups.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground"><Users className="h-12 w-12 mx-auto mb-3 opacity-50" /><p>Nenhum grupo familiar ainda.</p><p className="text-sm">Crie um grupo ou entre em um existente!</p></div>
+          ) : (
+            <Accordion type="single" collapsible className="w-full space-y-4">
+              {groups.map((group) => (
+                <AccordionItem key={group.id} value={group.id} className="bg-muted/50 border-0 rounded-lg overflow-hidden">
+                  <AccordionTrigger className="p-4 hover:no-underline" onClick={() => toggleGroupMembers(group.id)}>
+                    <div className="flex items-start justify-between w-full">
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center gap-2 mb-2"><h4 className="font-medium">{group.name}</h4>{group.is_owner && (<Badge variant="secondary" className="text-xs"><Crown className="h-3 w-3 mr-1" />Proprietário</Badge>)}</div>
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span>{group.member_count} {group.member_count === 1 ? 'membro' : 'membros'}</span>
+                          {group.is_owner && (
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs bg-background px-2 py-1 rounded">{group.join_code}</span>
+                              <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); copyJoinCode(group.join_code); }} className="h-6 px-2"><Copy className="h-3 w-3" /></Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{group.member_count} {group.member_count === 1 ? 'membro' : 'membros'}</span>
+                      <div className="flex items-center">
                         {group.is_owner && (
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-xs bg-background px-2 py-1 rounded">
-                              {group.join_code}
-                            </span>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => { e.stopPropagation(); copyJoinCode(group.join_code); }}
-                              className="h-6 px-2"
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
+                          <>
+                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEditClick(group); }} className="text-muted-foreground hover:text-primary"><Pencil className="h-4 w-4" /></Button>
+                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setDeletingGroup(group); setDeleteDialogOpen(true); }} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                          </>
+                        )}
+                        {!group.is_owner && (
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); leaveGroup(group.id); }} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
                         )}
                       </div>
                     </div>
-                    {!group.is_owner && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={(e) => { e.stopPropagation(); leaveGroup(group.id); }}
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-4"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <div className="px-4 pb-4 border-t border-muted">
-                    <h4 className="font-semibold my-3 text-sm text-muted-foreground">Membros</h4>
-                    {loadingMembers[group.id] ? (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                         <Loader2 className="h-4 w-4 animate-spin" />
-                         <span>Carregando...</span>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {(members[group.id] || []).map((member) => (
-                          <div key={member.id} className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={member.avatar_url || undefined} alt={member.full_name || 'Avatar'} />
-                              <AvatarFallback>{(member.full_name || 'U').charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm font-medium">{member.full_name || 'Usuário Sem Nome'}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        )}
-      </CardContent>
-    </Card>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="px-4 pb-4 border-t border-muted">
+                      <h4 className="font-semibold my-3 text-sm text-muted-foreground">Membros</h4>
+                      {loadingMembers[group.id] ? (
+                        <div className="flex items-center gap-2 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /><span>Carregando...</span></div>
+                      ) : (
+                        <div className="space-y-3">
+                          {(members[group.id] || []).map((member) => (
+                            <div key={member.id} className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8"><AvatarImage src={member.avatar_url || undefined} alt={member.full_name || 'Avatar'} /><AvatarFallback>{(member.full_name || 'U').charAt(0).toUpperCase()}</AvatarFallback></Avatar>
+                              <span className="text-sm font-medium">{member.full_name || 'Usuário Sem Nome'}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          )}
+        </CardContent>
+      </Card>
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Nome do Grupo</DialogTitle></DialogHeader>
+          <form onSubmit={handleUpdateGroup} className="space-y-4">
+            <div className="space-y-2"><Label htmlFor="edit-group-name">Novo Nome do Grupo</Label><Input id="edit-group-name" value={editGroupName} onChange={(e) => setEditGroupName(e.target.value)} placeholder="Ex: Família Silva" required /></div>
+            <Button type="submit" disabled={loading} className="w-full">{loading ? "Salvando..." : "Salvar Alterações"}</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o grupo "{deletingGroup?.name}" e todas as suas informações associadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteGroup} disabled={loading}>
+              {loading ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 };
