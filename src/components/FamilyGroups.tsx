@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Plus, Copy, UserPlus, Crown, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,8 +22,16 @@ interface FamilyGroup {
   member_count?: number;
 }
 
+interface Member {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+}
+
 export const FamilyGroups = () => {
   const [groups, setGroups] = useState<FamilyGroup[]>([]);
+  const [members, setMembers] = useState<Record<string, Member[]>>({});
+  const [loadingMembers, setLoadingMembers] = useState<Record<string, boolean>>({});
   const [newGroupName, setNewGroupName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
@@ -46,7 +56,6 @@ export const FamilyGroups = () => {
 
       if (error) throw error;
 
-      // Get member counts for each group
       const groupsWithCounts = await Promise.all(
         (groupsData || []).map(async (group) => {
           const { count } = await supabase
@@ -75,13 +84,33 @@ export const FamilyGroups = () => {
     }
   };
 
+  const toggleGroupMembers = async (groupId: string) => {
+    if (members[groupId]) {
+      return; // Already loaded
+    }
+    setLoadingMembers(prev => ({ ...prev, [groupId]: true }));
+    try {
+      const { data, error } = await supabase.rpc('get_group_members', { p_group_id: groupId });
+      if (error) throw error;
+      setMembers(prev => ({ ...prev, [groupId]: data || [] }));
+    } catch (error) {
+      console.error(`Erro ao carregar membros do grupo ${groupId}:`, error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os membros do grupo.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingMembers(prev => ({ ...prev, [groupId]: false }));
+    }
+  };
+
   const createGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !newGroupName.trim()) return;
 
     setLoading(true);
     try {
-      // Create group
       const { data: group, error: groupError } = await supabase
         .from('family_groups')
         .insert({
@@ -93,7 +122,6 @@ export const FamilyGroups = () => {
 
       if (groupError) throw groupError;
 
-      // Add owner as member
       const { error: memberError } = await supabase
         .from('group_members')
         .insert({
@@ -111,7 +139,7 @@ export const FamilyGroups = () => {
 
       setNewGroupName("");
       setCreateDialogOpen(false);
-      loadGroups(); // This will now use the new, reliable RPC call
+      loadGroups();
     } catch (error: any) {
       console.error('Erro ao criar grupo:', error);
       toast({
@@ -274,7 +302,7 @@ export const FamilyGroups = () => {
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         {loadingGroups ? (
           <div className="text-center py-8 text-muted-foreground">
             <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 opacity-50" />
@@ -287,53 +315,81 @@ export const FamilyGroups = () => {
             <p className="text-sm">Crie um grupo ou entre em um existente!</p>
           </div>
         ) : (
-          groups.map((group) => (
-            <Card key={group.id} className="bg-muted/50 border-muted">
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium">{group.name}</h4>
-                      {group.is_owner && (
-                        <Badge variant="secondary" className="text-xs">
-                          <Crown className="h-3 w-3 mr-1" />
-                          Proprietário
-                        </Badge>
-                      )}
+          <Accordion type="single" collapsible className="w-full space-y-4">
+            {groups.map((group) => (
+              <AccordionItem key={group.id} value={group.id} className="bg-muted/50 border-0 rounded-lg overflow-hidden">
+                <AccordionTrigger
+                  className="p-4 hover:no-underline"
+                  onClick={() => toggleGroupMembers(group.id)}
+                >
+                  <div className="flex items-start justify-between w-full">
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center gap-2 mb-2">
+                        <h4 className="font-medium">{group.name}</h4>
+                        {group.is_owner && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Crown className="h-3 w-3 mr-1" />
+                            Proprietário
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>{group.member_count} {group.member_count === 1 ? 'membro' : 'membros'}</span>
+                        {group.is_owner && (
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs bg-background px-2 py-1 rounded">
+                              {group.join_code}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => { e.stopPropagation(); copyJoinCode(group.join_code); }}
+                              className="h-6 px-2"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>{group.member_count} {group.member_count === 1 ? 'membro' : 'membros'}</span>
-                      {group.is_owner && (
-                        <div className="flex items-center gap-2">
-                          <span className="font-mono text-xs bg-background px-2 py-1 rounded">
-                            {group.join_code}
-                          </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => copyJoinCode(group.join_code)}
-                            className="h-6 px-2"
-                          >
-                            <Copy className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                    {!group.is_owner && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => { e.stopPropagation(); leaveGroup(group.id); }}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-4"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  {!group.is_owner && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => leaveGroup(group.id)}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="px-4 pb-4 border-t border-muted">
+                    <h4 className="font-semibold my-3 text-sm text-muted-foreground">Membros</h4>
+                    {loadingMembers[group.id] ? (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                         <Loader2 className="h-4 w-4 animate-spin" />
+                         <span>Carregando...</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {(members[group.id] || []).map((member) => (
+                          <div key={member.id} className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={member.avatar_url || undefined} alt={member.full_name || 'Avatar'} />
+                              <AvatarFallback>{(member.full_name || 'U').charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium">{member.full_name || 'Usuário Sem Nome'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         )}
       </CardContent>
     </Card>

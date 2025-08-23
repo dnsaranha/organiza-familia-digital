@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUpRight, ArrowDownRight, Clock, AlertTriangle } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Clock, AlertTriangle, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Transaction {
   id: string;
@@ -13,6 +14,10 @@ interface Transaction {
   category: string;
   description?: string;
   date: string;
+  profiles: {
+    full_name: string | null;
+    avatar_url: string | null;
+  } | null;
 }
 
 export const TransactionList = ({ key: refreshKey }: { key: number }) => {
@@ -33,7 +38,7 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
     try {
       const { data, error } = await supabase
         .from('transactions')
-        .select('*')
+        .select('*, profiles(full_name, avatar_url)')
         .order('date', { ascending: false })
         .limit(10);
 
@@ -41,7 +46,7 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
         throw error;
       }
 
-      setTransactions(data || []);
+      setTransactions(data as Transaction[] || []);
     } catch (err: any) {
       console.error("Erro ao buscar transações:", err);
       setError("Não foi possível carregar as transações.");
@@ -126,13 +131,19 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
                     <p className="font-medium text-foreground">
                       {transaction.description || transaction.category}
                     </p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <Badge variant="secondary" className="text-xs">
                         {transaction.category}
                       </Badge>
                       <span className="text-xs text-muted-foreground">
                         {formatDate(transaction.date)}
                       </span>
+                      {transaction.profiles && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground border-l pl-2">
+                          <User className="h-3 w-3" />
+                          <span>{transaction.profiles.full_name || 'Usuário'}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

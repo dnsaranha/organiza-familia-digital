@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Minus, Loader2 } from "lucide-react";
+import { Plus, Minus, Loader2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,14 +14,34 @@ interface TransactionFormProps {
   onTransactionAdded: () => void;
 }
 
+interface FamilyGroup {
+  id: string;
+  name: string;
+}
+
 export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
+  const [groupId, setGroupId] = useState<string | null>(null);
+  const [groups, setGroups] = useState<FamilyGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchGroups = async () => {
+      if (!user) return;
+      const { data, error } = await supabase.rpc('get_user_groups');
+      if (error) {
+        console.error("Erro ao buscar grupos:", error);
+      } else {
+        setGroups(data || []);
+      }
+    };
+    fetchGroups();
+  }, [user]);
 
   const incomeCategories = [
     'Salário',
@@ -61,6 +81,7 @@ export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) =>
         .from('transactions')
         .insert({
           user_id: user.id,
+          group_id: groupId,
           type,
           amount: parseFloat(amount),
           category,
@@ -79,6 +100,7 @@ export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) =>
       setAmount('');
       setCategory('');
       setDescription('');
+      setGroupId(null);
 
       // Notify parent component
       onTransactionAdded();
@@ -163,6 +185,24 @@ export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) =>
                 {(type === 'income' ? incomeCategories : expenseCategories).map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Group Selector */}
+          <div className="space-y-2">
+            <Label htmlFor="group">Orçamento</Label>
+            <Select value={groupId || 'personal'} onValueChange={(value) => setGroupId(value === 'personal' ? null : value)} disabled={loading || groups.length === 0}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o orçamento" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="personal">Pessoal</SelectItem>
+                {groups.map((group) => (
+                  <SelectItem key={group.id} value={group.id}>
+                    {group.name}
                   </SelectItem>
                 ))}
               </SelectContent>
