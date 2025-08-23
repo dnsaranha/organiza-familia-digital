@@ -1,31 +1,7 @@
-import { PiggyBank, Settings, Users, LogOut, LogIn } from "lucide-react";
+import { PiggyBank, Settings, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 
 export const Header = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleSignOut = async () => {
-    const { error } = await signOut();
-    if (error) {
-      toast({
-        title: "Erro",
-        description: "Não foi possível sair da conta.",
-        variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Saiu da conta",
-        description: "Você foi desconectado com sucesso.",
-      });
-      navigate("/auth");
-    }
-  };
-
   return (
     <header className="border-b border-border bg-gradient-card shadow-card">
       <div className="container mx-auto px-4 py-4">
@@ -41,38 +17,13 @@ export const Header = () => {
           </div>
           
           <div className="flex items-center gap-2">
-            {user ? (
-              <>
-                <span className="text-sm text-muted-foreground mr-2">
-                  {user.email}
-                </span>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
-                  <Users className="h-4 w-4 mr-2" />
-                  Família
-                </Button>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
-                  <Settings className="h-4 w-4" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleSignOut}
-                  className="text-muted-foreground hover:text-primary"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate("/auth")}
-                className="text-muted-foreground hover:text-primary"
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Entrar
-              </Button>
-            )}
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+              <Users className="h-4 w-4 mr-2" />
+              Família
+            </Button>
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
+              <Settings className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
