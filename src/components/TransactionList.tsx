@@ -45,7 +45,6 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
   });
 
   useEffect(() => {
-    // Fetch groups for the filter dropdown
     const fetchGroups = async () => {
       if (!user) return;
       const { data, error } = await supabase.rpc('get_user_groups');
@@ -57,7 +56,6 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
     };
     fetchGroups();
 
-    // Load saved filters from localStorage on mount
     const savedFilters = localStorage.getItem('transactionFilters');
     if (savedFilters) {
       try {
@@ -210,22 +208,22 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
             </PopoverContent>
           </Popover>
         </div>
+
         <div className="space-y-4">
-        {loading ? (
-          renderSkeleton()
-        ) : error ? (
-          <div className="text-center py-8 text-destructive flex flex-col items-center gap-2">
-            <AlertTriangle className="h-8 w-8" />
-            <p>{error}</p>
-          </div>
-        ) : transactions.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <p>Nenhuma transação encontrada para os filtros selecionados.</p>
-            <p className="text-sm mt-1">Tente ajustar seus filtros ou adicione uma nova transação.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {transactions.map((transaction) => (
+          {loading ? (
+            renderSkeleton()
+          ) : error ? (
+            <div className="text-center py-8 text-destructive flex flex-col items-center gap-2">
+              <AlertTriangle className="h-8 w-8" />
+              <p>{error}</p>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>Nenhuma transação encontrada para os filtros selecionados.</p>
+              <p className="text-sm mt-1">Tente ajustar seus filtros ou adicione uma nova transação.</p>
+            </div>
+          ) : (
+            transactions.map((transaction) => (
               <div
                 key={transaction.id}
                 className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-smooth"
@@ -270,9 +268,9 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
                   </p>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            ))
+          )}
+        </div>
       </CardContent>
     </Card>
   );
