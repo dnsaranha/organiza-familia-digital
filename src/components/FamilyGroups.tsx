@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Plus, Copy, UserPlus, Crown, Trash2 } from "lucide-react";
+import { Users, Plus, Copy, UserPlus, Crown, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,6 +25,7 @@ export const FamilyGroups = () => {
   const [newGroupName, setNewGroupName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingGroups, setLoadingGroups] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -38,16 +39,10 @@ export const FamilyGroups = () => {
 
   const loadGroups = async () => {
     if (!user) return;
+    setLoadingGroups(true);
     
     try {
-      // Get groups where user is owner or member
-      const { data: groupsData, error } = await supabase
-        .from('family_groups')
-        .select(`
-          *,
-          group_members!inner(user_id)
-        `)
-        .or(`owner_id.eq.${user.id},group_members.user_id.eq.${user.id}`);
+      const { data: groupsData, error } = await supabase.rpc('get_user_groups');
 
       if (error) throw error;
 
@@ -75,6 +70,8 @@ export const FamilyGroups = () => {
         description: "Não foi possível carregar os grupos familiares.",
         variant: "destructive",
       });
+    } finally {
+      setLoadingGroups(false);
     }
   };
 
@@ -114,7 +111,7 @@ export const FamilyGroups = () => {
 
       setNewGroupName("");
       setCreateDialogOpen(false);
-      loadGroups();
+      loadGroups(); // This will now use the new, reliable RPC call
     } catch (error: any) {
       console.error('Erro ao criar grupo:', error);
       toast({
@@ -218,7 +215,7 @@ export const FamilyGroups = () => {
           <div className="flex gap-2">
             <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" disabled={loadingGroups}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Entrar
                 </Button>
@@ -248,7 +245,7 @@ export const FamilyGroups = () => {
 
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth">
+                <Button size="sm" className="bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth" disabled={loadingGroups}>
                   <Plus className="h-4 w-4 mr-2" />
                   Criar
                 </Button>
@@ -278,7 +275,12 @@ export const FamilyGroups = () => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {groups.length === 0 ? (
+        {loadingGroups ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 opacity-50" />
+            <p>Carregando grupos...</p>
+          </div>
+        ) : groups.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>Nenhum grupo familiar ainda.</p>
