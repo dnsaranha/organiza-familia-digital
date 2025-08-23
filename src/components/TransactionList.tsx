@@ -2,10 +2,16 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUpRight, ArrowDownRight, Clock, AlertTriangle, User } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Clock, AlertTriangle, User, Calendar as CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { DateRange } from "react-day-picker";
+import { addDays, format } from "date-fns";
 
 interface Transaction {
   id: string;
@@ -20,27 +26,85 @@ interface Transaction {
   } | null;
 }
 
+interface FamilyGroup {
+  id: string;
+  name: string;
+}
+
 export const TransactionList = ({ key: refreshKey }: { key: number }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
+  const [groups, setGroups] = useState<FamilyGroup[]>([]);
+  const [budgetFilter, setBudgetFilter] = useState('all');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -29),
+    to: new Date(),
+  });
+
+  useEffect(() => {
+    // Fetch groups for the filter dropdown
+    const fetchGroups = async () => {
+      if (!user) return;
+      const { data, error } = await supabase.rpc('get_user_groups');
+      if (error) {
+        console.error("Erro ao buscar grupos para filtro:", error);
+      } else {
+        setGroups(data || []);
+      }
+    };
+    fetchGroups();
+
+    // Load saved filters from localStorage on mount
+    const savedFilters = localStorage.getItem('transactionFilters');
+    if (savedFilters) {
+      try {
+        const { budget, date } = JSON.parse(savedFilters);
+        if (budget) setBudgetFilter(budget);
+        if (date) setDateRange({
+          from: date.from ? new Date(date.from) : undefined,
+          to: date.to ? new Date(date.to) : undefined,
+        });
+      } catch (e) {
+        console.error("Failed to parse filters from localStorage", e);
+        localStorage.removeItem('transactionFilters');
+      }
+    }
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       fetchTransactions();
+      localStorage.setItem('transactionFilters', JSON.stringify({ budget: budgetFilter, date: dateRange }));
     }
-  }, [user, refreshKey]);
+  }, [user, refreshKey, budgetFilter, dateRange]);
 
   const fetchTransactions = async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('transactions')
-        .select('*, profiles(full_name, avatar_url)')
-        .order('date', { ascending: false })
-        .limit(10);
+        .select('*, profiles(full_name, avatar_url)');
+
+      if (budgetFilter === 'personal') {
+        query = query.is('group_id', null);
+      } else if (budgetFilter !== 'all') {
+        query = query.eq('group_id', budgetFilter);
+      }
+
+      if (dateRange?.from) {
+        query = query.gte('date', dateRange.from.toISOString());
+      }
+      if (dateRange?.to) {
+        query = query.lte('date', dateRange.to.toISOString());
+      }
+
+      query = query.order('date', { ascending: false });
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -90,12 +154,63 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
   return (
     <Card className="bg-gradient-card shadow-card border">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Clock className="h-5 w-5 text-primary" />
-          Transações Recentes
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="h-5 w-5 text-primary" />
+            Histórico de Transações
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="flex flex-col md:flex-row gap-2 mb-4">
+          <Select value={budgetFilter} onValueChange={setBudgetFilter}>
+            <SelectTrigger className="w-full md:w-[240px]">
+              <SelectValue placeholder="Filtrar por orçamento" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os Orçamentos</SelectItem>
+              <SelectItem value="personal">Pessoal</SelectItem>
+              {groups.map(group => (
+                <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="date"
+                variant={"outline"}
+                className="w-full md:w-auto justify-start text-left font-normal"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, "LLL dd, y")} -{" "}
+                      {format(dateRange.to, "LLL dd, y")}
+                    </>
+                  ) : (
+                    format(dateRange.from, "LLL dd, y")
+                  )
+                ) : (
+                  <span>Selecione um período</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+        <div className="space-y-4">
         {loading ? (
           renderSkeleton()
         ) : error ? (
@@ -105,8 +220,8 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
           </div>
         ) : transactions.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <p>Nenhuma transação encontrada</p>
-            <p className="text-sm mt-1">Adicione sua primeira transação para começar</p>
+            <p>Nenhuma transação encontrada para os filtros selecionados.</p>
+            <p className="text-sm mt-1">Tente ajustar seus filtros ou adicione uma nova transação.</p>
           </div>
         ) : (
           <div className="space-y-4">
