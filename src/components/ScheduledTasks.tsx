@@ -11,6 +11,7 @@ import { Calendar, Bell, Mail, Smartphone, Plus, Clock, CheckCircle, Trash2 } fr
 import { useToast } from "@/hooks/use-toast";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useTaskNotifications } from "@/hooks/useTaskNotifications";
+import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 interface ScheduledTask {
@@ -23,6 +24,12 @@ interface ScheduledTask {
   notification_push: boolean;
   is_completed: boolean;
   created_at: string;
+  group_id?: string;
+}
+
+interface FamilyGroup {
+  id: string;
+  name: string;
 }
 
 const taskTypes = [
@@ -34,6 +41,7 @@ const taskTypes = [
 
 export const ScheduledTasks = () => {
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
+  const [groups, setGroups] = useState<FamilyGroup[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -43,19 +51,26 @@ export const ScheduledTasks = () => {
     schedule_time: '',
     notification_email: true,
     notification_push: true,
+    group_id: '',
   });
 
   const { toast } = useToast();
   const { permission, requestPermission, scheduleNotification } = useNotifications();
+  const { user } = useAuth();
   
   // Hook para verificar e enviar notificações automáticas
   useTaskNotifications();
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    if (user) {
+      loadTasks();
+      loadGroups();
+    }
+  }, [user]);
 
   const loadTasks = async () => {
+    if (!user) return;
+    
     try {
       const { data, error } = await supabase
         .from('scheduled_tasks')
@@ -71,6 +86,23 @@ export const ScheduledTasks = () => {
         description: "Não foi possível carregar as tarefas agendadas.",
         variant: "destructive",
       });
+    }
+  };
+
+  const loadGroups = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('family_groups')
+        .select('id, name')
+        .or(`owner_id.eq.${user.id},group_members.user_id.eq.${user.id}`)
+        .order('name');
+
+      if (error) throw error;
+      setGroups((data || []) as FamilyGroup[]);
+    } catch (error) {
+      console.error('Erro ao carregar grupos:', error);
     }
   };
 
@@ -111,7 +143,8 @@ export const ScheduledTasks = () => {
           schedule_date: scheduleDateTime,
           notification_email: formData.notification_email,
           notification_push: formData.notification_push,
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: user?.id,
+          group_id: formData.group_id || null,
         })
         .select()
         .single();
@@ -142,6 +175,7 @@ export const ScheduledTasks = () => {
         schedule_time: '',
         notification_email: true,
         notification_push: true,
+        group_id: '',
       });
       setIsFormOpen(false);
       loadTasks();
@@ -255,6 +289,25 @@ export const ScheduledTasks = () => {
                     </Select>
                   </div>
                 </div>
+
+                {groups.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="group">Compartilhar com Grupo (opcional)</Label>
+                    <Select value={formData.group_id} onValueChange={(value) => setFormData({ ...formData, group_id: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um grupo ou deixe pessoal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Apenas pessoal</SelectItem>
+                        {groups.map((group) => (
+                          <SelectItem key={group.id} value={group.id}>
+                            {group.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Descrição</Label>
