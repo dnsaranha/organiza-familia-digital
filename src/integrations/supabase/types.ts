@@ -14,10 +14,70 @@ export type Database = {
   }
   public: {
     Tables: {
+      family_groups: {
+        Row: {
+          created_at: string
+          id: string
+          join_code: string
+          name: string
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          join_code?: string
+          name: string
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          join_code?: string
+          name?: string
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       scheduled_tasks: {
         Row: {
           created_at: string
           description: string | null
+          group_id: string | null
           id: string
           is_completed: boolean | null
           notification_email: boolean | null
@@ -31,6 +91,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          group_id?: string | null
           id?: string
           is_completed?: boolean | null
           notification_email?: boolean | null
@@ -44,6 +105,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          group_id?: string | null
           id?: string
           is_completed?: boolean | null
           notification_email?: boolean | null
@@ -54,14 +116,29 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_tasks_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_group_member: {
+        Args: { _group_id: string; _user_id?: string }
+        Returns: boolean
+      }
+      join_group: {
+        Args: { _join_code: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
