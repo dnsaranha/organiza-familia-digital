@@ -82,7 +82,7 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
     try {
       let query = supabase
         .from('transactions')
-        .select('*, profiles(full_name, avatar_url)');
+        .select('*, profiles(*)');
 
       if (budgetFilter === 'personal') {
         query = query.is('group_id', null);
