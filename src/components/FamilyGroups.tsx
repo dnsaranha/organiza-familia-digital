@@ -53,6 +53,7 @@ export const FamilyGroups = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingGroup, setDeletingGroup] = useState<FamilyGroup | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -60,7 +61,7 @@ export const FamilyGroups = () => {
     if (user) {
       loadGroups();
     }
-  }, [user]);
+  }, [user, refreshKey]);
 
   const loadGroups = async () => {
     if (!user) return;
@@ -115,7 +116,7 @@ export const FamilyGroups = () => {
       toast({ title: "Grupo atualizado!", description: `O nome do grupo foi alterado para "${editGroupName}".` });
       setEditDialogOpen(false);
       setEditingGroup(null);
-      loadGroups();
+      setRefreshKey(k => k + 1);
     } catch (error) {
       console.error('Erro ao atualizar grupo:', error);
       toast({ title: "Erro", description: "Não foi possível atualizar o grupo.", variant: "destructive" });
@@ -133,7 +134,7 @@ export const FamilyGroups = () => {
       toast({ title: "Grupo excluído!", description: `O grupo "${deletingGroup.name}" foi excluído com sucesso.` });
       setDeleteDialogOpen(false);
       setDeletingGroup(null);
-      loadGroups();
+      setRefreshKey(k => k + 1);
     } catch (error) {
       console.error('Erro ao excluir grupo:', error);
       toast({ title: "Erro", description: "Não foi possível excluir o grupo.", variant: "destructive" });
@@ -197,7 +198,7 @@ export const FamilyGroups = () => {
 
       setNewGroupName("");
       setCreateDialogOpen(false);
-      loadGroups();
+      setRefreshKey(k => k + 1);
     } catch (error: any) {
       console.error('Erro ao criar grupo:', error);
       toast({
@@ -229,7 +230,7 @@ export const FamilyGroups = () => {
 
       setJoinCode("");
       setJoinDialogOpen(false);
-      loadGroups();
+      setRefreshKey(k => k + 1);
     } catch (error: any) {
       console.error('Erro ao entrar no grupo:', error);
       toast({
@@ -277,7 +278,7 @@ export const FamilyGroups = () => {
         description: "Você saiu do grupo familiar.",
       });
 
-      loadGroups();
+      setRefreshKey(k => k + 1);
     } catch (error) {
       console.error('Erro ao sair do grupo:', error);
       toast({
