@@ -36,7 +36,7 @@ export const SubscriptionStatus = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await (supabase as any)
+      const { data, error: fetchError } = await supabase
         .from('stripe_user_subscriptions')
         .select('*')
         .maybeSingle();
@@ -45,7 +45,7 @@ export const SubscriptionStatus = () => {
         throw fetchError;
       }
 
-      setSubscription(data as SubscriptionData);
+      setSubscription(data);
     } catch (err: any) {
       console.error('Erro ao buscar assinatura:', err);
       setError('Não foi possível carregar informações da assinatura');

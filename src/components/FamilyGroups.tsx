@@ -68,16 +68,17 @@ export const FamilyGroups = () => {
     setLoadingGroups(true);
     
     try {
-      const { data: groupsData, error } = await (supabase as any).rpc('get_user_groups');
+      const { data: groupsData, error } = await supabase.rpc('get_user_groups');
 
       if (error) throw error;
 
       const groupsWithCounts = await Promise.all(
-        ((groupsData as FamilyGroup[]) || []).map(async (group) => {
+        (groupsData || []).map(async (group) => {
           const { count } = await supabase
             .from('group_members')
             .select('*', { count: 'exact', head: true })
             .eq('group_id', group.id);
+          
           return {
             ...group,
             is_owner: group.owner_id === user.id,
@@ -148,9 +149,9 @@ export const FamilyGroups = () => {
     }
     setLoadingMembers(prev => ({ ...prev, [groupId]: true }));
     try {
-      const { data, error } = await (supabase as any).rpc('get_group_members', { p_group_id: groupId });
+      const { data, error } = await supabase.rpc('get_group_members', { p_group_id: groupId });
       if (error) throw error;
-      setMembers(prev => ({ ...prev, [groupId]: (data as Member[]) || [] }));
+      setMembers(prev => ({ ...prev, [groupId]: data || [] }));
     } catch (error) {
       console.error(`Erro ao carregar membros do grupo ${groupId}:`, error);
       toast({
