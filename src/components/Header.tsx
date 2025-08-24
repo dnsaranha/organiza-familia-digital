@@ -1,6 +1,7 @@
-import { PiggyBank, Settings, Users, LogOut, LogIn } from "lucide-react";
+import { PiggyBank, Settings, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { BudgetScopeSwitcher } from "./BudgetScopeSwitcher";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 
@@ -40,16 +41,10 @@ export const Header = () => {
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             {user ? (
               <>
-                <span className="text-sm text-muted-foreground mr-2">
-                  {user.email}
-                </span>
-                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
-                  <Users className="h-4 w-4 mr-2" />
-                  Família
-                </Button>
+                <BudgetScopeSwitcher />
                 <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
                   <Settings className="h-4 w-4" />
                 </Button>

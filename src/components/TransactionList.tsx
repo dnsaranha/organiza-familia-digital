@@ -39,10 +39,7 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
 
   const [groups, setGroups] = useState<FamilyGroup[]>([]);
   const [budgetFilter, setBudgetFilter] = useState('all');
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
-    from: addDays(new Date(), -29),
-    to: new Date(),
-  });
+  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
 
   useEffect(() => {
     const fetchGroups = async () => {
