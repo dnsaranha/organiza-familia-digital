@@ -8,6 +8,7 @@ import { ScheduledTasks } from "@/components/ScheduledTasks";
 import { FamilyGroups } from "@/components/FamilyGroups";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { useBudgetScope } from "@/contexts/BudgetScopeContext";
 import { Wallet, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 
 interface FinancialData {
@@ -22,6 +23,7 @@ const Index = () => {
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { scope } = useBudgetScope();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -33,16 +35,22 @@ const Index = () => {
     if (user) {
       fetchFinancialData();
     }
-  }, [user, refreshKey]);
+  }, [user, refreshKey, scope]);
 
   const fetchFinancialData = async () => {
     if (!user) return;
 
     setLoadingData(true);
     try {
-      const { data: transactions, error } = await supabase
-        .from('transactions')
-        .select('type, amount, date');
+      let query = supabase.from('transactions').select('type, amount, date');
+
+      if (scope === 'personal') {
+        query = query.is('group_id', null).eq('user_id', user.id);
+      } else {
+        query = query.eq('group_id', scope);
+      }
+
+      const { data: transactions, error } = await query;
 
       if (error) throw error;
 
