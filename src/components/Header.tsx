@@ -45,6 +45,14 @@ export const Header = () => {
             {user ? (
               <>
                 <BudgetScopeSwitcher />
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => navigate("/pricing")}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  Planos
+                </Button>
                 <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-primary">
                   <Settings className="h-4 w-4" />
                 </Button>

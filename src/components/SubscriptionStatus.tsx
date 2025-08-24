@@ -1,0 +1,228 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Crown, Calendar, CreditCard, AlertCircle, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { getProductByPriceId } from '@/stripe-config';
+import { useToast } from '@/hooks/use-toast';
+
+interface SubscriptionData {
+  subscription_status: string;
+  price_id: string | null;
+  current_period_start: number | null;
+  current_period_end: number | null;
+  cancel_at_period_end: boolean;
+  payment_method_brand: string | null;
+  payment_method_last4: string | null;
+}
+
+export const SubscriptionStatus = () => {
+  const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchSubscription();
+    }
+  }, [user]);
+
+  const fetchSubscription = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('stripe_user_subscriptions')
+        .select('*')
+        .maybeSingle();
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      setSubscription(data);
+    } catch (err: any) {
+      console.error('Erro ao buscar assinatura:', err);
+      setError('Não foi possível carregar informações da assinatura');
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível carregar informações da assinatura',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-success text-success-foreground">Ativa</Badge>;
+      case 'trialing':
+        return <Badge className="bg-primary text-primary-foreground">Período de Teste</Badge>;
+      case 'past_due':
+        return <Badge variant="destructive">Pagamento em Atraso</Badge>;
+      case 'canceled':
+        return <Badge variant="secondary">Cancelada</Badge>;
+      case 'incomplete':
+        return <Badge variant="outline">Incompleta</Badge>;
+      case 'not_started':
+        return <Badge variant="outline">Não Iniciada</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString('pt-BR');
+  };
+
+  if (!user) {
+    return null;
+  }
+
+  if (loading) {
+    return (
+      <Card className="bg-gradient-card shadow-card border">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin mr-2" />
+            <span>Carregando informações da assinatura...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-gradient-card shadow-card border">
+        <CardContent className="p-6">
+          <div className="flex items-center text-destructive">
+            <AlertCircle className="h-5 w-5 mr-2" />
+            <span>{error}</span>
+          </div>
+          <Button 
+            onClick={fetchSubscription} 
+            variant="outline" 
+            size="sm" 
+            className="mt-4"
+          >
+            Tentar Novamente
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!subscription || subscription.subscription_status === 'not_started') {
+    return (
+      <Card className="bg-gradient-card shadow-card border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-muted-foreground" />
+            Status da Assinatura
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-6">
+            <p className="text-muted-foreground mb-4">
+              Você ainda não possui uma assinatura ativa.
+            </p>
+            <Button 
+              onClick={() => window.location.href = '/pricing'}
+              className="bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
+            >
+              Ver Planos Disponíveis
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const product = subscription.price_id ? getProductByPriceId(subscription.price_id) : null;
+
+  return (
+    <Card className="bg-gradient-card shadow-card border">
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-primary" />
+            Status da Assinatura
+          </div>
+          {getStatusBadge(subscription.subscription_status)}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {product && (
+          <div>
+            <h3 className="font-semibold text-lg">{product.name}</h3>
+            <p className="text-muted-foreground text-sm">{product.description}</p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {subscription.current_period_start && subscription.current_period_end && (
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <div className="text-sm">
+                <p className="font-medium">Período Atual</p>
+                <p className="text-muted-foreground">
+                  {formatDate(subscription.current_period_start)} - {formatDate(subscription.current_period_end)}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {subscription.payment_method_brand && subscription.payment_method_last4 && (
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <div className="text-sm">
+                <p className="font-medium">Método de Pagamento</p>
+                <p className="text-muted-foreground">
+                  {subscription.payment_method_brand.toUpperCase()} •••• {subscription.payment_method_last4}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {subscription.cancel_at_period_end && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-4 w-4" />
+              <span className="font-medium">Cancelamento Agendado</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">
+              Sua assinatura será cancelada no final do período atual em{' '}
+              {subscription.current_period_end && formatDate(subscription.current_period_end)}.
+            </p>
+          </div>
+        )}
+
+        <div className="flex gap-2 pt-4">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => window.location.href = '/pricing'}
+          >
+            Alterar Plano
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={fetchSubscription}
+          >
+            Atualizar Status
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

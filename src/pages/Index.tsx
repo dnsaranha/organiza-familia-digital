@@ -6,6 +6,7 @@ import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
 import { ScheduledTasks } from "@/components/ScheduledTasks";
 import { FamilyGroups } from "@/components/FamilyGroups";
+import { SubscriptionStatus } from "@/components/SubscriptionStatus";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useBudgetScope } from "@/contexts/BudgetScopeContext";
@@ -166,6 +167,11 @@ const Index = () => {
           <div>
             <ScheduledTasks />
           </div>
+        </div>
+
+        {/* Subscription Status */}
+        <div className="mb-8">
+          <SubscriptionStatus />
         </div>
 
         {/* Success Notice */}
