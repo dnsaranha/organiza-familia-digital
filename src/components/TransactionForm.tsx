@@ -33,11 +33,11 @@ export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) =>
   useEffect(() => {
     const fetchGroups = async () => {
       if (!user) return;
-      const { data, error } = await supabase.rpc('get_user_groups');
+      const { data, error } = await (supabase as any).rpc('get_user_groups');
       if (error) {
         console.error("Erro ao buscar grupos:", error);
       } else {
-        setGroups(data || []);
+        setGroups((data as FamilyGroup[]) || []);
       }
     };
     fetchGroups();
@@ -77,7 +77,7 @@ export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) =>
 
     setLoading(true);
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('transactions')
         .insert({
           user_id: user.id,

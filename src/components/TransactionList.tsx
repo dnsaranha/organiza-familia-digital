@@ -20,10 +20,6 @@ interface Transaction {
   category: string;
   description?: string;
   date: string;
-  profiles: {
-    full_name: string | null;
-    avatar_url: string | null;
-  } | null;
 }
 
 interface FamilyGroup {
@@ -44,11 +40,11 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
   useEffect(() => {
     const fetchGroups = async () => {
       if (!user) return;
-      const { data, error } = await supabase.rpc('get_user_groups');
+      const { data, error } = await (supabase as any).rpc('get_user_groups');
       if (error) {
         console.error("Erro ao buscar grupos para filtro:", error);
       } else {
-        setGroups(data || []);
+        setGroups((data as FamilyGroup[]) || []);
       }
     };
     fetchGroups();
@@ -80,9 +76,9 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
     setLoading(true);
     setError(null);
     try {
-      let query = supabase
+      let query = (supabase as any)
         .from('transactions')
-        .select('*, profiles(*)');
+        .select('*');
 
       if (budgetFilter === 'personal') {
         query = query.is('group_id', null);
@@ -105,7 +101,7 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
         throw error;
       }
 
-      setTransactions(data as Transaction[] || []);
+      setTransactions((data as unknown as Transaction[]) || []);
     } catch (err: any) {
       console.error("Erro ao buscar transações:", err);
       setError("Não foi possível carregar as transações.");
@@ -248,12 +244,6 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
                       <span className="text-xs text-muted-foreground">
                         {formatDate(transaction.date)}
                       </span>
-                      {transaction.profiles && (
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground border-l pl-2">
-                          <User className="h-3 w-3" />
-                          <span>{transaction.profiles.full_name || 'Usuário'}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
