@@ -43,7 +43,7 @@ const Index = () => {
 
     setLoadingData(true);
     try {
-      let query = supabase.from('transactions').select('type, amount, date');
+      let query = (supabase as any).from('transactions').select('type, amount, date');
 
       if (scope === 'personal') {
         query = query.is('group_id', null).eq('user_id', user.id);
@@ -128,21 +128,19 @@ const Index = () => {
             value={financialData?.balance ?? 0}
             type="balance"
             icon={Wallet}
-            loading={loadingData}
           />
           <FinancialCard
             title="Receitas do Mês"
             value={financialData?.monthlyIncome ?? 0}
             type="income"
             icon={TrendingUp}
-            loading={loadingData}
           />
           <FinancialCard
             title="Gastos do Mês"
             value={financialData?.monthlyExpenses ?? 0}
             type="expense"
             icon={TrendingDown}
-            loading={loadingData}
+            
           />
         </div>
 
