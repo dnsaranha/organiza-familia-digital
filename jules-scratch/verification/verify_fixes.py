@@ -120,10 +120,24 @@ def run(playwright):
     page.get_by_role("button", name="Adicionar Transação").click()
     time.sleep(1)
 
+    # Create a scheduled task for the group
+    task_title = "Group Deletion Test Task"
+    page.get_by_role("button", name="Nova Tarefa").click()
+    page.get_by_label("Título *").fill(task_title)
+    page.get_by_label("Data *").fill("2025-12-31")
+    page.get_by_label("Horário *").fill("12:00")
+    page.get_by_label("Compartilhar com Grupo (opcional)").click()
+    page.get_by_text(group_to_delete_name).click()
+    page.get_by_role("button", name="Agendar Tarefa").click()
+    time.sleep(1)
+
     # Make sure the transaction is visible
     page.locator('.flex.gap-2.mb-4 > .relative.w-full').click()
     page.get_by_text(group_to_delete_name).click()
     expect(page.get_by_text("Group Deletion Test Transaction")).to_be_visible()
+
+    # Make sure the task is visible
+    expect(page.get_by_text(task_title)).to_be_visible()
 
     # Delete the group
     page.get_by_role("button", name=re.compile(group_to_delete_name)).click()
@@ -139,6 +153,9 @@ def run(playwright):
     page.locator('.flex.gap-2.mb-4 > .relative.w-full').click()
     page.get_by_text("Todos").click()
     expect(page.get_by_text("Group Deletion Test Transaction")).not_to_be_visible()
+
+    # Verify the task is gone
+    expect(page.get_by_text(task_title)).not_to_be_visible()
 
     # --- Final Screenshot ---
     page.screenshot(path="jules-scratch/verification/verification.png")
