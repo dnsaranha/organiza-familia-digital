@@ -96,7 +96,7 @@ export const ScheduledTasks = () => {
       const { data, error } = await supabase
         .from('family_groups')
         .select('id, name')
-        .or(`owner_id.eq.${user.id},group_members.user_id.eq.${user.id}`)
+        .or(`owner_id.eq.${user.id},user_id.eq.${user.id}`, { foreignTable: 'group_members' })
         .order('name');
 
       if (error) throw error;
