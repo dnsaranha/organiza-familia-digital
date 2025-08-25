@@ -127,62 +127,72 @@ async function handleEvent(event: Stripe.Event) {
 // based on the excellent https://github.com/t3dotgg/stripe-recommendations
 async function syncCustomerFromStripe(customerId: string) {
   try {
-    // fetch latest subscription data from Stripe
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      limit: 1,
-      status: 'all',
-      expand: ['data.default_payment_method'],
+    const customer = await stripe.customers.retrieve(customerId, {
+      expand: ['subscriptions'],
     });
 
-    // TODO verify if needed
-    if (subscriptions.data.length === 0) {
-      console.info(`No active subscriptions found for customer: ${customerId}`);
-      const { error: noSubError } = await supabase.from('stripe_subscriptions').upsert(
-        {
-          customer_id: customerId,
-          subscription_status: 'not_started',
-        },
-        {
-          onConflict: 'customer_id',
-        },
-      );
-
-      if (noSubError) {
-        console.error('Error updating subscription status:', noSubError);
-        throw new Error('Failed to update subscription status in database');
-      }
+    if (customer.deleted) {
+      console.warn(`Customer ${customerId} is deleted. No action taken.`);
+      return;
     }
 
-    // assumes that a customer can only have a single subscription
-    const subscription = subscriptions.data[0];
+    const { data: existingSubscription, error: getSubError } = await supabase
+      .from('stripe_user_subscriptions')
+      .select('user_id')
+      .eq('customer_id', customerId)
+      .single();
 
-    // store subscription state
-    const { error: subError } = await supabase.from('stripe_subscriptions').upsert(
-      {
-        customer_id: customerId,
-        subscription_id: subscription.id,
-        price_id: subscription.items.data[0].price.id,
-        current_period_start: subscription.current_period_start,
-        current_period_end: subscription.current_period_end,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-        ...(subscription.default_payment_method && typeof subscription.default_payment_method !== 'string'
-          ? {
-              payment_method_brand: subscription.default_payment_method.card?.brand ?? null,
-              payment_method_last4: subscription.default_payment_method.card?.last4 ?? null,
-            }
-          : {}),
-        status: subscription.status,
-      },
-      {
-        onConflict: 'customer_id',
-      },
-    );
+    if (getSubError && getSubError.code !== 'PGRST116') { // Ignore 'not found' error
+      console.error(`Error fetching user_id for customer ${customerId}:`, getSubError);
+      throw new Error('Failed to fetch user from database');
+    }
+
+    const userId = existingSubscription?.user_id ?? (customer.metadata.user_id || null);
+
+    if (!userId) {
+      console.error(`user_id not found for customer ${customerId}. Cannot sync subscription.`);
+      return;
+    }
+
+    const subscription = customer.subscriptions?.data[0];
+
+    if (!subscription) {
+      console.info(`No active subscriptions found for customer: ${customerId}. Setting status to 'canceled'.`);
+      const { error: noSubError } = await supabase
+        .from('stripe_user_subscriptions')
+        .update({ subscription_status: 'canceled' })
+        .eq('customer_id', customerId);
+
+      if (noSubError) {
+        console.error('Error updating subscription status to canceled:', noSubError);
+      }
+      return;
+    }
+
+    const paymentMethod = subscription.default_payment_method as Stripe.PaymentMethod | null;
+
+    const subscriptionData = {
+      user_id: userId,
+      customer_id: customerId,
+      subscription_id: subscription.id,
+      price_id: subscription.items.data[0]?.price.id,
+      subscription_status: subscription.status,
+      current_period_start: subscription.current_period_start,
+      current_period_end: subscription.current_period_end,
+      cancel_at_period_end: subscription.cancel_at_period_end,
+      payment_method_brand: paymentMethod?.card?.brand ?? null,
+      payment_method_last4: paymentMethod?.card?.last4 ?? null,
+    };
+
+    const { error: subError } = await supabase
+      .from('stripe_user_subscriptions')
+      .upsert(subscriptionData, { onConflict: 'customer_id' });
 
     if (subError) {
       console.error('Error syncing subscription:', subError);
       throw new Error('Failed to sync subscription in database');
     }
+
     console.info(`Successfully synced subscription for customer: ${customerId}`);
   } catch (error) {
     console.error(`Failed to sync subscription for customer ${customerId}:`, error);
