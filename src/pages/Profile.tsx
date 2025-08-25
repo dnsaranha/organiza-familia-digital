@@ -8,14 +8,25 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [newAvatar, setNewAvatar] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      const file = event.target.files[0];
+      setNewAvatar(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -72,10 +83,31 @@ export default function Profile() {
       setLoading(true);
       if (!user) throw new Error("No user");
 
+      let newAvatarUrl = avatarUrl;
+
+      if (newAvatar) {
+        const fileExt = newAvatar.name.split('.').pop();
+        const filePath = `${user.id}/${Math.random()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, newAvatar);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+        newAvatarUrl = publicUrl;
+      }
+
       const updates = {
         id: user.id,
         full_name: fullName,
-        avatar_url: avatarUrl,
+        avatar_url: newAvatarUrl,
         updated_at: new Date().toISOString(),
       };
 
@@ -85,12 +117,13 @@ export default function Profile() {
         throw error;
       }
       toast({
-        title: "Profile updated!",
-        description: "Your profile has been successfully updated.",
+        title: "Perfil atualizado!",
+        description: "Seu perfil foi atualizado com sucesso.",
       });
+      navigate('/');
     } catch (error) {
       toast({
-        title: "Error updating profile",
+        title: "Erro ao atualizar o perfil",
         description: (error as Error).message,
         variant: "destructive",
       });
@@ -123,18 +156,28 @@ export default function Profile() {
                   onChange={(e) => setFullName(e.target.value)}
                 />
               </div>
-              <div>
-                <Label htmlFor="avatarUrl">Avatar URL</Label>
-                <Input
-                  id="avatarUrl"
-                  type="text"
-                  value={avatarUrl || ""}
-                  onChange={(e) => setAvatarUrl(e.target.value)}
-                />
+              <div className="space-y-2">
+                <Label>Avatar</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={avatarPreview || avatarUrl} alt={fullName || ""} />
+                    <AvatarFallback>{fullName?.charAt(0).toUpperCase()}</AvatarFallback>
+                  </Avatar>
+                  <Input
+                    id="avatarFile"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    className="max-w-xs"
+                  />
+                </div>
               </div>
-              <div>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => navigate('/')}>
+                  Voltar
+                </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Saving..." : "Save"}
+                  {loading ? "Salvando..." : "Salvar"}
                 </Button>
               </div>
             </form>
