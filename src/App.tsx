@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Pricing from "./pages/Pricing";
 import Success from "./pages/Success";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 import { BudgetScopeProvider } from "./contexts/BudgetScopeContext";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/success" element={<Success />} />
+            <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
