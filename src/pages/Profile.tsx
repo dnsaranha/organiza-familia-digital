@@ -87,11 +87,11 @@ export default function Profile() {
 
       if (newAvatar) {
         const fileExt = newAvatar.name.split('.').pop();
-        const filePath = `${user.id}/${Math.random()}.${fileExt}`;
+        const filePath = `${user.id}/avatar.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, newAvatar);
+          .upload(filePath, newAvatar, { upsert: true });
 
         if (uploadError) {
           throw uploadError;

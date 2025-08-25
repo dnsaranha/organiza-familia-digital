@@ -128,7 +128,7 @@ export const FamilyGroups = () => {
     if (!deletingGroup) return;
     setLoading(true);
     try {
-      const { error } = await supabase.from('family_groups').delete().eq('id', deletingGroup.id);
+      const { error } = await supabase.rpc('delete_group_and_transactions', { p_group_id: deletingGroup.id });
       if (error) throw error;
       toast({ title: "Grupo excluído!", description: `O grupo "${deletingGroup.name}" foi excluído com sucesso.` });
       setDeleteDialogOpen(false);

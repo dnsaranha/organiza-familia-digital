@@ -80,6 +80,66 @@ def run(playwright):
     balance_card = page.get_by_role("heading", name=re.compile("R\\$ -250,00"))
     expect(balance_card).to_be_visible()
 
+    # --- Test Profile Picture Update ---
+    page.goto("http://127.0.0.1:8080/profile")
+
+    # Upload a new avatar
+    page.set_input_files('input[type="file"]', 'public/placeholder.svg')
+
+    # Wait for the preview to show up
+    expect(page.locator('img[src^="blob:"]')).to_be_visible()
+
+    page.get_by_role("button", name="Salvar").click()
+
+    # Wait for navigation back to home
+    expect(page.get_by_role("heading", name="Olá, bem-vindo de volta!")).to_be_visible(timeout=10000)
+
+    # Go back to profile and check if the avatar is there
+    page.goto("http://127.0.0.1:8080/profile")
+
+    # The image src should now be a supabase url
+    expect(page.locator(f'img[src*="supabase.co"]')).to_be_visible()
+
+    # --- Test Group Deletion ---
+    page.goto("http://127.0.0.1:8080/")
+
+    # Create a group to be deleted
+    group_to_delete_name = f"Delete Me Group {random.randint(100, 999)}"
+    page.get_by_role("button", name="Criar").click()
+    page.get_by_label("Nome do Grupo").fill(group_to_delete_name)
+    page.get_by_role("button", name="Criar Grupo").click()
+    time.sleep(1)
+
+    # Add a transaction to the group
+    page.get_by_label("Valor *").fill("50")
+    page.get_by_label("Categoria *").click()
+    page.get_by_text("Lazer").click()
+    page.get_by_label("Orçamento").click()
+    page.get_by_text(group_to_delete_name).click()
+    page.get_by_label("Descrição").fill("Group Deletion Test Transaction")
+    page.get_by_role("button", name="Adicionar Transação").click()
+    time.sleep(1)
+
+    # Make sure the transaction is visible
+    page.locator('.flex.gap-2.mb-4 > .relative.w-full').click()
+    page.get_by_text(group_to_delete_name).click()
+    expect(page.get_by_text("Group Deletion Test Transaction")).to_be_visible()
+
+    # Delete the group
+    page.get_by_role("button", name=re.compile(group_to_delete_name)).click()
+    page.get_by_role("button").nth(3).click() # Click the delete button
+    page.get_by_role("button", name="Excluir").click()
+    time.sleep(1)
+
+    # Verify the group is gone
+    expect(page.get_by_role("button", name=re.compile(group_to_delete_name))).not_to_be_visible()
+
+    # Verify the transaction is gone
+    # Switch to "All" transactions view
+    page.locator('.flex.gap-2.mb-4 > .relative.w-full').click()
+    page.get_by_text("Todos").click()
+    expect(page.get_by_text("Group Deletion Test Transaction")).not_to_be_visible()
+
     # --- Final Screenshot ---
     page.screenshot(path="jules-scratch/verification/verification.png")
 
