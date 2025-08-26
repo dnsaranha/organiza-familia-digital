@@ -120,7 +120,7 @@ export const SubscriptionStatus = () => {
     );
   }
 
-  if (!subscription || subscription.subscription_status === 'not_started') {
+  if (!subscription || !['active', 'trialing', 'past_due'].includes(subscription.subscription_status)) {
     return (
       <Card className="bg-gradient-card shadow-card border">
         <CardHeader>
