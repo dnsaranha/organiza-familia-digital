@@ -45,33 +45,29 @@ export const Header = () => {
             {user ? (
               <>
                 <BudgetScopeSwitcher />
-                <div className="hidden sm:flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate("/pricing")}
-                    className="text-muted-foreground hover:text-primary"
-                  >
-                    Planos
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => navigate("/profile")}
-                    className="text-muted-foreground hover:text-primary"
-                  >
-                    <Settings className="h-5 w-5" />
-                    <span className="sr-only">Configurações</span>
-                  </Button>
-                </div>
                 <Button 
                   variant="ghost" 
-                  size="icon"
+                  size="sm"
+                  onClick={() => navigate("/pricing")}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  Planos
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/profile")}
+                  className="text-muted-foreground hover:text-primary"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleSignOut}
                   className="text-muted-foreground hover:text-primary"
                 >
-                  <LogOut className="h-5 w-5" />
-                  <span className="sr-only">Sair</span>
+                  <LogOut className="h-4 w-4" />
                 </Button>
               </>
             ) : (
