@@ -2,12 +2,16 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNotifications } from './useNotifications';
 import { useToast } from './use-toast';
+import { useAuth } from './useAuth';
 
 export const useTaskNotifications = () => {
   const { sendNotification } = useNotifications();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
+    if (!user) return;
+
     const checkUpcomingTasks = async () => {
       try {
         const now = new Date();
@@ -47,6 +51,7 @@ export const useTaskNotifications = () => {
               supabase.functions.invoke('send-notification', {
                 body: {
                   taskId: task.id,
+                  userEmail: user.email,
                   title: task.title,
                   description: task.description,
                   scheduleDate: task.schedule_date,
@@ -67,5 +72,5 @@ export const useTaskNotifications = () => {
     checkUpcomingTasks();
 
     return () => clearInterval(interval);
-  }, [sendNotification, toast]);
+  }, [sendNotification, toast, user]);
 };
