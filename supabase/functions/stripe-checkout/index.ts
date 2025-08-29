@@ -74,23 +74,20 @@ Deno.serve(async (req) => {
       return corsResponse({ error: 'User not found' }, 404);
     }
 
-    const { data: customer, error: getCustomerError } = await supabase
-      .from('stripe_customers')
+    const { data: subscription, error: getSubscriptionError } = await supabase
+      .from('stripe_user_subscriptions')
       .select('customer_id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
+
+    if (getSubscriptionError) {
+      console.error('Failed to fetch subscription information from the database', getSubscriptionError);
+      return corsResponse({ error: 'Failed to fetch subscription information' }, 500);
+    }
 
     let customerId;
 
-    if (getCustomerError && getCustomerError.code !== 'PGRST116') { // PGRST116 = no rows found
-      console.error('Failed to fetch customer information from the database', getCustomerError);
-      return corsResponse({ error: 'Failed to fetch customer information' }, 500);
-    }
-
-    if (customer?.customer_id) {
-      customerId = customer.customer_id;
-      console.log(`Found existing Stripe customer ${customerId} for user ${user.id}`);
-    } else {
+    if (!subscription || !subscription.customer_id) {
       const newCustomer = await stripe.customers.create({
         email: user.email ?? undefined,
         metadata: {
@@ -101,24 +98,28 @@ Deno.serve(async (req) => {
       customerId = newCustomer.id;
       console.log(`Created new Stripe customer ${customerId} for user ${user.id}`);
 
-      const { error: createCustomerError } = await supabase
-        .from('stripe_customers')
+      const { error: createSubscriptionError } = await supabase
+        .from('stripe_user_subscriptions')
         .insert({
           user_id: user.id,
           customer_id: customerId,
+          subscription_status: 'not_started',
         });
 
-      if (createCustomerError) {
-        console.error('Failed to save new customer in the database', createCustomerError);
+      if (createSubscriptionError) {
+        console.error('Failed to save new subscription in the database', createSubscriptionError);
         // Attempt to clean up Stripe customer if DB insert fails
         try {
           await stripe.customers.del(newCustomer.id);
         } catch (deleteError) {
           console.error('Failed to clean up Stripe customer after DB error:', deleteError);
         }
-        return corsResponse({ error: 'Failed to create customer' }, 500);
+        return corsResponse({ error: 'Failed to create subscription' }, 500);
       }
-      console.log(`Successfully created customer record for new customer ${customerId}`);
+      console.log(`Successfully created subscription record for new customer ${customerId}`);
+    } else {
+      customerId = subscription.customer_id;
+      console.log(`Found existing Stripe customer ${customerId} for user ${user.id}`);
     }
 
     // create Checkout Session
