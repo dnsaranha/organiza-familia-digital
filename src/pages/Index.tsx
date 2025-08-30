@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { FinancialCard } from "@/components/FinancialCard";
@@ -32,18 +32,12 @@ const Index = () => {
     }
   }, [user, authLoading, navigate]);
 
-  useEffect(() => {
-    if (user) {
-      fetchFinancialData();
-    }
-  }, [user, refreshKey, scope]);
-
-  const fetchFinancialData = async () => {
+  const fetchFinancialData = useCallback(async () => {
     if (!user) return;
 
     setLoadingData(true);
     try {
-      let query = (supabase as any).from('transactions').select('type, amount, date');
+      let query = supabase.from('transactions').select('type, amount, date');
 
       if (scope === 'personal') {
         query = query.is('group_id', null).eq('user_id', user.id);
@@ -85,9 +79,15 @@ const Index = () => {
     } finally {
       setLoadingData(false);
     }
-  };
+  }, [scope, user]);
 
-  const handleTransactionAdded = () => {
+  useEffect(() => {
+    if (user) {
+      fetchFinancialData();
+    }
+  }, [user, refreshKey, fetchFinancialData]);
+
+  const handleTransactionChange = () => {
     setRefreshKey(prevKey => prevKey + 1);
   };
 
@@ -148,12 +148,15 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Transaction Form */}
           <div>
-            <TransactionForm onTransactionAdded={handleTransactionAdded} />
+            <TransactionForm onTransactionAdded={handleTransactionChange} />
           </div>
           
           {/* Recent Transactions */}
           <div>
-            <TransactionList key={refreshKey} />
+            <TransactionList
+              key={refreshKey}
+              onTransactionChange={handleTransactionChange}
+            />
           </div>
         </div>
 
