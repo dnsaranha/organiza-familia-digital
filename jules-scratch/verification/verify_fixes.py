@@ -18,8 +18,9 @@ def run_verification():
             page.get_by_label("Senha").fill(password)
             page.get_by_role("button", name="Entrar").click()
 
-            # Wait for navigation to the main page
-            expect(page).to_have_url("http://127.0.0.1:8080/", timeout=15000)
+            # Wait for navigation and for the network to be idle
+            page.wait_for_url("http://127.0.0.1:8080/", timeout=15000)
+            page.wait_for_load_state('networkidle')
 
             # --- Add a new transaction ---
             page.get_by_label("Valor *").fill("99.99")
