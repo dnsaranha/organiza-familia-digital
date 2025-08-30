@@ -153,10 +153,7 @@ const Index = () => {
           
           {/* Recent Transactions */}
           <div>
-            <TransactionList
-              key={refreshKey}
-              onTransactionChange={handleTransactionChange}
-            />
+            <TransactionList key={refreshKey} onTransactionChange={handleTransactionChange} />
           </div>
         </div>
 
