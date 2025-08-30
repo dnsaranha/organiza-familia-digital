@@ -87,7 +87,7 @@ const Index = () => {
     }
   };
 
-  const handleTransactionAdded = () => {
+  const handleDataRefresh = () => {
     setRefreshKey(prevKey => prevKey + 1);
   };
 
@@ -148,12 +148,12 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Transaction Form */}
           <div>
-            <TransactionForm onTransactionAdded={handleTransactionAdded} />
+            <TransactionForm onSave={handleDataRefresh} />
           </div>
           
           {/* Recent Transactions */}
           <div>
-            <TransactionList key={refreshKey} />
+            <TransactionList key={refreshKey} onDataChange={handleDataRefresh} />
           </div>
         </div>
 
