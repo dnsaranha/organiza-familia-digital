@@ -2,16 +2,12 @@ import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNotifications } from './useNotifications';
 import { useToast } from './use-toast';
-import { useAuth } from './useAuth';
 
 export const useTaskNotifications = () => {
   const { sendNotification } = useNotifications();
   const { toast } = useToast();
-  const { user } = useAuth();
 
   useEffect(() => {
-    if (!user) return;
-
     const checkUpcomingTasks = async () => {
       try {
         const now = new Date();
@@ -34,28 +30,30 @@ export const useTaskNotifications = () => {
           const timeUntilTask = scheduleTime.getTime() - now.getTime();
           
           if (timeUntilTask > 0 && timeUntilTask <= 5 * 60 * 1000) { // 5 minutos
-            if (task.notification_push) {
-              sendNotification(`⏰ ${task.title}`, {
-                body: task.description || 'Tarefa agendada próxima do vencimento',
-                icon: '/favicon.ico',
-              });
-            }
-            
             toast({
               title: `⏰ Lembrete: ${task.title}`,
               description: task.description || 'Tarefa agendada próxima do vencimento',
             });
 
-            // Enviar email se habilitado
-            if (task.notification_email) {
+            // Se as notificações push estiverem habilitadas, envie tanto a notificação do navegador
+            // quanto a notificação push real através do backend.
+            if (task.notification_push) {
+              // Notificação no navegador (se a guia estiver aberta)
+              sendNotification(`⏰ ${task.title}`, {
+                body: task.description || 'Tarefa agendada próxima do vencimento',
+                icon: '/favicon.ico',
+              });
+
+              // Notificação Push via OneSignal (funciona em segundo plano)
               supabase.functions.invoke('send-notification', {
                 body: {
-                  taskId: task.id,
-                  userEmail: user.email,
                   title: task.title,
-                  description: task.description,
-                  scheduleDate: task.schedule_date,
+                  description: task.description || 'Lembrete de tarefa.',
                 },
+              }).then(response => {
+                if (response.error) {
+                  console.error('Erro ao invocar send-notification:', response.error);
+                }
               });
             }
           }
@@ -72,5 +70,5 @@ export const useTaskNotifications = () => {
     checkUpcomingTasks();
 
     return () => clearInterval(interval);
-  }, [sendNotification, toast, user]);
+  }, [sendNotification, toast]);
 };

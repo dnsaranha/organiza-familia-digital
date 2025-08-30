@@ -1,93 +1,101 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
+import { corsHeaders } from '../_shared/cors.ts';
 
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+// Supabase client with role key for elevated privileges
+const supabaseAdmin = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
-
-interface NotificationRequest {
-  taskId: string;
-  email?: string;
-  userEmail?: string;
+interface NotificationPayload {
   title: string;
   description?: string;
-  scheduleDate: string;
 }
 
-const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { taskId, email, userEmail, title, description, scheduleDate }: NotificationRequest = await req.json();
+    // 1. Get JWT from Authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing Authorization header');
+    }
+    const token = authHeader.replace('Bearer ', '');
 
-    console.log("Processing notification for task:", taskId);
+    // 2. Get user from token
+    const { data: { user }, error: userError } = await createClient(
+        Deno.env.get('SUPABASE_URL')!,
+        Deno.env.get('SUPABASE_ANON_KEY')!,
+        { global: { headers: { Authorization: `Bearer ${token}` } } }
+    ).auth.getUser();
 
-    // Criar cliente Supabase para acessar dados
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    if (userError) throw userError;
+    if (!user) throw new Error('User not found');
 
-    const emailResponse = await resend.emails.send({
-      from: "Organiza <onboarding@resend.dev>",
-      to: [email || userEmail || "usuario@exemplo.com"],
-      subject: `Lembrete: ${title}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #2563eb; text-align: center;">💰 Organiza - Lembrete</h1>
-          <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="color: #1e293b; margin: 0 0 10px 0;">${title}</h2>
-            ${description ? `<p style="color: #64748b; margin: 10px 0;">${description}</p>` : ''}
-            <p style="color: #475569; margin: 10px 0;">
-              <strong>Data agendada:</strong> ${new Date(scheduleDate).toLocaleDateString('pt-BR', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
-            </p>
-          </div>
-          <div style="text-align: center; margin: 30px 0;">
-            <p style="color: #64748b; font-size: 14px;">
-              Este é um lembrete automático do seu aplicativo Organiza.
-            </p>
-          </div>
-        </div>
-      `,
-    });
+    // 3. Get the user's OneSignal Player ID from the profiles table
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('onesignal_player_id')
+      .eq('id', user.id)
+      .single();
 
-    console.log("Email sent successfully:", emailResponse);
+    if (profileError) throw profileError;
+    if (!profile || !profile.onesignal_player_id) {
+      return new Response(JSON.stringify({ message: 'User does not have a OneSignal Player ID' }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      emailId: emailResponse.data?.id 
-    }), {
-      status: 200,
+    const playerId = profile.onesignal_player_id;
+
+    // 4. Get the notification content from the request body
+    const { title, description }: NotificationPayload = await req.json();
+
+    // 5. Send notification using OneSignal API
+    const oneSignalAppId = Deno.env.get('ONESIGNAL_APP_ID');
+    const oneSignalRestApiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
+
+    if (!oneSignalAppId || !oneSignalRestApiKey) {
+        throw new Error('OneSignal credentials are not configured in environment variables.');
+    }
+
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${oneSignalRestApiKey}`,
       },
-    });
-  } catch (error: any) {
-    console.error("Error in send-notification function:", error);
-    return new Response(
-      JSON.stringify({ 
-        error: error.message,
-        success: false 
+      body: JSON.stringify({
+        app_id: oneSignalAppId,
+        include_player_ids: [playerId],
+        headings: { en: title },
+        contents: { en: description || 'Você tem um novo lembrete.' },
       }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
-    );
-  }
-};
+    });
 
-serve(handler);
+    if (!response.ok) {
+      const errorBody = await response.json();
+      console.error('OneSignal API Error:', errorBody);
+      throw new Error(`Failed to send notification: ${response.statusText}`);
+    }
+
+    const responseData = await response.json();
+
+    return new Response(JSON.stringify({ success: true, oneSignalResponse: responseData }), {
+      status: 200,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('Error processing notification:', error.message);
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});
