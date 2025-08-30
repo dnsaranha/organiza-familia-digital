@@ -9,9 +9,14 @@ import { Plus, Minus, Loader2, Users } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Tables } from "@/integrations/supabase/types";
+
+type Transaction = Tables<'transactions'>;
 
 interface TransactionFormProps {
-  onTransactionAdded: () => void;
+  onSave: () => void;
+  onCancel?: () => void;
+  transactionToEdit?: Transaction | null;
 }
 
 interface FamilyGroup {
@@ -19,8 +24,10 @@ interface FamilyGroup {
   name: string;
 }
 
-export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) => {
-  const [type, setType] = useState<'income' | 'expense'>('expense');
+export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: TransactionFormProps) => {
+  const isEditMode = !!transactionToEdit;
+
+  const [type, setType] = useState<Transaction['type']>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
@@ -41,7 +48,15 @@ export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) =>
       }
     };
     fetchGroups();
-  }, [user]);
+
+    if (isEditMode && transactionToEdit) {
+      setType(transactionToEdit.type);
+      setAmount(String(transactionToEdit.amount));
+      setCategory(transactionToEdit.category);
+      setDescription(transactionToEdit.description || '');
+      setGroupId(transactionToEdit.group_id);
+    }
+  }, [user, isEditMode, transactionToEdit]);
 
   const incomeCategories = [
     'Salário',
@@ -77,39 +92,53 @@ export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) =>
 
     setLoading(true);
     try {
-      const { error } = await (supabase as any)
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          group_id: groupId,
-          type,
-          amount: parseFloat(amount),
-          category,
-          description: description || null,
-          date: new Date().toISOString(),
-        });
+      const transactionData = {
+        user_id: user.id,
+        group_id: groupId,
+        type,
+        amount: parseFloat(amount),
+        category,
+        description: description || null,
+        date: isEditMode ? transactionToEdit.date : new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      let error;
+      if (isEditMode) {
+        const { error: updateError } = await (supabase as any)
+          .from('transactions')
+          .update(transactionData)
+          .eq('id', transactionToEdit.id);
+        error = updateError;
+      } else {
+        const { error: insertError } = await (supabase as any)
+          .from('transactions')
+          .insert(transactionData);
+        error = insertError;
+      }
 
       if (error) throw error;
 
       toast({
-        title: "Transação adicionada! 🎉",
-        description: `${type === 'income' ? 'Receita' : 'Despesa'} de R$ ${amount} foi registrada com sucesso.`,
+        title: `Transação ${isEditMode ? 'atualizada' : 'adicionada'}! 🎉`,
+        description: `Sua transação foi ${isEditMode ? 'salva' : 'registrada'} com sucesso.`,
       });
 
-      // Reset form
-      setAmount('');
-      setCategory('');
-      setDescription('');
-      setGroupId(null);
+      if (!isEditMode) {
+        // Reset form only when adding
+        setAmount('');
+        setCategory('');
+        setDescription('');
+        setGroupId(null);
+      }
 
-      // Notify parent component
-      onTransactionAdded();
+      onSave();
 
     } catch (err: any) {
-      console.error("Erro ao adicionar transação:", err);
+      console.error(`Erro ao ${isEditMode ? 'atualizar' : 'adicionar'} transação:`, err);
       toast({
-        title: "Erro ao adicionar transação",
-        description: "Não foi possível registrar a transação. Tente novamente.",
+        title: `Erro ao ${isEditMode ? 'atualizar' : 'adicionar'} transação`,
+        description: `Não foi possível ${isEditMode ? 'salvar as alterações' : 'registrar a transação'}. Tente novamente.`,
         variant: "destructive"
       });
     } finally {
@@ -121,38 +150,42 @@ export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) =>
     <Card className="bg-gradient-card shadow-card border">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          {type === 'income' ? (
+          {isEditMode ? (
+            <Pencil className="h-5 w-5 text-primary" />
+          ) : type === 'income' ? (
             <Plus className="h-5 w-5 text-success" />
           ) : (
             <Minus className="h-5 w-5 text-expense" />
           )}
-          Nova Transação
+          {isEditMode ? 'Editar Transação' : 'Nova Transação'}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Type Selector */}
-        <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
-          <Button
-            type="button"
-            variant={type === 'expense' ? 'default' : 'ghost'}
-            onClick={() => setType('expense')}
-            disabled={loading}
-            className={type === 'expense' ? 'bg-gradient-expense text-expense-foreground shadow-expense' : ''}
-          >
-            <Minus className="h-4 w-4 mr-2" />
-            Despesa
-          </Button>
-          <Button
-            type="button"
-            variant={type === 'income' ? 'default' : 'ghost'}
-            onClick={() => setType('income')}
-            disabled={loading}
-            className={type === 'income' ? 'bg-gradient-success text-success-foreground shadow-success' : ''}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Receita
-          </Button>
-        </div>
+        {!isEditMode && (
+          <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+            <Button
+              type="button"
+              variant={type === 'expense' ? 'default' : 'ghost'}
+              onClick={() => setType('expense')}
+              disabled={loading}
+              className={type === 'expense' ? 'bg-gradient-expense text-expense-foreground shadow-expense' : ''}
+            >
+              <Minus className="h-4 w-4 mr-2" />
+              Despesa
+            </Button>
+            <Button
+              type="button"
+              variant={type === 'income' ? 'default' : 'ghost'}
+              onClick={() => setType('income')}
+              disabled={loading}
+              className={type === 'income' ? 'bg-gradient-success text-success-foreground shadow-success' : ''}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Receita
+            </Button>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Amount */}
@@ -222,20 +255,27 @@ export const TransactionForm = ({ onTransactionAdded }: TransactionFormProps) =>
             />
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Adicionando...
-              </>
-            ) : (
-              "Adicionar Transação"
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              type="submit"
+              className="w-full bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isEditMode ? 'Salvando...' : 'Adicionando...'}
+                </>
+              ) : (
+                isEditMode ? 'Salvar Alterações' : 'Adicionar Transação'
+              )}
+            </Button>
+            {onCancel && (
+              <Button type="button" variant="ghost" onClick={onCancel} className="w-full sm:w-auto" disabled={loading}>
+                Cancelar
+              </Button>
             )}
-          </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
