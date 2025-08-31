@@ -29,6 +29,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface FamilyGroup {
   id: string;
@@ -448,10 +454,18 @@ export const FamilyGroups = () => {
                           </>
                         )}
                         {!group.is_owner && (
-                          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); leaveGroup(group.id); }} className="text-destructive border-destructive hover:bg-destructive/10 ml-auto">
-                            <LogOut className="h-4 w-4 mr-2" />
-                            Sair do Grupo
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button size="icon" variant="ghost" onClick={(e) => { e.stopPropagation(); leaveGroup(group.id); }} className="text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto">
+                                  <LogOut className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Sair do Grupo</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                       </div>
                     </div>
