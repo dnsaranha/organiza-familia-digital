@@ -18,10 +18,16 @@ interface FinancialData {
   monthlyExpenses: number;
 }
 
+interface FamilyGroup {
+  id: string;
+  name: string;
+}
+
 const Index = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
+  const [groups, setGroups] = useState<FamilyGroup[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const { scope } = useBudgetScope();
@@ -35,6 +41,7 @@ const Index = () => {
   useEffect(() => {
     if (user) {
       fetchFinancialData();
+      fetchGroups();
     }
   }, [user, refreshKey, scope]);
 
@@ -84,6 +91,23 @@ const Index = () => {
       // Handle error state in UI if necessary
     } finally {
       setLoadingData(false);
+    }
+  };
+
+  const fetchGroups = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await (supabase as any).rpc('get_user_groups');
+      if (error) {
+        console.error("Erro ao buscar grupos no Index:", error);
+        // Set groups to empty array on error, so the app doesn't crash
+        setGroups([]);
+      } else {
+        setGroups((data as FamilyGroup[]) || []);
+      }
+    } catch (err) {
+      console.error("Erro catastrófico ao buscar grupos no Index:", err);
+      setGroups([]);
     }
   };
 
@@ -148,12 +172,12 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Transaction Form */}
           <div>
-            <TransactionForm onSave={handleDataRefresh} />
+            <TransactionForm onSave={handleDataRefresh} groups={groups} />
           </div>
           
           {/* Recent Transactions */}
           <div>
-            <TransactionList key={refreshKey} onDataChange={handleDataRefresh} />
+            <TransactionList key={refreshKey} onDataChange={handleDataRefresh} groups={groups} />
           </div>
         </div>
 

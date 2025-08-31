@@ -15,18 +15,19 @@ import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 type Transaction = Tables<'transactions'>;
 
-interface TransactionFormProps {
-  onSave: () => void;
-  onCancel?: () => void;
-  transactionToEdit?: Transaction | null;
-}
-
 interface FamilyGroup {
   id: string;
   name: string;
 }
 
-export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: TransactionFormProps) => {
+interface TransactionFormProps {
+  onSave: () => void;
+  onCancel?: () => void;
+  transactionToEdit?: Transaction | null;
+  groups: FamilyGroup[];
+}
+
+export const TransactionForm = ({ onSave, onCancel, transactionToEdit, groups }: TransactionFormProps) => {
   const isEditMode = !!transactionToEdit;
 
   const [type, setType] = useState<Transaction['type']>('expense');
@@ -34,23 +35,11 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
   const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
   const [groupId, setGroupId] = useState<string | null>(null);
-  const [groups, setGroups] = useState<FamilyGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
-    const fetchGroups = async () => {
-      if (!user) return;
-      const { data, error } = await (supabase as any).rpc('get_user_groups');
-      if (error) {
-        console.error("Erro ao buscar grupos:", error);
-      } else {
-        setGroups((data as FamilyGroup[]) || []);
-      }
-    };
-    fetchGroups();
-
     if (isEditMode && transactionToEdit) {
       setType(transactionToEdit.type);
       setAmount(String(transactionToEdit.amount));
@@ -58,7 +47,7 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
       setDescription(transactionToEdit.description || '');
       setGroupId(transactionToEdit.group_id);
     }
-  }, [user, isEditMode, transactionToEdit]);
+  }, [isEditMode, transactionToEdit]);
 
   const incomeCategories = [
     'Salário',

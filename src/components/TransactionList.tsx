@@ -32,9 +32,10 @@ interface FamilyGroup {
 
 interface TransactionListProps {
   onDataChange: () => void;
+  groups: FamilyGroup[];
 }
 
-export const TransactionList = ({ onDataChange }: TransactionListProps) => {
+export const TransactionList = ({ onDataChange, groups }: TransactionListProps) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,23 +46,11 @@ export const TransactionList = ({ onDataChange }: TransactionListProps) => {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const [groups, setGroups] = useState<FamilyGroup[]>([]);
   const [budgetFilter, setBudgetFilter] = useState('all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isOpen, setIsOpen] = useState(true);
 
   useEffect(() => {
-    const fetchGroups = async () => {
-      if (!user) return;
-      const { data, error } = await (supabase as any).rpc('get_user_groups');
-      if (error) {
-        console.error("Erro ao buscar grupos para filtro:", error);
-      } else {
-        setGroups((data as FamilyGroup[]) || []);
-      }
-    };
-    fetchGroups();
-
     const savedFilters = localStorage.getItem('transactionFilters');
     if (savedFilters) {
       try {
@@ -366,6 +355,7 @@ export const TransactionList = ({ onDataChange }: TransactionListProps) => {
           </DialogHeader>
           <TransactionForm
             transactionToEdit={editingTransaction}
+            groups={groups}
             onSave={() => {
               setEditingTransaction(null);
               onDataChange();

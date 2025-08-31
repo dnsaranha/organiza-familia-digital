@@ -1,3 +1,5 @@
+DROP FUNCTION IF EXISTS public.get_user_groups();
+
 CREATE OR REPLACE FUNCTION public.get_user_groups()
 RETURNS TABLE (
   id UUID,
