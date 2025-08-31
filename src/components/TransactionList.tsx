@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ErrorBoundary from "./ErrorBoundary";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -184,8 +186,25 @@ export const TransactionList = ({ onDataChange }: TransactionListProps) => {
     </div>
   );
 
+  const fallbackUI = (
+    <Card>
+      <CardHeader>
+        <CardTitle>Erro</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Erro ao carregar o histórico</AlertTitle>
+          <AlertDescription>
+            Não foi possível carregar o histórico de transações. Tente novamente mais tarde.
+          </AlertDescription>
+        </Alert>
+      </CardContent>
+    </Card>
+  );
+
   return (
-    <>
+    <ErrorBoundary fallback={fallbackUI}>
       <Card className="bg-gradient-card shadow-card border">
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <CardHeader>
@@ -375,6 +394,6 @@ export const TransactionList = ({ onDataChange }: TransactionListProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </ErrorBoundary>
   );
 };

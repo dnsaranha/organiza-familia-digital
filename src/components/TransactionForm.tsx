@@ -5,11 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Minus, Loader2, Users } from "lucide-react";
+import { Plus, Minus, Loader2, Users, AlertTriangle, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Tables } from "@/integrations/supabase/types";
+import ErrorBoundary from "./ErrorBoundary";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 type Transaction = Tables<'transactions'>;
 
@@ -146,138 +148,150 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
     }
   };
 
-  return (
-    <Card className="bg-gradient-card shadow-card border">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          {isEditMode ? (
-            <Pencil className="h-5 w-5 text-primary" />
-          ) : type === 'income' ? (
-            <Plus className="h-5 w-5 text-success" />
-          ) : (
-            <Minus className="h-5 w-5 text-expense" />
-          )}
-          {isEditMode ? 'Editar Transação' : 'Nova Transação'}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Type Selector */}
-        {!isEditMode && (
-          <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
-            <Button
-              type="button"
-              variant={type === 'expense' ? 'default' : 'ghost'}
-              onClick={() => setType('expense')}
-              disabled={loading}
-              className={type === 'expense' ? 'bg-gradient-expense text-expense-foreground shadow-expense' : ''}
-            >
-              <Minus className="h-4 w-4 mr-2" />
-              Despesa
-            </Button>
-            <Button
-              type="button"
-              variant={type === 'income' ? 'default' : 'ghost'}
-              onClick={() => setType('income')}
-              disabled={loading}
-              className={type === 'income' ? 'bg-gradient-success text-success-foreground shadow-success' : ''}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Receita
-            </Button>
-          </div>
-        )}
+  const fallbackUI = (
+    <Alert variant="destructive">
+      <AlertTriangle className="h-4 w-4" />
+      <AlertTitle>Erro ao carregar formulário</AlertTitle>
+      <AlertDescription>
+        Não foi possível carregar o formulário de transação. Tente novamente mais tarde.
+      </AlertDescription>
+    </Alert>
+  );
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Amount */}
-          <div className="space-y-2">
-            <Label htmlFor="amount">Valor *</Label>
-            <div className="relative">
-              <span className="absolute left-3 top-3 text-muted-foreground">R$</span>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                placeholder="0,00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="pl-10"
-                required
+  return (
+    <ErrorBoundary fallback={fallbackUI}>
+      <Card className="bg-gradient-card shadow-card border">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {isEditMode ? (
+              <Pencil className="h-5 w-5 text-primary" />
+            ) : type === 'income' ? (
+              <Plus className="h-5 w-5 text-success" />
+            ) : (
+              <Minus className="h-5 w-5 text-expense" />
+            )}
+            {isEditMode ? 'Editar Transação' : 'Nova Transação'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Type Selector */}
+          {!isEditMode && (
+            <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+              <Button
+                type="button"
+                variant={type === 'expense' ? 'default' : 'ghost'}
+                onClick={() => setType('expense')}
+                disabled={loading}
+                className={type === 'expense' ? 'bg-gradient-expense text-expense-foreground shadow-expense' : ''}
+              >
+                <Minus className="h-4 w-4 mr-2" />
+                Despesa
+              </Button>
+              <Button
+                type="button"
+                variant={type === 'income' ? 'default' : 'ghost'}
+                onClick={() => setType('income')}
+                disabled={loading}
+                className={type === 'income' ? 'bg-gradient-success text-success-foreground shadow-success' : ''}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Receita
+              </Button>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Amount */}
+            <div className="space-y-2">
+              <Label htmlFor="amount">Valor *</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-3 text-muted-foreground">R$</span>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0,00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  className="pl-10"
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            {/* Category */}
+            <div className="space-y-2">
+              <Label htmlFor="category">Categoria *</Label>
+              <Select value={category} onValueChange={setCategory} required disabled={loading}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(type === 'income' ? incomeCategories : expenseCategories).map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {cat}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Group Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="group">Orçamento</Label>
+              <Select value={groupId || 'personal'} onValueChange={(value) => setGroupId(value === 'personal' ? null : value)} disabled={loading || groups.length === 0}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o orçamento" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="personal">Pessoal</SelectItem>
+                  {groups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="description">Descrição</Label>
+              <Textarea
+                id="description"
+                placeholder="Adicione uma descrição..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="resize-none"
                 disabled={loading}
               />
             </div>
-          </div>
 
-          {/* Category */}
-          <div className="space-y-2">
-            <Label htmlFor="category">Categoria *</Label>
-            <Select value={category} onValueChange={setCategory} required disabled={loading}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione uma categoria" />
-              </SelectTrigger>
-              <SelectContent>
-                {(type === 'income' ? incomeCategories : expenseCategories).map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Group Selector */}
-          <div className="space-y-2">
-            <Label htmlFor="group">Orçamento</Label>
-            <Select value={groupId || 'personal'} onValueChange={(value) => setGroupId(value === 'personal' ? null : value)} disabled={loading || groups.length === 0}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o orçamento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="personal">Pessoal</SelectItem>
-                {groups.map((group) => (
-                  <SelectItem key={group.id} value={group.id}>
-                    {group.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
-            <Textarea
-              id="description"
-              placeholder="Adicione uma descrição..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="resize-none"
-              disabled={loading}
-            />
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2">
-            <Button
-              type="submit"
-              className="w-full bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isEditMode ? 'Salvando...' : 'Adicionando...'}
-                </>
-              ) : (
-                isEditMode ? 'Salvar Alterações' : 'Adicionar Transação'
-              )}
-            </Button>
-            {onCancel && (
-              <Button type="button" variant="ghost" onClick={onCancel} className="w-full sm:w-auto" disabled={loading}>
-                Cancelar
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button
+                type="submit"
+                className="w-full bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {isEditMode ? 'Salvando...' : 'Adicionando...'}
+                  </>
+                ) : (
+                  isEditMode ? 'Salvar Alterações' : 'Adicionar Transação'
+                )}
               </Button>
-            )}
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+              {onCancel && (
+                <Button type="button" variant="ghost" onClick={onCancel} className="w-full sm:w-auto" disabled={loading}>
+                  Cancelar
+                </Button>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </ErrorBoundary>
   );
 };

@@ -93,11 +93,7 @@ export const ScheduledTasks = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('family_groups')
-        .select('id, name')
-        .or(`owner_id.eq.${user.id},user_id.eq.${user.id}`, { foreignTable: 'group_members' })
-        .order('name');
+      const { data, error } = await (supabase as any).rpc('get_user_groups');
 
       if (error) throw error;
       setGroups((data || []) as FamilyGroup[]);
