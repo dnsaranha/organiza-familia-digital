@@ -1,17 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowUpRight, ArrowDownRight, Clock, AlertTriangle, User, Calendar as CalendarIcon } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Clock, AlertTriangle, MoreHorizontal, Pencil, Trash2, User, Calendar as CalendarIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { addDays, format } from "date-fns";
+import { EditTransactionModal } from "./EditTransactionModal";
 
 interface Transaction {
   id: string;
@@ -20,6 +33,7 @@ interface Transaction {
   category: string;
   description?: string;
   date: string;
+  group_id?: string | null;
 }
 
 interface FamilyGroup {
@@ -27,11 +41,14 @@ interface FamilyGroup {
   name: string;
 }
 
-export const TransactionList = ({ key: refreshKey }: { key: number }) => {
+export const TransactionList = ({ key: refreshKey, onTransactionChange }: { key: number, onTransactionChange: () => void }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { toast } = useToast();
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+  const [transactionToEdit, setTransactionToEdit] = useState<Transaction | null>(null);
 
   const [groups, setGroups] = useState<FamilyGroup[]>([]);
   const [budgetFilter, setBudgetFilter] = useState('all');
@@ -40,11 +57,11 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
   useEffect(() => {
     const fetchGroups = async () => {
       if (!user) return;
-      const { data, error } = await (supabase as any).rpc('get_user_groups');
+      const { data, error } = await supabase.rpc('get_user_groups');
       if (error) {
         console.error("Erro ao buscar grupos para filtro:", error);
       } else {
-        setGroups((data as FamilyGroup[]) || []);
+        setGroups(data || []);
       }
     };
     fetchGroups();
@@ -65,18 +82,11 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
     }
   }, [user]);
 
-  useEffect(() => {
-    if (user) {
-      fetchTransactions();
-      localStorage.setItem('transactionFilters', JSON.stringify({ budget: budgetFilter, date: dateRange }));
-    }
-  }, [user, refreshKey, budgetFilter, dateRange]);
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      let query = (supabase as any)
+      let query = supabase
         .from('transactions')
         .select('*');
 
@@ -101,12 +111,46 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
         throw error;
       }
 
-      setTransactions((data as unknown as Transaction[]) || []);
-    } catch (err: any) {
+      setTransactions((data as Transaction[]) || []);
+    } catch (err) {
       console.error("Erro ao buscar transações:", err);
       setError("Não foi possível carregar as transações.");
     } finally {
       setLoading(false);
+    }
+  }, [budgetFilter, dateRange]);
+
+  useEffect(() => {
+    if (user) {
+      fetchTransactions();
+      localStorage.setItem('transactionFilters', JSON.stringify({ budget: budgetFilter, date: dateRange }));
+    }
+  }, [user, refreshKey, fetchTransactions, budgetFilter, dateRange]);
+
+  const handleDeleteTransaction = async () => {
+    if (!transactionToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', transactionToDelete.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Transação excluída! 🗑️",
+        description: "A transação foi removida com sucesso.",
+      });
+      onTransactionChange();
+      setTransactionToDelete(null);
+    } catch (err) {
+      console.error("Erro ao excluir transação:", err);
+      toast({
+        title: "Erro ao excluir transação",
+        description: "Não foi possível remover a transação. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -143,16 +187,17 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
   );
 
   return (
-    <Card className="bg-gradient-card shadow-card border">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            Histórico de Transações
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
+    <>
+      <Card className="bg-gradient-card shadow-card border">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              Histórico de Transações
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
         <div className="flex flex-col md:flex-row gap-2 mb-4">
           <Select value={budgetFilter} onValueChange={setBudgetFilter}>
             <SelectTrigger className="w-full md:w-[240px]">
@@ -247,18 +292,69 @@ export const TransactionList = ({ key: refreshKey }: { key: number }) => {
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className={`font-semibold ${
-                    transaction.type === 'income' ? 'text-success' : 'text-expense'
-                  }`}>
-                    {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
-                  </p>
+                <div className="flex items-center gap-2">
+                  <div className="text-right">
+                    <p className={`font-semibold ${
+                      transaction.type === 'income' ? 'text-success' : 'text-expense'
+                    }`}>
+                      {transaction.type === 'income' ? '+' : '-'} {formatCurrency(transaction.amount)}
+                    </p>
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Abrir menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setTransactionToEdit(transaction)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => setTransactionToDelete(transaction)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))
           )}
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={!!transactionToDelete} onOpenChange={() => setTransactionToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente a transação de
+              {' '}<span className="font-bold">{transactionToDelete?.description || transactionToDelete?.category}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTransaction}>Continuar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <EditTransactionModal
+        isOpen={!!transactionToEdit}
+        onClose={() => setTransactionToEdit(null)}
+        transaction={transactionToEdit}
+        onTransactionUpdated={() => {
+          setTransactionToEdit(null);
+          onTransactionChange();
+        }}
+      />
+    </>
   );
 };
