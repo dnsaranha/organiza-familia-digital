@@ -17,12 +17,18 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Plus, Copy, UserPlus, Crown, Trash2, Loader2, Pencil, AlertTriangle } from "lucide-react";
+import { Users, Plus, Copy, UserPlus, Crown, Trash2, Loader2, Pencil, AlertTriangle, MoreVertical, UserCog, UserX } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ErrorBoundary from "./ErrorBoundary";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface FamilyGroup {
   id: string;
@@ -38,6 +44,7 @@ interface Member {
   id: string;
   full_name: string | null;
   avatar_url: string | null;
+  role: string;
 }
 
 export const FamilyGroups = () => {
@@ -262,6 +269,74 @@ export const FamilyGroups = () => {
     }
   };
 
+  const removeMember = async (groupId: string, memberId: string) => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc('remove_group_member', {
+        p_group_id: groupId,
+        p_user_id: memberId,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Membro removido",
+        description: "O membro foi removido do grupo.",
+      });
+
+      const { data, error: fetchError } = await (supabase as any).rpc('get_group_members', { p_group_id: groupId });
+      if (fetchError) throw fetchError;
+      setMembers(prev => ({ ...prev, [groupId]: (data as Member[]) || [] }));
+      setRefreshKey(k => k + 1);
+
+    } catch (error: any) {
+      console.error('Erro ao remover membro:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível remover o membro.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateMemberRole = async (groupId: string, memberId: string, newRole: 'editor' | 'member') => {
+    if (!user) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc('update_member_role', {
+        p_group_id: groupId,
+        p_user_id: memberId,
+        p_new_role: newRole,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Função do membro atualizada",
+        description: `O membro agora é um ${newRole}.`,
+      });
+
+      const { data, error: fetchError } = await (supabase as any).rpc('get_group_members', { p_group_id: groupId });
+      if (fetchError) throw fetchError;
+      setMembers(prev => ({ ...prev, [groupId]: (data as Member[]) || [] }));
+
+    } catch (error: any) {
+      console.error('Erro ao atualizar função do membro:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível atualizar a função do membro.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const leaveGroup = async (groupId: string) => {
     if (!user) return;
 
@@ -386,9 +461,42 @@ export const FamilyGroups = () => {
                       ) : (
                         <div className="space-y-3">
                           {(members[group.id] || []).map((member) => (
-                            <div key={member.id} className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8"><AvatarImage src={member.avatar_url || undefined} alt={member.full_name || 'Avatar'} /><AvatarFallback>{(member.full_name || 'U').charAt(0).toUpperCase()}</AvatarFallback></Avatar>
-                              <span className="text-sm font-medium">{member.full_name || 'Usuário Sem Nome'}</span>
+                            <div key={member.id} className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <Avatar className="h-8 w-8"><AvatarImage src={member.avatar_url || undefined} alt={member.full_name || 'Avatar'} /><AvatarFallback>{(member.full_name || 'U').charAt(0).toUpperCase()}</AvatarFallback></Avatar>
+                                <div>
+                                  <span className="text-sm font-medium">{member.full_name || 'Usuário Sem Nome'}</span>
+                                  <Badge variant={member.role === 'owner' ? 'default' : 'secondary'} className="ml-2 text-xs capitalize">{member.role}</Badge>
+                                </div>
+                              </div>
+
+                              {group.is_owner && user?.id !== member.id && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {member.role === 'member' && (
+                                      <DropdownMenuItem onClick={() => updateMemberRole(group.id, member.id, 'editor')}>
+                                        <UserCog className="mr-2 h-4 w-4" />
+                                        <span>Tornar Editor</span>
+                                      </DropdownMenuItem>
+                                    )}
+                                    {member.role === 'editor' && (
+                                      <DropdownMenuItem onClick={() => updateMemberRole(group.id, member.id, 'member')}>
+                                        <UserCog className="mr-2 h-4 w-4" />
+                                        <span>Tornar Membro</span>
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive" onClick={() => removeMember(group.id, member.id)}>
+                                      <UserX className="mr-2 h-4 w-4" />
+                                      <span>Remover do grupo</span>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
                             </div>
                           ))}
                         </div>

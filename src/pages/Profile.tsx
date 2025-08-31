@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Switch } from "@/components/ui/switch";
+import { Separator } from "@/components/ui/separator";
 
 export default function Profile() {
   const [loading, setLoading] = useState(true);
@@ -16,6 +18,8 @@ export default function Profile() {
   const [avatarUrl, setAvatarUrl] = useState("");
   const [newAvatar, setNewAvatar] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [monthStartDay, setMonthStartDay] = useState(1);
+  const [carryOverBalance, setCarryOverBalance] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
@@ -41,28 +45,46 @@ export default function Profile() {
   }, [navigate]);
 
   useEffect(() => {
-    async function getProfile() {
+    async function getProfileAndPreferences() {
       try {
         setLoading(true);
         if (!user) return;
 
-        const { data, error, status } = await supabase
+        // Fetch profile
+        const { data: profileData, error: profileError, status } = await supabase
           .from("profiles")
           .select(`full_name, avatar_url`)
           .eq("id", user.id)
           .single();
 
-        if (error && status !== 406) {
-          throw error;
+        if (profileError && status !== 406) {
+          throw profileError;
         }
 
-        if (data) {
-          setFullName(data.full_name || "");
-          setAvatarUrl(data.avatar_url || "");
+        if (profileData) {
+          setFullName(profileData.full_name || "");
+          setAvatarUrl(profileData.avatar_url || "");
         }
+
+        // Fetch preferences
+        const { data: preferencesData, error: preferencesError } = await supabase
+          .from('user_preferences')
+          .select('month_start_day, carry_over_balance')
+          .eq('user_id', user.id)
+          .single();
+
+        if (preferencesError && preferencesError.code !== 'PGRST116') { // Ignore 'no rows' error
+          throw preferencesError;
+        }
+
+        if (preferencesData) {
+            setMonthStartDay(preferencesData.month_start_day);
+            setCarryOverBalance(preferencesData.carry_over_balance);
+        }
+
       } catch (error) {
         toast({
-          title: "Error loading profile",
+          title: "Erro ao carregar perfil",
           description: (error as Error).message,
           variant: "destructive",
         });
@@ -72,7 +94,7 @@ export default function Profile() {
     }
 
     if (user) {
-      getProfile();
+      getProfileAndPreferences();
     }
   }, [user, toast]);
 
@@ -104,21 +126,29 @@ export default function Profile() {
         newAvatarUrl = publicUrl;
       }
 
-      const updates = {
+      const profileUpdates = {
         id: user.id,
         full_name: fullName,
         avatar_url: newAvatarUrl,
         updated_at: new Date().toISOString(),
       };
 
-      const { error } = await supabase.from("profiles").upsert(updates);
+      const { error: profileError } = await supabase.from("profiles").upsert(profileUpdates);
+      if (profileError) throw profileError;
 
-      if (error) {
-        throw error;
-      }
+      const preferencesUpdates = {
+        user_id: user.id,
+        month_start_day: monthStartDay,
+        carry_over_balance: carryOverBalance,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: preferencesError } = await supabase.from("user_preferences").upsert(preferencesUpdates);
+      if (preferencesError) throw preferencesError;
+
       toast({
         title: "Perfil atualizado!",
-        description: "Seu perfil foi atualizado com sucesso.",
+        description: "Seu perfil e suas preferências foram atualizados com sucesso.",
       });
       navigate('/');
     } catch (error) {
@@ -135,49 +165,84 @@ export default function Profile() {
   return (
     <div>
       <Header />
-      <div className="flex justify-center items-center h-screen">
-        <Card className="w-full max-w-md">
+      <div className="flex justify-center items-center min-h-screen py-8">
+        <Card className="w-full max-w-2xl">
           <CardHeader>
-            <CardTitle>User Profile</CardTitle>
-            <CardDescription>Update your profile information.</CardDescription>
+            <CardTitle>Perfil de Usuário</CardTitle>
+            <CardDescription>Atualize suas informações de perfil e preferências.</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={updateProfile} className="space-y-4">
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="text" value={user?.email || ""} disabled />
-              </div>
-              <div>
-                <Label htmlFor="fullName">Full Name</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  value={fullName || ""}
-                  onChange={(e) => setFullName(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Avatar</Label>
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={avatarPreview || avatarUrl} alt={fullName || ""} />
-                    <AvatarFallback>{fullName?.charAt(0).toUpperCase()}</AvatarFallback>
-                  </Avatar>
+            <form onSubmit={updateProfile} className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" type="text" value={user?.email || ""} disabled />
+                </div>
+                <div>
+                  <Label htmlFor="fullName">Nome Completo</Label>
                   <Input
-                    id="avatarFile"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="max-w-xs"
+                    id="fullName"
+                    type="text"
+                    value={fullName || ""}
+                    onChange={(e) => setFullName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Avatar</Label>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={avatarPreview || avatarUrl} alt={fullName || ""} />
+                      <AvatarFallback>{fullName?.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <Input
+                      id="avatarFile"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="max-w-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">Preferências Financeiras</h3>
+                <div className="space-y-2">
+                  <Label htmlFor="monthStartDay">Dia de Início do Mês</Label>
+                  <Input
+                    id="monthStartDay"
+                    type="number"
+                    min="1"
+                    max="28"
+                    value={monthStartDay}
+                    onChange={(e) => setMonthStartDay(parseInt(e.target.value, 10))}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Defina o dia em que seu mês financeiro começa (ex: 1 para o dia primeiro).
+                  </p>
+                </div>
+                <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <Label>Transportar Saldo Anterior</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Iniciar o mês com o saldo final do mês anterior.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={carryOverBalance}
+                    onCheckedChange={setCarryOverBalance}
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-2">
+
+              <div className="flex justify-end gap-2 pt-4">
                 <Button type="button" variant="outline" onClick={() => navigate('/')}>
                   Voltar
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? "Salvando..." : "Salvar"}
+                  {loading ? "Salvando..." : "Salvar Alterações"}
                 </Button>
               </div>
             </form>

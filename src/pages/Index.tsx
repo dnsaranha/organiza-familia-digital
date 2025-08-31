@@ -43,42 +43,64 @@ const Index = () => {
 
     setLoadingData(true);
     try {
-      let query = (supabase as any).from('transactions').select('type, amount, date');
+      // 1. Fetch user preferences
+      const { data: preferences } = await supabase
+        .from('user_preferences')
+        .select('month_start_day, carry_over_balance')
+        .eq('user_id', user.id)
+        .single();
 
+      const monthStartDay = preferences?.month_start_day || 1;
+      const carryOverBalance = preferences?.carry_over_balance || false;
+
+      // 2. Fetch transactions
+      let query = supabase.from('transactions').select('type, amount, date');
       if (scope === 'personal') {
         query = query.is('group_id', null).eq('user_id', user.id);
       } else {
         query = query.eq('group_id', scope);
       }
-
       const { data: transactions, error } = await query;
-
       if (error) throw error;
 
+      // 3. Define date range based on preferences
       const now = new Date();
-      const currentMonth = now.getMonth();
-      const currentYear = now.getFullYear();
+      let monthStartDate = new Date(now.getFullYear(), now.getMonth(), monthStartDay);
+      if (now.getDate() < monthStartDay) {
+        monthStartDate.setMonth(monthStartDate.getMonth() - 1);
+      }
+      let monthEndDate = new Date(monthStartDate.getFullYear(), monthStartDate.getMonth() + 1, monthStartDay - 1);
+      monthEndDate.setHours(23, 59, 59, 999);
 
+
+      // 4. Calculate financial data
       let balance = 0;
       let monthlyIncome = 0;
       let monthlyExpenses = 0;
+      let periodBalance = 0;
 
       for (const t of transactions) {
         const transactionDate = new Date(t.date);
-        if (t.type === 'income') {
-          balance += t.amount;
-          if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
+        const amount = t.type === 'income' ? t.amount : -t.amount;
+
+        // Always calculate total balance
+        balance += amount;
+
+        // Check if transaction is within the current financial period
+        if (transactionDate >= monthStartDate && transactionDate <= monthEndDate) {
+          if (t.type === 'income') {
             monthlyIncome += t.amount;
-          }
-        } else {
-          balance -= t.amount;
-          if (transactionDate.getMonth() === currentMonth && transactionDate.getFullYear() === currentYear) {
+          } else {
             monthlyExpenses += t.amount;
           }
+          periodBalance += amount;
         }
       }
 
-      setFinancialData({ balance, monthlyIncome, monthlyExpenses });
+      // 5. Set final balance based on carry_over_balance preference
+      const finalBalance = carryOverBalance ? balance : periodBalance;
+
+      setFinancialData({ balance: finalBalance, monthlyIncome, monthlyExpenses });
     } catch (err) {
       console.error("Erro ao buscar dados financeiros:", err);
       // Handle error state in UI if necessary

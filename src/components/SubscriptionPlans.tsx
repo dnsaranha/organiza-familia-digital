@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Star, Zap, Loader2 } from 'lucide-react';
+import { Check, Crown, Star, Zap, Loader2, ArrowLeft } from 'lucide-react';
 import { stripeProducts } from '@/stripe-config';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +13,7 @@ export const SubscriptionPlans = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubscribe = async (priceId: string, mode: 'payment' | 'subscription') => {
     if (!user) {
@@ -114,7 +116,15 @@ export const SubscriptionPlans = () => {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="text-center mb-12">
+      <div className="relative text-center mb-12">
+        <Button
+          variant="ghost"
+          className="absolute top-0 left-0"
+          onClick={() => navigate('/')}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Voltar
+        </Button>
         <h1 className="text-4xl font-bold text-foreground mb-4">
           Escolha seu Plano
         </h1>
