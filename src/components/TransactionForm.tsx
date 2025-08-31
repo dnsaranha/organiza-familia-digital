@@ -240,7 +240,7 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
             {/* Group Selector */}
             <div className="space-y-2">
               <Label htmlFor="group">Orçamento</Label>
-              <Select value={groupId || 'personal'} onValueChange={(value) => setGroupId(value === 'personal' ? null : value)} disabled={loading || groups.length === 0}>
+              <Select value={groupId || 'personal'} onValueChange={(value) => setGroupId(value === 'personal' ? null : value)} disabled={loading || groups.length === 0 || isEditMode}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione o orçamento" />
                 </SelectTrigger>
