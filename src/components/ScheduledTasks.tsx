@@ -51,7 +51,7 @@ export const ScheduledTasks = () => {
     schedule_time: '',
     notification_email: true,
     notification_push: true,
-    group_id: '',
+    group_id: 'personal',
   });
 
   const { toast } = useToast();
@@ -140,7 +140,7 @@ export const ScheduledTasks = () => {
           notification_email: formData.notification_email,
           notification_push: formData.notification_push,
           user_id: user?.id,
-          group_id: formData.group_id || null,
+          group_id: formData.group_id === 'personal' ? null : formData.group_id,
         })
         .select()
         .single();
@@ -286,24 +286,22 @@ export const ScheduledTasks = () => {
                   </div>
                 </div>
 
-                {groups.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="group">Compartilhar com Grupo (opcional)</Label>
-                    <Select value={formData.group_id} onValueChange={(value) => setFormData({ ...formData, group_id: value })}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um grupo ou deixe pessoal" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Apenas pessoal</SelectItem>
-                        {groups.map((group) => (
-                          <SelectItem key={group.id} value={group.id}>
-                            {group.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="group">Compartilhar com Grupo (opcional)</Label>
+                  <Select value={formData.group_id} onValueChange={(value) => setFormData({ ...formData, group_id: value })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um grupo ou deixe pessoal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Apenas pessoal</SelectItem>
+                      {groups.map((group) => (
+                        <SelectItem key={group.id} value={group.id}>
+                          {group.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="description">Descrição</Label>
