@@ -39,6 +39,7 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Efeito para buscar os grupos do usuário
   useEffect(() => {
     const fetchGroups = async () => {
       if (!user) return;
@@ -50,15 +51,25 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
       }
     };
     fetchGroups();
+  }, [user]);
 
+  // Efeito para popular o formulário ao editar uma transação
+  useEffect(() => {
     if (isEditMode && transactionToEdit) {
       setType(transactionToEdit.type);
       setAmount(String(transactionToEdit.amount));
       setCategory(transactionToEdit.category);
       setDescription(transactionToEdit.description || '');
       setGroupId(transactionToEdit.group_id);
+    } else {
+      // Reseta o formulário se não estiver em modo de edição (ex: ao criar uma nova transação)
+      setType('expense');
+      setAmount('');
+      setCategory('');
+      setDescription('');
+      setGroupId(null);
     }
-  }, [user, isEditMode, transactionToEdit]);
+  }, [isEditMode, transactionToEdit]);
 
   const incomeCategories = [
     'Salário',
@@ -237,23 +248,25 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
               </Select>
             </div>
 
-            {/* Group Selector */}
-            <div className="space-y-2">
-              <Label htmlFor="group">Orçamento</Label>
-              <Select value={groupId || 'personal'} onValueChange={(value) => setGroupId(value === 'personal' ? null : value)} disabled={loading || groups.length === 0}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o orçamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="personal">Pessoal</SelectItem>
-                  {groups.map((group) => (
-                    <SelectItem key={group.id} value={group.id}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Group Selector - Hidden in Edit Mode */}
+            {!isEditMode && (
+              <div className="space-y-2">
+                <Label htmlFor="group">Orçamento</Label>
+                <Select value={groupId || 'personal'} onValueChange={(value) => setGroupId(value === 'personal' ? null : value)} disabled={loading || groups.length === 0}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o orçamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personal">Pessoal</SelectItem>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Description */}
             <div className="space-y-2">
