@@ -39,6 +39,7 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Efeito para buscar os grupos do usuário
   useEffect(() => {
     const fetchGroups = async () => {
       if (!user) return;
@@ -50,15 +51,25 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
       }
     };
     fetchGroups();
+  }, [user]);
 
+  // Efeito para popular o formulário ao editar uma transação
+  useEffect(() => {
     if (isEditMode && transactionToEdit) {
       setType(transactionToEdit.type);
       setAmount(String(transactionToEdit.amount));
       setCategory(transactionToEdit.category);
       setDescription(transactionToEdit.description || '');
       setGroupId(transactionToEdit.group_id);
+    } else {
+      // Reseta o formulário se não estiver em modo de edição (ex: ao criar uma nova transação)
+      setType('expense');
+      setAmount('');
+      setCategory('');
+      setDescription('');
+      setGroupId(null);
     }
-  }, [user, isEditMode, transactionToEdit]);
+  }, [isEditMode, transactionToEdit]);
 
   const incomeCategories = [
     'Salário',
