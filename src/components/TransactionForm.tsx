@@ -248,23 +248,25 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
               </Select>
             </div>
 
-            {/* Group Selector */}
-            <div className="space-y-2">
-              <Label htmlFor="group">Orçamento</Label>
-              <Select value={groupId || 'personal'} onValueChange={(value) => setGroupId(value === 'personal' ? null : value)} disabled={loading || groups.length === 0 || isEditMode}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o orçamento" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="personal">Pessoal</SelectItem>
-                  {groups.map((group) => (
-                    <SelectItem key={group.id} value={group.id}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {/* Group Selector - Hidden in Edit Mode */}
+            {!isEditMode && (
+              <div className="space-y-2">
+                <Label htmlFor="group">Orçamento</Label>
+                <Select value={groupId || 'personal'} onValueChange={(value) => setGroupId(value === 'personal' ? null : value)} disabled={loading || groups.length === 0}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o orçamento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="personal">Pessoal</SelectItem>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             {/* Description */}
             <div className="space-y-2">
