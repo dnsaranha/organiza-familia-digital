@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ArrowUpRight, ArrowDownRight, Clock, AlertTriangle, User, Calendar as CalendarIcon, ChevronUp, MoreHorizontal, Pencil, Trash2, Loader2 } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, Clock, AlertTriangle, User, Calendar as CalendarIcon, ChevronUp, MoreHorizontal, Pencil, Trash2, Loader2, Download, Upload } from "lucide-react";
+import * as XLSX from 'xlsx';
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +23,7 @@ import { DateRange } from "react-day-picker";
 import { addDays, format } from "date-fns";
 import { Tables } from "@/integrations/supabase/types";
 import { TransactionForm } from "./TransactionForm";
+import { exportToXLS } from "@/lib/export";
 
 type Transaction = Tables<'transactions'>;
 
@@ -49,6 +51,88 @@ export const TransactionList = ({ onDataChange }: TransactionListProps) => {
   const [budgetFilter, setBudgetFilter] = useState('all');
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [isOpen, setIsOpen] = useState(true);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleExport = () => {
+    if (transactions.length === 0) {
+      toast({ title: "Nenhuma transação para exportar", description: "A lista de transações está vazia.", variant: "destructive" });
+      return;
+    }
+
+    const dataToExport = transactions.map(tx => ({
+      ID: tx.id,
+      Data: tx.date,
+      Descrição: tx.description,
+      Categoria: tx.category,
+      Tipo: tx.type,
+      Valor: tx.amount,
+      'ID do Grupo': tx.group_id,
+    }));
+
+    if (exportToXLS(dataToExport, 'historico_transacoes')) {
+        toast({ title: "Exportação bem-sucedida!", description: "O arquivo XLS foi gerado." });
+    } else {
+        toast({ title: "Erro na Exportação", description: "Não foi possível gerar o arquivo XLS.", variant: "destructive" });
+    }
+  };
+
+  const handleImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = new Uint8Array(e.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        const transactionsToImport = json.map(row => ({
+          id: row.ID,
+          date: row.Data,
+          description: row.Descrição,
+          category: row.Categoria,
+          type: row.Tipo,
+          amount: row.Valor,
+          group_id: row['ID do Grupo'],
+        }));
+
+        // Basic validation
+        if (transactionsToImport.length === 0 || !transactionsToImport[0].Data || !transactionsToImport[0].Valor) {
+            throw new Error("Formato de arquivo inválido ou colunas essenciais ausentes (Data, Valor).");
+        }
+
+        toast({ title: "Importando transações...", description: "Isso pode levar um momento." });
+
+        const { data: result, error } = await supabase.rpc('import_transactions', { transactions: transactionsToImport });
+
+        if (error) throw error;
+
+        toast({
+          title: "Importação Concluída!",
+          description: `${result.imported} transações importadas, ${result.ignored} ignoradas por serem duplicadas.`,
+        });
+
+        onDataChange(); // Refresh data
+
+      } catch (error: any) {
+        console.error("Erro ao importar arquivo:", error);
+        toast({ title: "Erro na Importação", description: error.message || "Não foi possível processar o arquivo.", variant: "destructive" });
+      }
+    };
+    reader.readAsArrayBuffer(file);
+
+    // Reset file input
+    if(fileInputRef.current) {
+        fileInputRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -205,6 +289,13 @@ export const TransactionList = ({ onDataChange }: TransactionListProps) => {
 
   return (
     <ErrorBoundary fallback={fallbackUI}>
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+        accept=".xlsx, .xls"
+      />
       <Card className="bg-gradient-card shadow-card border">
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
           <CardHeader>
@@ -270,6 +361,17 @@ export const TransactionList = ({ onDataChange }: TransactionListProps) => {
                     />
                   </PopoverContent>
                 </Popover>
+
+                <div className="flex gap-2 ml-auto">
+                    <Button variant="outline" onClick={handleImport}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Importar
+                    </Button>
+                    <Button variant="outline" onClick={handleExport}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Exportar
+                    </Button>
+                </div>
               </div>
 
               <ScrollArea className="h-72">

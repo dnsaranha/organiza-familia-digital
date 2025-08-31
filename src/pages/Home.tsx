@@ -5,8 +5,6 @@ import { FinancialCard } from "@/components/FinancialCard";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
 import { ScheduledTasks } from "@/components/ScheduledTasks";
-import { FamilyGroups } from "@/components/FamilyGroups";
-import { SubscriptionStatus } from "@/components/SubscriptionStatus";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useBudgetScope } from "@/contexts/BudgetScopeContext";
@@ -18,7 +16,7 @@ interface FinancialData {
   monthlyExpenses: number;
 }
 
-const Index = () => {
+const Home = () => {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [financialData, setFinancialData] = useState<FinancialData | null>(null);
@@ -179,19 +177,9 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Family Groups and Scheduled Tasks */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div>
-            <FamilyGroups />
-          </div>
-          <div>
-            <ScheduledTasks />
-          </div>
-        </div>
-
-        {/* Subscription Status */}
+        {/* Scheduled Tasks */}
         <div className="mb-8">
-          <SubscriptionStatus />
+          <ScheduledTasks />
         </div>
 
         {/* Success Notice */}
@@ -217,4 +205,4 @@ const Index = () => {
   );
 };
 
-export default Index;
+export default Home;
