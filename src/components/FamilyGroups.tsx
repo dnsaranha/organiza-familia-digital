@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Plus, Copy, UserPlus, Crown, Trash2, Loader2, Pencil, AlertTriangle, MoreVertical, UserCog, UserX } from "lucide-react";
+import { Users, Plus, Copy, UserPlus, Crown, Trash2, Loader2, Pencil, AlertTriangle, MoreVertical, UserCog, UserX, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import ErrorBoundary from "./ErrorBoundary";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
@@ -448,7 +448,10 @@ export const FamilyGroups = () => {
                           </>
                         )}
                         {!group.is_owner && (
-                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); leaveGroup(group.id); }} className="text-destructive hover:text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); leaveGroup(group.id); }} className="text-destructive border-destructive hover:bg-destructive/10 ml-auto">
+                            <LogOut className="h-4 w-4 mr-2" />
+                            Sair do Grupo
+                          </Button>
                         )}
                       </div>
                     </div>
