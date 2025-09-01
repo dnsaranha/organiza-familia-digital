@@ -1,3 +1,4 @@
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MonthlyTransactionReport from "@/components/reports/MonthlyTransactionReport";
 import MonthlyBalanceReport from "@/components/reports/MonthlyBalanceReport";

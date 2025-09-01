@@ -1,3 +1,4 @@
+import React from 'react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -5,7 +6,7 @@ const AppHeader = () => {
     const isMobile = useIsMobile();
 
     if (isMobile) {
-        return null; // No header on mobile view, navigation is handled by BottomNavBar
+        return null;
     }
 
     return (
