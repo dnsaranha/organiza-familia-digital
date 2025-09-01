@@ -6,7 +6,7 @@ const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('
 const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripe = new Stripe(stripeSecret, {
   appInfo: {
-    name: 'Bolt Integration',
+    name: 'Family Budget App',
     version: '1.0.0',
   },
 });
@@ -45,18 +45,14 @@ Deno.serve(async (req) => {
 
     const { price_id, success_url, cancel_url, mode } = await req.json();
 
-    const error = validateParameters(
-      { price_id, success_url, cancel_url, mode },
-      {
-        cancel_url: 'string',
-        price_id: 'string',
-        success_url: 'string',
-        mode: { values: ['payment', 'subscription'] },
-      },
-    );
+    console.log('Received checkout request:', { price_id, success_url, cancel_url, mode });
 
-    if (error) {
-      return corsResponse({ error }, 400);
+    if (!price_id || !success_url || !cancel_url || !mode) {
+      return corsResponse({ error: 'Missing required parameters' }, 400);
+    }
+
+    if (!['payment', 'subscription'].includes(mode)) {
+      return corsResponse({ error: 'Invalid mode. Must be payment or subscription' }, 400);
     }
 
     const authHeader = req.headers.get('Authorization')!;
@@ -67,6 +63,7 @@ Deno.serve(async (req) => {
     } = await supabase.auth.getUser(token);
 
     if (getUserError) {
+      console.error('Auth error:', getUserError);
       return corsResponse({ error: 'Failed to authenticate user' }, 401);
     }
 
@@ -74,6 +71,9 @@ Deno.serve(async (req) => {
       return corsResponse({ error: 'User not found' }, 404);
     }
 
+    console.log('User authenticated:', user.id);
+
+    // Check if customer already exists
     const { data: subscription, error: getSubscriptionError } = await supabase
       .from('stripe_user_subscriptions')
       .select('customer_id')
@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
     let customerId;
 
     if (!subscription || !subscription.customer_id) {
+      console.log('Creating new Stripe customer');
       const newCustomer = await stripe.customers.create({
         email: user.email ?? undefined,
         metadata: {
@@ -123,6 +124,8 @@ Deno.serve(async (req) => {
     }
 
     // create Checkout Session
+    console.log('Creating checkout session with:', { customerId, price_id, mode, success_url, cancel_url });
+    
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
@@ -145,28 +148,3 @@ Deno.serve(async (req) => {
     return corsResponse({ error: error.message }, 500);
   }
 });
-
-type ExpectedType = 'string' | { values: string[] };
-type Expectations<T> = { [K in keyof T]: ExpectedType };
-
-function validateParameters<T extends Record<string, any>>(values: T, expected: Expectations<T>): string | undefined {
-  for (const parameter in values) {
-    const expectation = expected[parameter];
-    const value = values[parameter];
-
-    if (expectation === 'string') {
-      if (value == null) {
-        return `Missing required parameter ${parameter}`;
-      }
-      if (typeof value !== 'string') {
-        return `Expected parameter ${parameter} to be a string got ${JSON.stringify(value)}`;
-      }
-    } else {
-      if (!expectation.values.includes(value)) {
-        return `Expected parameter ${parameter} to be one of ${expectation.values.join(', ')}`;
-      }
-    }
-  }
-
-  return undefined;
-}

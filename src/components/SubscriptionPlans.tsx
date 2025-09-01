@@ -28,30 +28,17 @@ export const SubscriptionPlans = () => {
     setLoading(priceId);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('Sessão não encontrada');
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
+        body: {
           price_id: priceId,
           success_url: `${window.location.origin}/success`,
           cancel_url: `${window.location.origin}/pricing`,
           mode,
-        }),
+        },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Erro ao criar sessão de checkout');
+      if (error) {
+        throw new Error(error.message || 'Erro ao criar sessão de checkout');
       }
 
       if (data.url) {

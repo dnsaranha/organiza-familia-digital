@@ -6,7 +6,7 @@ const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY')!;
 const stripeWebhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET')!;
 const stripe = new Stripe(stripeSecret, {
   appInfo: {
-    name: 'Bolt Integration',
+    name: 'Family Budget App',
     version: '1.0.0',
   },
 });
@@ -43,6 +43,8 @@ Deno.serve(async (req) => {
       console.error(`Webhook signature verification failed: ${error.message}`);
       return new Response(`Webhook signature verification failed: ${error.message}`, { status: 400 });
     }
+
+    console.log(`Processing webhook event: ${event.type}`);
 
     EdgeRuntime.waitUntil(handleEvent(event));
 
