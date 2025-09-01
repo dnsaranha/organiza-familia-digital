@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 export const SubscriptionPlans = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const navigate = useNavigate();
 
   const handleSubscribe = async (priceId: string, mode: 'payment' | 'subscription') => {
@@ -28,10 +28,8 @@ export const SubscriptionPlans = () => {
     setLoading(priceId);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('Sessão não encontrada');
+      if (!session || !session.access_token) {
+        throw new Error('Sessão não encontrada ou inválida');
       }
 
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-checkout`, {
