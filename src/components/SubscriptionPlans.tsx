@@ -114,6 +114,12 @@ export const SubscriptionPlans = () => {
     }
   };
 
+  const formatPrice = (price: number, currency: string) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: currency,
+    }).format(price);
+  };
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="relative text-center mb-12">
@@ -161,7 +167,7 @@ export const SubscriptionPlans = () => {
                 {product.name}
               </CardTitle>
               <div className="text-3xl font-bold text-primary">
-                R$ 0,00
+                {formatPrice(product.price, product.currency)}
                 {product.mode === 'subscription' && (
                   <span className="text-sm font-normal text-muted-foreground">/mês</span>
                 )}
@@ -200,7 +206,7 @@ export const SubscriptionPlans = () => {
                   </>
                 ) : (
                   <>
-                    {product.mode === 'subscription' ? 'Assinar Agora' : 'Começar Grátis'}
+                    {product.price === 0 ? 'Começar Grátis' : product.mode === 'subscription' ? 'Assinar Agora' : 'Comprar Agora'}
                   </>
                 )}
               </Button>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Crown, Calendar, CreditCard, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
-import { getProductByPriceId } from '@/stripe-config';
+import { getProductByPriceId, stripeProducts } from '@/stripe-config';
 import { useToast } from '@/hooks/use-toast';
 
 interface SubscriptionData {
@@ -82,6 +82,12 @@ export const SubscriptionStatus = () => {
     return new Date(timestamp * 1000).toLocaleDateString('pt-BR');
   };
 
+  const formatPrice = (price: number, currency: string) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: currency,
+    }).format(price);
+  };
   if (!user) {
     return null;
   }
@@ -132,13 +138,18 @@ export const SubscriptionStatus = () => {
         <CardContent>
           <div className="text-center py-6">
             <p className="text-muted-foreground mb-4">
-              Você ainda não possui uma assinatura ativa.
+              Você está usando o plano gratuito.
             </p>
+            <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+              <h3 className="font-semibold mb-2">{stripeProducts[0].name}</h3>
+              <p className="text-sm text-muted-foreground mb-2">{stripeProducts[0].description}</p>
+              <p className="text-lg font-bold text-primary">{formatPrice(stripeProducts[0].price, stripeProducts[0].currency)}</p>
+            </div>
             <Button 
               onClick={() => window.location.href = '/pricing'}
               className="bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
             >
-              Ver Planos Disponíveis
+              Fazer Upgrade
             </Button>
           </div>
         </CardContent>
@@ -164,6 +175,10 @@ export const SubscriptionStatus = () => {
           <div>
             <h3 className="font-semibold text-lg">{product.name}</h3>
             <p className="text-muted-foreground text-sm">{product.description}</p>
+            <p className="text-lg font-bold text-primary mt-2">
+              {formatPrice(product.price, product.currency)}
+              {product.mode === 'subscription' && <span className="text-sm font-normal text-muted-foreground">/mês</span>}
+            </p>
           </div>
         )}
 

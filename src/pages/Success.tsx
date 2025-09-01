@@ -54,13 +54,16 @@ export default function Success() {
                 <CheckCircle className="h-16 w-16 text-success" />
               </div>
               <CardTitle className="text-3xl font-bold text-success">
-                Pagamento Realizado com Sucesso! 🎉
+                {sessionId ? 'Pagamento Realizado com Sucesso!' : 'Plano Ativado com Sucesso!'} 🎉
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <p className="text-lg text-muted-foreground">
-                  Obrigado por escolher o Organiza! Seu pagamento foi processado com sucesso.
+                  {sessionId 
+                    ? 'Obrigado por escolher o Organiza! Seu pagamento foi processado com sucesso.'
+                    : 'Obrigado por escolher o Organiza! Seu plano foi ativado com sucesso.'
+                  }
                 </p>
                 
                 {sessionId && (
@@ -80,10 +83,12 @@ export default function Success() {
                       <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
                       Sua conta foi atualizada com o novo plano
                     </li>
-                    <li className="flex items-center gap-2">
-                      <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
-                      Você receberá um email de confirmação em breve
-                    </li>
+                    {sessionId && (
+                      <li className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
+                        Você receberá um email de confirmação em breve
+                      </li>
+                    )}
                     <li className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-success flex-shrink-0" />
                       Todos os recursos do seu plano já estão disponíveis
