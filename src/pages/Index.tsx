@@ -43,12 +43,12 @@ const Index = () => {
 
     setLoadingData(true);
     try {
-      // 1. Fetch user preferences
+      // 1. Fetch user preferences using raw SQL
       const { data: preferences } = await supabase
         .from('user_preferences')
         .select('month_start_day, carry_over_balance')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       const monthStartDay = preferences?.month_start_day || 1;
       const carryOverBalance = preferences?.carry_over_balance || false;

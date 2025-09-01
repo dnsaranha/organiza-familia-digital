@@ -314,6 +314,30 @@ export type Database = {
           },
         ]
       }
+      user_preferences: {
+        Row: {
+          carry_over_balance: boolean
+          month_start_day: number
+          theme: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          carry_over_balance?: boolean
+          month_start_day?: number
+          theme?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          carry_over_balance?: boolean
+          month_start_day?: number
+          theme?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       stripe_user_orders: {
@@ -357,6 +381,7 @@ export type Database = {
           avatar_url: string
           full_name: string
           id: string
+          role: string
         }[]
       }
       get_user_groups: {
@@ -370,6 +395,12 @@ export type Database = {
           updated_at: string
         }[]
       }
+      import_transactions: {
+        Args: {
+          transactions: Database["public"]["CompositeTypes"]["transaction_import_type"][]
+        }
+        Returns: Json
+      }
       is_group_member: {
         Args: { _group_id: string; _user_id?: string }
         Returns: boolean
@@ -377,6 +408,14 @@ export type Database = {
       join_group: {
         Args: { _join_code: string }
         Returns: string
+      }
+      remove_group_member: {
+        Args: { p_group_id: string; p_user_id: string }
+        Returns: undefined
+      }
+      update_member_role: {
+        Args: { p_group_id: string; p_new_role: string; p_user_id: string }
+        Returns: undefined
       }
     }
     Enums: {
@@ -394,7 +433,15 @@ export type Database = {
       transaction_type: "income" | "expense"
     }
     CompositeTypes: {
-      [_ in never]: never
+      transaction_import_type: {
+        id: string | null
+        date: string | null
+        description: string | null
+        category: string | null
+        type: string | null
+        amount: number | null
+        group_id: string | null
+      }
     }
   }
 }

@@ -66,12 +66,12 @@ export default function Profile() {
           setAvatarUrl(profileData.avatar_url || "");
         }
 
-        // Fetch preferences
+        // Fetch preferences using raw SQL
         const { data: preferencesData, error: preferencesError } = await supabase
           .from('user_preferences')
           .select('month_start_day, carry_over_balance')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (preferencesError && preferencesError.code !== 'PGRST116') { // Ignore 'no rows' error
           throw preferencesError;
@@ -143,7 +143,9 @@ export default function Profile() {
         updated_at: new Date().toISOString(),
       };
 
-      const { error: preferencesError } = await supabase.from("user_preferences").upsert(preferencesUpdates);
+      const { error: preferencesError } = await supabase
+        .from('user_preferences')
+        .upsert(preferencesUpdates);
       if (preferencesError) throw preferencesError;
 
       toast({

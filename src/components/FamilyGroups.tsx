@@ -280,10 +280,12 @@ export const FamilyGroups = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.rpc('remove_group_member', {
-        p_group_id: groupId,
-        p_user_id: memberId,
-      });
+      // Delete group member directly
+      const { error } = await supabase
+        .from('group_members')
+        .delete()
+        .eq('group_id', groupId)
+        .eq('user_id', memberId);
 
       if (error) throw error;
 
@@ -314,11 +316,12 @@ export const FamilyGroups = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.rpc('update_member_role', {
-        p_group_id: groupId,
-        p_user_id: memberId,
-        p_new_role: newRole,
-      });
+      // Update member role directly
+      const { error } = await supabase
+        .from('group_members')
+        .update({ role: newRole })
+        .eq('group_id', groupId)
+        .eq('user_id', memberId);
 
       if (error) throw error;
 
