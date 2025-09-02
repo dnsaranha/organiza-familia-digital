@@ -1,6 +1,6 @@
 import * as React from "react";
 import { NavLink } from "react-router-dom";
-import { Home, Settings, Users, PanelLeft, Menu } from "lucide-react";
+import { Home, Settings, Users, PanelLeft, Menu, PiggyBank } from "lucide-react";
 
 import {
   Sidebar,
@@ -42,11 +42,14 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
         <header className="sticky top-0 z-40 w-full border-b bg-background">
           <div className="container flex h-16 items-center justify-between">
             <NavLink to="/" className="flex items-center gap-2">
-              <span className="font-bold">Meu App</span>
+              <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
+                <PiggyBank className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <span className="font-bold text-primary">Organiza</span>
             </NavLink>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button variant="ghost" size="icon">
                   <Menu className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
@@ -78,87 +81,80 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
-        <SidebarInset>
-          <div className="flex h-full flex-col">
-            <SidebarHeader className="flex items-center justify-between">
-              <span className="text-lg font-semibold">Meu App</span>
-              <SidebarTrigger>
-                <PanelLeft className="size-5" />
-              </SidebarTrigger>
-            </SidebarHeader>
-            <SidebarContent className="flex-1">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <NavLink to="/" className="w-full">
-                    {({ isActive }) => (
-                      <SidebarMenuButton isActive={isActive}>
-                        <Home className="size-4" />
-                        <span>Home</span>
-                      </SidebarMenuButton>
-                    )}
-                  </NavLink>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <NavLink to="/groups" className="w-full">
-                    {({ isActive }) => (
-                      <SidebarMenuButton isActive={isActive}>
-                        <Users className="size-4" />
-                        <span>Grupos</span>
-                      </SidebarMenuButton>
-                    )}
-                  </NavLink>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <NavLink to="/profile" className="w-full">
-                    {({ isActive }) => (
-                      <SidebarMenuButton isActive={isActive}>
-                        <Settings className="size-4" />
-                        <span>Configurações</span>
-                      </SidebarMenuButton>
-                    )}
-                  </NavLink>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarContent>
-            <SidebarFooter>
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-start gap-2">
-                      <div className="flex size-8 items-center justify-center rounded-full bg-muted">
-                        <span>{user.email?.[0].toUpperCase()}</span>
-                      </div>
-                      <span className="truncate">{user.email}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56" align="end" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">
-                          Minha Conta
-                        </p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <NavLink to="/profile">Perfil</NavLink>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button asChild className="w-full">
-                  <NavLink to="/auth">Login</NavLink>
-                </Button>
-              )}
-            </SidebarFooter>
-          </div>
-        </SidebarInset>
-        <div className="flex-1">{children}</div>
+        <div className="flex h-full flex-col">
+          <SidebarHeader className="flex items-center justify-between p-4">
+            <NavLink to="/" className="flex items-center gap-2">
+              <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
+                <PiggyBank className="h-6 w-6 text-primary-foreground" />
+              </div>
+              <span className="font-bold text-lg text-primary">Organiza</span>
+            </NavLink>
+            <SidebarTrigger>
+              <PanelLeft className="size-5" />
+            </SidebarTrigger>
+          </SidebarHeader>
+          <SidebarContent className="flex-1">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <NavLink to="/" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <Home className="size-4" />
+                      <span>Home</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/groups" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <Users className="size-4" />
+                      <span>Grupos</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarContent>
+          <SidebarFooter>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-start gap-2">
+                    <div className="flex size-8 items-center justify-center rounded-full bg-muted">
+                      <span>{user.email?.[0].toUpperCase()}</span>
+                    </div>
+                    <span className="truncate">{user.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        Minha Conta
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <NavLink to="/profile">Perfil</NavLink>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild className="w-full">
+                <NavLink to="/auth">Login</NavLink>
+              </Button>
+            )}
+          </SidebarFooter>
+        </div>
       </Sidebar>
+      <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   );
 };
