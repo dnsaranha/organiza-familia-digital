@@ -112,6 +112,9 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
             </SidebarTrigger>
           </SidebarHeader>
           <SidebarContent className="flex-1">
+            <div className="p-2">
+              <BudgetScopeSwitcher />
+            </div>
             <SidebarMenu>
               <SidebarMenuItem>
                 <NavLink to="/" className="w-full">
@@ -180,7 +183,6 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
       <SidebarInset>
         <header className="border-b p-4">
           <div className="flex items-center justify-end gap-4">
-            <BudgetScopeSwitcher />
             <Button
               variant="ghost"
               size="sm"
