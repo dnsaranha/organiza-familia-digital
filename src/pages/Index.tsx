@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/Header";
 import { FinancialCard } from "@/components/FinancialCard";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
@@ -130,8 +129,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <main className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">

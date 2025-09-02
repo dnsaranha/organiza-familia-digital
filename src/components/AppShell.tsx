@@ -1,6 +1,6 @@
 import * as React from "react";
-import { NavLink } from "react-router-dom";
-import { Home, Settings, Users, PanelLeft, Menu, PiggyBank } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Home, Users, PanelLeft, Menu, PiggyBank, Settings, LogOut } from "lucide-react";
 
 import {
   Sidebar,
@@ -25,12 +25,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { BottomNavBar } from "@/components/BottomNavBar";
+import { BudgetScopeSwitcher } from "@/components/BudgetScopeSwitcher";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
 const AppShell = ({ children }: { children: React.ReactNode }) => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -154,7 +156,30 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </SidebarFooter>
         </div>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset>
+        <header className="border-b p-4">
+          <div className="flex items-center justify-end gap-4">
+            <BudgetScopeSwitcher />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/pricing")}
+              className="text-muted-foreground hover:text-primary"
+            >
+              Planos
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/profile")}
+              className="text-muted-foreground hover:text-primary"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+        </header>
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 };
