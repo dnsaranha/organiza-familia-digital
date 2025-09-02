@@ -38,38 +38,37 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
   };
 
-  if (isMobile) {
-    return (
-      <div className="min-h-screen bg-background">
-        <header className="sticky top-0 z-40 w-full border-b bg-background">
-          <div className="container flex h-16 items-center justify-between">
-            <NavLink to="/" className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
-              <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
-                <PiggyBank className="h-6 w-6 text-primary-foreground" />
-              </div>
-              <div>
-                <div className="font-bold text-primary">Organiza</div>
-                <p className="text-xs text-muted-foreground">
-                  Gestão Financeira Familiar
-                </p>
-              </div>
-            </NavLink>
-            <div className="flex items-center gap-2">
-              <BudgetScopeSwitcher />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+  const mobileView = (
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-40 w-full border-b bg-background">
+        <div className="container flex h-16 items-center justify-between">
+          <NavLink to="/" className="flex items-center gap-3">
+            <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
+              <PiggyBank className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div>
+              <div className="font-bold text-primary">Organiza</div>
+              <p className="text-xs text-muted-foreground">
+                Gestão Financeira Familiar
+              </p>
+            </div>
+          </NavLink>
+          <div className="flex items-center gap-2">
+            <BudgetScopeSwitcher />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
                 {user ? (
                   <>
                     <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
+                  <DropdownMenuItem asChild>
                       <NavLink to="/pricing">Planos</NavLink>
-                    </DropdownMenuItem>
+                  </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <NavLink to="/profile">Perfil</NavLink>
                     </DropdownMenuItem>
@@ -81,18 +80,17 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            </DropdownMenu>
           </div>
-        </header>
-        <main className="pb-20">{children}</main>
-        <BottomNavBar />
-      </div>
-    );
-  }
+        </div>
+      </header>
+      <main className="pb-20">{children}</main>
+      <BottomNavBar />
+    </div>
+  );
 
-  return (
-    <SidebarProvider defaultOpen>
+  const desktopView = (
+    <>
       <Sidebar collapsible="icon">
         <div className="flex h-full flex-col">
           <SidebarHeader className="flex items-center justify-between p-4">
@@ -203,6 +201,12 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
         </header>
         {children}
       </SidebarInset>
+    </>
+  );
+
+  return (
+    <SidebarProvider defaultOpen>
+      {isMobile ? mobileView : desktopView}
     </SidebarProvider>
   );
 };
