@@ -13,6 +13,7 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarInset,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -105,9 +106,6 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </p>
               </div>
             </NavLink>
-            <SidebarTrigger className="group-data-[collapsible=icon]:hidden">
-              <PanelLeft className="size-5" />
-            </SidebarTrigger>
           </SidebarHeader>
           <SidebarContent className="flex-1">
             <div className="p-2 flex justify-center">
@@ -178,6 +176,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </SidebarFooter>
         </div>
       </Sidebar>
+      <SidebarRail />
       <SidebarInset>
         <header className="border-b p-4">
           <div className="flex items-center justify-end gap-4">
