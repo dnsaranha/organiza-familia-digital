@@ -93,14 +93,19 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SidebarProvider defaultOpen>
-      <Sidebar>
+      <Sidebar collapsible="icon">
         <div className="flex h-full flex-col">
           <SidebarHeader className="flex items-center justify-between p-4">
-            <NavLink to="/" className="flex items-center gap-2">
+            <NavLink to="/" className="flex items-center gap-3">
               <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
                 <PiggyBank className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="font-bold text-lg text-primary">Organiza</span>
+              <div className="overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:w-0">
+                <div className="font-bold text-lg text-primary">Organiza</div>
+                <p className="text-xs text-muted-foreground">
+                  Gestão Financeira Familiar
+                </p>
+              </div>
             </NavLink>
             <SidebarTrigger>
               <PanelLeft className="size-5" />
@@ -138,7 +143,9 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     <div className="flex size-8 items-center justify-center rounded-full bg-muted">
                       <span>{user.email?.[0].toUpperCase()}</span>
                     </div>
-                    <span className="truncate">{user.email}</span>
+                    <span className="truncate overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:w-0">
+                      {user.email}
+                    </span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -153,6 +160,9 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <NavLink to="/pricing">Planos</NavLink>
+                    </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <NavLink to="/profile">Perfil</NavLink>
                   </DropdownMenuItem>
