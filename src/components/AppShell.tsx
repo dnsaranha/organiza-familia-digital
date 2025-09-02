@@ -43,11 +43,16 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-40 w-full border-b bg-background">
           <div className="container flex h-16 items-center justify-between">
-            <NavLink to="/" className="flex items-center gap-2">
+            <NavLink to="/" className="flex items-center gap-3">
               <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
                 <PiggyBank className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="font-bold text-primary">Organiza</span>
+              <div>
+                <div className="font-bold text-primary">Organiza</div>
+                <p className="text-xs text-muted-foreground">
+                  Gestão Financeira Familiar
+                </p>
+              </div>
             </NavLink>
             <div className="flex items-center gap-2">
               <BudgetScopeSwitcher />
