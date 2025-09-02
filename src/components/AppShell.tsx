@@ -49,17 +49,22 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
               </div>
               <span className="font-bold text-primary">Organiza</span>
             </NavLink>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+            <div className="flex items-center gap-2">
+              <BudgetScopeSwitcher />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
                 {user ? (
                   <>
                     <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                     <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <NavLink to="/pricing">Planos</NavLink>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <NavLink to="/profile">Perfil</NavLink>
                     </DropdownMenuItem>
@@ -71,7 +76,8 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
-            </DropdownMenu>
+              </DropdownMenu>
+            </div>
           </div>
         </header>
         <main className="pb-20">{children}</main>
