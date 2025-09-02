@@ -43,7 +43,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
       <div className="min-h-screen bg-background">
         <header className="sticky top-0 z-40 w-full border-b bg-background">
           <div className="container flex h-16 items-center justify-between">
-            <NavLink to="/" className="flex items-center gap-3">
+            <NavLink to="/" className="flex items-center gap-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0">
               <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
                 <PiggyBank className="h-6 w-6 text-primary-foreground" />
               </div>
@@ -107,12 +107,12 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </p>
               </div>
             </NavLink>
-            <SidebarTrigger>
+            <SidebarTrigger className="group-data-[collapsible=icon]:hidden">
               <PanelLeft className="size-5" />
             </SidebarTrigger>
           </SidebarHeader>
           <SidebarContent className="flex-1">
-            <div className="p-2">
+            <div className="p-2 flex justify-center">
               <BudgetScopeSwitcher />
             </div>
             <SidebarMenu>
@@ -142,7 +142,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start gap-2">
+                  <Button variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center gap-2">
                     <div className="flex size-8 items-center justify-center rounded-full bg-muted">
                       <span>{user.email?.[0].toUpperCase()}</span>
                     </div>
