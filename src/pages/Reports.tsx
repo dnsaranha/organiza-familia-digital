@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -7,7 +7,13 @@ import { DateRangePicker } from "@/components/ui/date-range-picker"; // Assuming
 import { Download, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { cn } from "@/lib/utils";
+
+const ExpensePieChart = lazy(() => import('@/components/charts/ExpensePieChart'));
+const IncomeExpenseBarChart = lazy(() => import('@/components/charts/IncomeExpenseBarChart'));
 
 interface Transaction {
   id: string;
@@ -58,11 +64,32 @@ const ReportsPage = () => {
     return Object.entries(expenseData).map(([name, value]) => ({ name, value }));
   }, [transactions]);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#AF19FF', '#FF1919'];
+  const incomeVsExpenseData = useMemo(() => {
+    const monthlyData = transactions.reduce((acc, t) => {
+      const month = format(new Date(t.date), 'MMM/yy', { locale: ptBR });
+      if (!acc[month]) {
+        acc[month] = { name: month, income: 0, expense: 0 };
+      }
+      if (t.type === 'income') {
+        acc[month].income += t.amount;
+      } else {
+        acc[month].expense += t.amount;
+      }
+      return acc;
+    }, {} as Record<string, { name: string; income: number; expense: number }>);
+
+    return Object.values(monthlyData);
+  }, [transactions]);
+
+  const ChartLoader = () => (
+    <div className="h-full flex items-center justify-center text-muted-foreground">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold">Relatórios Avançados</h1>
           <p className="text-muted-foreground">
@@ -70,13 +97,13 @@ const ReportsPage = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Exportar PDF
+          <Button variant="outline" size="sm">
+            <Download className="md:mr-2 h-4 w-4" />
+            <span className="hidden md:inline">Exportar PDF</span>
           </Button>
-          <Button variant="outline">
-            <Download className="mr-2 h-4 w-4" />
-            Exportar Excel
+          <Button variant="outline" size="sm">
+            <Download className="md:mr-2 h-4 w-4" />
+            <span className="hidden md:inline">Exportar Excel</span>
           </Button>
         </div>
       </div>
@@ -86,7 +113,6 @@ const ReportsPage = () => {
         <CardContent className="p-4 flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[200px]">
             <label className="text-sm font-medium mb-1 block">Período</label>
-            {/* Placeholder for DateRangePicker */}
             <Button variant="outline" className="w-full justify-start text-left font-normal">
               Selecione um período
             </Button>
@@ -99,7 +125,6 @@ const ReportsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas</SelectItem>
-                {/* Categories will be populated here */}
               </SelectContent>
             </Select>
           </div>
@@ -111,7 +136,6 @@ const ReportsPage = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                {/* Members will be populated here */}
               </SelectContent>
             </Select>
           </div>
@@ -128,42 +152,19 @@ const ReportsPage = () => {
             <CardTitle>Despesas por Categoria</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
-            {loading ? (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={expenseByCategory}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    nameKey="name"
-                  >
-                    {expenseByCategory.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+            <Suspense fallback={<ChartLoader />}>
+              <ExpensePieChart data={expenseByCategory} />
+            </Suspense>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
             <CardTitle>Receitas vs. Despesas</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-              Gráfico de Barras
-            </div>
+          <CardContent className="h-[300px]">
+            <Suspense fallback={<ChartLoader />}>
+              <IncomeExpenseBarChart data={incomeVsExpenseData} />
+            </Suspense>
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">
@@ -176,26 +177,37 @@ const ReportsPage = () => {
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.slice(0, 10).map((t) => (
-                    <TableRow key={t.id}>
-                      <TableCell>{new Date(t.date).toLocaleDateString('pt-BR')}</TableCell>
-                      <TableCell>{t.category}</TableCell>
-                      <TableCell>{t.type === 'income' ? 'Receita' : 'Despesa'}</TableCell>
-                      <TableCell className="text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount)}</TableCell>
+              <ScrollArea className="h-[300px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.map((t) => {
+                      const date = t.date ? new Date(t.date) : null;
+                      const isValidDate = date && !isNaN(date.getTime());
+
+                      return (
+                        <TableRow key={t.id}>
+                          <TableCell>{isValidDate ? date.toLocaleDateString('pt-BR') : 'Data inválida'}</TableCell>
+                          <TableCell>{t.category || 'N/A'}</TableCell>
+                          <TableCell className={cn(t.type === 'income' ? 'text-success-foreground' : 'text-destructive-foreground')}>
+                            {t.type === 'income' ? 'Receita' : 'Despesa'}
+                          </TableCell>
+                          <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-success-foreground' : 'text-destructive-foreground')}>
+                            {t.type === 'income' ? '+' : '-'} {typeof t.amount === 'number' ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount) : 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
             )}
           </CardContent>
         </Card>
