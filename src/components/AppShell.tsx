@@ -1,6 +1,6 @@
 import * as React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Users, PanelLeft, Menu, PiggyBank, Settings, LogOut } from "lucide-react";
+import { Home, Users, PanelLeft, Menu, PiggyBank, Settings, LogOut, AreaChart } from "lucide-react";
 
 import {
   Sidebar,
@@ -131,6 +131,16 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     <SidebarMenuButton isActive={isActive}>
                       <Users className="size-4" />
                       <span>Grupos</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/reports" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <AreaChart className="size-4" />
+                      <span>Relatórios</span>
                     </SidebarMenuButton>
                   )}
                 </NavLink>
