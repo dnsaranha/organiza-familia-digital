@@ -54,7 +54,7 @@ const ReportsPage = () => {
       try {
         let query = supabase
           .from('transactions')
-          .select('id, user_id, type, category, amount, date, profiles(full_name)');
+          .select('*, profiles:user_id(full_name)');
 
         if (scope === 'personal') {
           query = query.is('group_id', null).eq('user_id', user.id);
@@ -84,7 +84,7 @@ const ReportsPage = () => {
         return;
       }
       try {
-        const { data, error } = await (supabase as any).rpc('get_group_members', { group_id_param: scope });
+        const { data, error } = await (supabase as any).rpc('get_group_members', { p_group_id: scope });
         if (error) throw error;
         setGroupMembers(data as GroupMember[] || []);
       } catch (err) {
@@ -216,9 +216,6 @@ const ReportsPage = () => {
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="flex items-end">
-            <Button>Aplicar Filtros</Button>
           </div>
         </CardContent>
       </Card>
