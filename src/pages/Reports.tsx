@@ -34,7 +34,7 @@ interface Transaction {
 }
 
 interface GroupMember {
-  user_id: string;
+  id: string;
   full_name: string;
 }
 
@@ -84,7 +84,7 @@ const ReportsPage = () => {
       pdf.addImage(barImageData, 'PNG', 105, 30, 80, 60);
 
       const tableData = filteredTransactions.map(t => [
-        new Date(t.date).toLocaleDateString('pt-BR'),
+        t.date ? new Date(t.date.replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A',
         t.category,
         t.memberName || (scope === 'personal' ? user?.email : 'N/A'),
         t.type === 'income' ? 'Receita' : 'Despesa',
@@ -113,7 +113,7 @@ const ReportsPage = () => {
 
   const handleExcelExport = () => {
     const dataToExport = filteredTransactions.map(t => ({
-      'Data': new Date(t.date).toLocaleDateString('pt-BR'),
+      'Data': t.date ? new Date(t.date.replace(/-/g, '/')).toLocaleDateString('pt-BR') : 'N/A',
       'Categoria': t.category,
       'Membro': t.memberName,
       'Tipo': t.type === 'income' ? 'Receita' : 'Despesa',
@@ -140,12 +140,7 @@ const ReportsPage = () => {
         }
 
         const { data, error } = await query;
-
-        if (error) {
-          console.error("Supabase error fetching transactions:", error);
-          throw error;
-        }
-
+        if (error) throw error;
         setTransactions(data || []);
       } catch (err) {
         console.error("Caught error in fetchTransactions:", err);
@@ -153,7 +148,6 @@ const ReportsPage = () => {
         setLoading(false);
       }
     };
-
     fetchTransactions();
   }, [user, scope]);
 
@@ -172,19 +166,14 @@ const ReportsPage = () => {
 
   useEffect(() => {
     const fetchGroupMembers = async () => {
+      setMember("all");
       if (scope === 'personal' || !scope) {
         setGroupMembers([]);
-        setMember("all");
         return;
       }
       try {
         const { data, error } = await (supabase as any).rpc('get_group_members', { p_group_id: scope });
-
-        if (error) {
-          console.error("Supabase error fetching group members:", error);
-          throw error;
-        }
-
+        if (error) throw error;
         setGroupMembers(data as GroupMember[] || []);
       } catch (err) {
         console.error("Caught error in fetchGroupMembers:", err);
@@ -203,7 +192,8 @@ const ReportsPage = () => {
 
     if (dateRange?.from && dateRange?.to) {
       filtered = filtered.filter(t => {
-        const transactionDate = new Date(t.date);
+        if (!t.date) return false;
+        const transactionDate = new Date(t.date.replace(/-/g, '/'));
         return transactionDate >= dateRange.from! && transactionDate <= dateRange.to!;
       });
     }
@@ -242,7 +232,8 @@ const ReportsPage = () => {
 
   const incomeVsExpenseData = useMemo(() => {
     const monthlyData = filteredTransactions.reduce((acc, t) => {
-      const month = format(new Date(t.date), 'MMM/yy', { locale: ptBR });
+      if (!t.date) return acc;
+      const month = format(new Date(t.date.replace(/-/g, '/')), 'MMM/yy', { locale: ptBR });
       if (!acc[month]) {
         acc[month] = { name: month, income: 0, expense: 0 };
       }
@@ -315,7 +306,7 @@ const ReportsPage = () => {
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 {groupMembers.map(m => (
-                  <SelectItem key={m.user_id} value={m.user_id}>
+                  <SelectItem key={m.id} value={m.id}>
                     {m.full_name}
                   </SelectItem>
                 ))}
@@ -369,7 +360,7 @@ const ReportsPage = () => {
                   </TableHeader>
                   <TableBody>
                     {filteredTransactions.map((t) => {
-                      const date = t.date ? new Date(t.date) : null;
+                      const date = t.date ? new Date(t.date.replace(/-/g, '/')) : null;
                       const isValidDate = date && !isNaN(date.getTime());
 
                       return (
@@ -377,7 +368,7 @@ const ReportsPage = () => {
                           <TableCell>{isValidDate ? date.toLocaleDateString('pt-BR') : 'Data inválida'}</TableCell>
                           <TableCell>{t.category || 'N/A'}</TableCell>
                           {scope !== 'personal' && <TableCell>{t.memberName || 'N/A'}</TableCell>}
-                          <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-success-foreground' : 'text-destructive-foreground')}>
+                          <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-green-500' : 'text-red-500')}>
                             {t.type === 'income' ? '+' : '-'} {typeof t.amount === 'number' ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount) : 'N/A'}
                           </TableCell>
                         </TableRow>
