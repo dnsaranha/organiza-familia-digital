@@ -11,6 +11,9 @@ import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import GroupsPage from "./pages/Groups";
 import ReportsPage from "./pages/Reports";
+import Investments from "./pages/Investments";
+import Notifications from "./pages/Notifications";
+import Support from "./pages/Support";
 import AppShell from "./components/AppShell";
 import { BudgetScopeProvider } from "./contexts/BudgetScopeContext";
 
@@ -57,6 +60,30 @@ const App = () => (
               element={
                 <AppShell>
                   <ReportsPage />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/investments"
+              element={
+                <AppShell>
+                  <Investments />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <AppShell>
+                  <Notifications />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/support"
+              element={
+                <AppShell>
+                  <Support />
                 </AppShell>
               }
             />

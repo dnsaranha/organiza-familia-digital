@@ -1,11 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { Home, Users, AreaChart } from "lucide-react";
+import { Home, Users, AreaChart, Briefcase, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const BottomNavBar = () => {
   return (
     <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border">
-      <div className="grid h-full max-w-lg grid-cols-3 mx-auto font-medium">
+      <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
         <NavLink
           to="/"
           className={({ isActive }) =>
@@ -41,6 +41,30 @@ export const BottomNavBar = () => {
         >
           <AreaChart className="w-5 h-5 mb-1" />
           <span className="text-sm">Relatórios</span>
+        </NavLink>
+        <NavLink
+          to="/investments"
+          className={({ isActive }) =>
+            cn(
+              "inline-flex flex-col items-center justify-center px-5 hover:bg-muted",
+              isActive ? "text-primary" : "text-muted-foreground"
+            )
+          }
+        >
+          <Briefcase className="w-5 h-5 mb-1" />
+          <span className="text-sm">Invest</span>
+        </NavLink>
+        <NavLink
+          to="/notifications"
+          className={({ isActive }) =>
+            cn(
+              "inline-flex flex-col items-center justify-center px-5 hover:bg-muted",
+              isActive ? "text-primary" : "text-muted-foreground"
+            )
+          }
+        >
+          <Bell className="w-5 h-5 mb-1" />
+          <span className="text-sm">Alertas</span>
         </NavLink>
       </div>
     </div>

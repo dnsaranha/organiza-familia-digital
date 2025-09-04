@@ -1,6 +1,6 @@
 import * as React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Users, PanelLeft, Menu, PiggyBank, Settings, LogOut, AreaChart } from "lucide-react";
+import { Home, Users, PanelLeft, Menu, PiggyBank, Settings, LogOut, AreaChart, Briefcase, Bell, LifeBuoy } from "lucide-react";
 
 import {
   Sidebar,
@@ -141,6 +141,36 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     <SidebarMenuButton isActive={isActive}>
                       <AreaChart className="size-4" />
                       <span>Relatórios</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/investments" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <Briefcase className="size-4" />
+                      <span>Investimentos</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/notifications" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <Bell className="size-4" />
+                      <span>Notificações</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/support" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <LifeBuoy className="size-4" />
+                      <span>Suporte</span>
                     </SidebarMenuButton>
                   )}
                 </NavLink>
