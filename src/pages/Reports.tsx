@@ -11,8 +11,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
+import { useRef } from "react";
 import { DateRange } from "react-day-picker";
 import { useBudgetScope } from "@/contexts/BudgetScopeContext";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import autoTable from 'jspdf-autotable';
 
 const ExpensePieChart = lazy(() => import('@/components/charts/ExpensePieChart'));
 const IncomeExpenseBarChart = lazy(() => import('@/components/charts/IncomeExpenseBarChart'));
@@ -46,6 +51,9 @@ const ReportsPage = () => {
   const { user } = useAuth();
   const { scope } = useBudgetScope();
 
+  const pieChartRef = useRef<HTMLDivElement>(null);
+  const barChartRef = useRef<HTMLDivElement>(null);
+
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 29),
     to: new Date(),
@@ -53,6 +61,70 @@ const ReportsPage = () => {
   const [category, setCategory] = useState<string>("all");
   const [member, setMember] = useState<string>("all");
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+
+  const handlePdfExport = async () => {
+    const pieChartElement = pieChartRef.current;
+    const barChartElement = barChartRef.current;
+
+    if (!pieChartElement || !barChartElement) return;
+
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    pdf.text("Relatório Financeiro", 14, 15);
+
+    try {
+      const pieCanvas = await html2canvas(pieChartElement);
+      const barCanvas = await html2canvas(barChartElement);
+      const pieImageData = pieCanvas.toDataURL('image/png');
+      const barImageData = barCanvas.toDataURL('image/png');
+
+      pdf.text("Despesas por Categoria", 14, 25);
+      pdf.addImage(pieImageData, 'PNG', 14, 30, 80, 60);
+
+      pdf.text("Receitas vs. Despesas", 105, 25);
+      pdf.addImage(barImageData, 'PNG', 105, 30, 80, 60);
+
+      const tableData = filteredTransactions.map(t => [
+        new Date(t.date).toLocaleDateString('pt-BR'),
+        t.category,
+        t.memberName || (scope === 'personal' ? user?.email : 'N/A'),
+        t.type === 'income' ? 'Receita' : 'Despesa',
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount)
+      ]);
+
+      const head = [['Data', 'Categoria', 'Membro', 'Tipo', 'Valor']];
+      if (scope === 'personal') {
+        head[0].splice(2, 1);
+        tableData.forEach(row => row.splice(2, 1));
+      }
+
+      autoTable(pdf, {
+        head: head,
+        body: tableData,
+        startY: 100,
+        headStyles: { fillColor: [22, 163, 74] },
+      });
+
+      pdf.save('Relatorio_Financeiro.pdf');
+
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+    }
+  };
+
+  const handleExcelExport = () => {
+    const dataToExport = filteredTransactions.map(t => ({
+      'Data': new Date(t.date).toLocaleDateString('pt-BR'),
+      'Categoria': t.category,
+      'Membro': t.memberName,
+      'Tipo': t.type === 'income' ? 'Receita' : 'Despesa',
+      'Valor': t.amount
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transações');
+    XLSX.writeFile(workbook, 'Relatorio_Transacoes.xlsx');
+  };
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -201,11 +273,11 @@ const ReportsPage = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handlePdfExport}>
             <Download className="md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">Exportar PDF</span>
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleExcelExport}>
             <Download className="md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">Exportar Excel</span>
           </Button>
@@ -255,7 +327,7 @@ const ReportsPage = () => {
 
       {/* Reports Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <Card>
+        <Card ref={pieChartRef}>
           <CardHeader>
             <CardTitle>Despesas por Categoria</CardTitle>
           </CardHeader>
@@ -265,7 +337,7 @@ const ReportsPage = () => {
             </Suspense>
           </CardContent>
         </Card>
-        <Card>
+        <Card ref={barChartRef}>
           <CardHeader>
             <CardTitle>Receitas vs. Despesas</CardTitle>
           </CardHeader>
@@ -305,7 +377,7 @@ const ReportsPage = () => {
                           <TableCell>{isValidDate ? date.toLocaleDateString('pt-BR') : 'Data inválida'}</TableCell>
                           <TableCell>{t.category || 'N/A'}</TableCell>
                           {scope !== 'personal' && <TableCell>{t.memberName || 'N/A'}</TableCell>}
-                          <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-green-500' : 'text-red-500')}>
+                          <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-success-foreground' : 'text-destructive-foreground')}>
                             {t.type === 'income' ? '+' : '-'} {typeof t.amount === 'number' ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount) : 'N/A'}
                           </TableCell>
                         </TableRow>
