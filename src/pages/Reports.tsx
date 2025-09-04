@@ -12,16 +12,24 @@ import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
+import { useBudgetScope } from "@/contexts/BudgetScopeContext";
 
 const ExpensePieChart = lazy(() => import('@/components/charts/ExpensePieChart'));
 const IncomeExpenseBarChart = lazy(() => import('@/components/charts/IncomeExpenseBarChart'));
 
 interface Transaction {
   id: string;
+  user_id: string;
   type: 'income' | 'expense';
   category: string;
   amount: number;
   date: string;
+  profiles: { full_name: string } | null;
+}
+
+interface GroupMember {
+  user_id: string;
+  full_name: string;
 }
 
 const ReportsPage = () => {
@@ -29,21 +37,32 @@ const ReportsPage = () => {
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { scope } = useBudgetScope();
 
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: subDays(new Date(), 29),
     to: new Date(),
   });
   const [category, setCategory] = useState<string>("all");
+  const [member, setMember] = useState<string>("all");
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
 
   useEffect(() => {
     const fetchTransactions = async () => {
       if (!user) return;
       setLoading(true);
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('transactions')
-          .select('id, type, category, amount, date');
+          .select('id, user_id, type, category, amount, date, profiles(full_name)');
+
+        if (scope === 'personal') {
+          query = query.is('group_id', null).eq('user_id', user.id);
+        } else {
+          query = query.eq('group_id', scope);
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         setTransactions(data as Transaction[] || []);
@@ -55,7 +74,25 @@ const ReportsPage = () => {
     };
 
     fetchTransactions();
-  }, [user]);
+  }, [user, scope]);
+
+  useEffect(() => {
+    const fetchGroupMembers = async () => {
+      if (scope === 'personal' || !scope) {
+        setGroupMembers([]);
+        setMember("all");
+        return;
+      }
+      try {
+        const { data, error } = await (supabase as any).rpc('get_group_members', { group_id_param: scope });
+        if (error) throw error;
+        setGroupMembers(data as GroupMember[] || []);
+      } catch (err) {
+        console.error("Erro ao buscar membros do grupo:", err);
+      }
+    };
+    fetchGroupMembers();
+  }, [scope]);
 
   const categories = useMemo(() => {
     const allCategories = transactions.map(t => t.category).filter(Boolean);
@@ -76,8 +113,12 @@ const ReportsPage = () => {
       filtered = filtered.filter(t => t.category === category);
     }
 
+    if (member !== "all") {
+      filtered = filtered.filter(t => t.user_id === member);
+    }
+
     setFilteredTransactions(filtered);
-  }, [transactions, dateRange, category]);
+  }, [transactions, dateRange, category, member]);
 
   const expenseByCategory = useMemo(() => {
     const expenseData = filteredTransactions
@@ -162,12 +203,17 @@ const ReportsPage = () => {
           </div>
           <div className="flex-1 min-w-[150px]">
             <label className="text-sm font-medium mb-1 block">Membro</label>
-            <Select>
+            <Select value={member} onValueChange={setMember} disabled={scope === 'personal'}>
               <SelectTrigger>
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
+                {groupMembers.map(m => (
+                  <SelectItem key={m.user_id} value={m.user_id}>
+                    {m.full_name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -215,6 +261,7 @@ const ReportsPage = () => {
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Categoria</TableHead>
+                      {scope !== 'personal' && <TableHead>Membro</TableHead>}
                       <TableHead className="text-right">Valor</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -227,6 +274,7 @@ const ReportsPage = () => {
                         <TableRow key={t.id}>
                           <TableCell>{isValidDate ? date.toLocaleDateString('pt-BR') : 'Data inválida'}</TableCell>
                           <TableCell>{t.category || 'N/A'}</TableCell>
+                          {scope !== 'personal' && <TableCell>{t.profiles?.full_name || 'N/A'}</TableCell>}
                           <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-green-500' : 'text-red-500')}>
                             {t.type === 'income' ? '+' : '-'} {typeof t.amount === 'number' ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount) : 'N/A'}
                           </TableCell>
