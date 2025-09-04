@@ -10,6 +10,7 @@ import Success from "./pages/Success";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import GroupsPage from "./pages/Groups";
+import ReportsPage from "./pages/Reports";
 import AppShell from "./components/AppShell";
 import { BudgetScopeProvider } from "./contexts/BudgetScopeContext";
 
@@ -48,6 +49,14 @@ const App = () => (
               element={
                 <AppShell>
                   <GroupsPage />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <AppShell>
+                  <ReportsPage />
                 </AppShell>
               }
             />

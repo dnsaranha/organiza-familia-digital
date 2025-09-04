@@ -42,8 +42,8 @@ export const BudgetScopeSwitcher = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <SelectTrigger className="w-8 h-8 p-0 justify-center">
-                <SelectValue asChild>
-                  <span>{selectedGroup?.name.charAt(0).toUpperCase()}</span>
+                <SelectValue>
+                  {selectedGroup?.name.charAt(0).toUpperCase()}
                 </SelectValue>
               </SelectTrigger>
             </TooltipTrigger>
