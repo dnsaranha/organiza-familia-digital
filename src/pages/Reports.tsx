@@ -34,7 +34,7 @@ interface Transaction {
 }
 
 interface GroupMember {
-  user_id: string;
+  id: string;
   full_name: string;
 }
 
@@ -306,7 +306,7 @@ const ReportsPage = () => {
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 {groupMembers.map(m => (
-                  <SelectItem key={m.user_id} value={m.user_id}>
+                  <SelectItem key={m.id} value={m.id}>
                     {m.full_name}
                   </SelectItem>
                 ))}
