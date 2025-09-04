@@ -3,14 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DateRangePicker } from "@/components/ui/date-range-picker"; // Assuming this component exists or will be created
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Download, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { format } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from "@/lib/utils";
+import { DateRange } from "react-day-picker";
 
 const ExpensePieChart = lazy(() => import('@/components/charts/ExpensePieChart'));
 const IncomeExpenseBarChart = lazy(() => import('@/components/charts/IncomeExpenseBarChart'));
@@ -25,8 +26,15 @@ interface Transaction {
 
 const ReportsPage = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: subDays(new Date(), 29),
+    to: new Date(),
+  });
+  const [category, setCategory] = useState<string>("all");
 
   useEffect(() => {
     const fetchTransactions = async () => {
@@ -49,8 +57,30 @@ const ReportsPage = () => {
     fetchTransactions();
   }, [user]);
 
+  const categories = useMemo(() => {
+    const allCategories = transactions.map(t => t.category).filter(Boolean);
+    return ['all', ...Array.from(new Set(allCategories))];
+  }, [transactions]);
+
+  useEffect(() => {
+    let filtered = transactions;
+
+    if (dateRange?.from && dateRange?.to) {
+      filtered = filtered.filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate >= dateRange.from! && transactionDate <= dateRange.to!;
+      });
+    }
+
+    if (category !== "all") {
+      filtered = filtered.filter(t => t.category === category);
+    }
+
+    setFilteredTransactions(filtered);
+  }, [transactions, dateRange, category]);
+
   const expenseByCategory = useMemo(() => {
-    const expenseData = transactions
+    const expenseData = filteredTransactions
       .filter(t => t.type === 'expense')
       .reduce((acc, transaction) => {
         const category = transaction.category || 'Sem Categoria';
@@ -62,10 +92,10 @@ const ReportsPage = () => {
       }, {} as Record<string, number>);
 
     return Object.entries(expenseData).map(([name, value]) => ({ name, value }));
-  }, [transactions]);
+  }, [filteredTransactions]);
 
   const incomeVsExpenseData = useMemo(() => {
-    const monthlyData = transactions.reduce((acc, t) => {
+    const monthlyData = filteredTransactions.reduce((acc, t) => {
       const month = format(new Date(t.date), 'MMM/yy', { locale: ptBR });
       if (!acc[month]) {
         acc[month] = { name: month, income: 0, expense: 0 };
@@ -79,7 +109,7 @@ const ReportsPage = () => {
     }, {} as Record<string, { name: string; income: number; expense: number }>);
 
     return Object.values(monthlyData);
-  }, [transactions]);
+  }, [filteredTransactions]);
 
   const ChartLoader = () => (
     <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -113,18 +143,20 @@ const ReportsPage = () => {
         <CardContent className="p-4 flex flex-wrap items-center gap-4">
           <div className="flex-1 min-w-[200px]">
             <label className="text-sm font-medium mb-1 block">Período</label>
-            <Button variant="outline" className="w-full justify-start text-left font-normal">
-              Selecione um período
-            </Button>
+            <DateRangePicker date={dateRange} onDateChange={setDateRange} />
           </div>
           <div className="flex-1 min-w-[150px]">
             <label className="text-sm font-medium mb-1 block">Categoria</label>
-            <Select>
+            <Select value={category} onValueChange={setCategory}>
               <SelectTrigger>
                 <SelectValue placeholder="Todas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
+                {categories.map(c => (
+                  <SelectItem key={c} value={c}>
+                    {c === 'all' ? 'Todas' : c}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -183,12 +215,11 @@ const ReportsPage = () => {
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Categoria</TableHead>
-                      <TableHead>Tipo</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {transactions.map((t) => {
+                    {filteredTransactions.map((t) => {
                       const date = t.date ? new Date(t.date) : null;
                       const isValidDate = date && !isNaN(date.getTime());
 
@@ -196,10 +227,7 @@ const ReportsPage = () => {
                         <TableRow key={t.id}>
                           <TableCell>{isValidDate ? date.toLocaleDateString('pt-BR') : 'Data inválida'}</TableCell>
                           <TableCell>{t.category || 'N/A'}</TableCell>
-                          <TableCell className={cn(t.type === 'income' ? 'text-success-foreground' : 'text-destructive-foreground')}>
-                            {t.type === 'income' ? 'Receita' : 'Despesa'}
-                          </TableCell>
-                          <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-success-foreground' : 'text-destructive-foreground')}>
+                          <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-green-500' : 'text-red-500')}>
                             {t.type === 'income' ? '+' : '-'} {typeof t.amount === 'number' ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount) : 'N/A'}
                           </TableCell>
                         </TableRow>
