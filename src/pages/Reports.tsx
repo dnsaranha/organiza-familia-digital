@@ -166,9 +166,9 @@ const ReportsPage = () => {
 
   useEffect(() => {
     const fetchGroupMembers = async () => {
+      setMember("all");
       if (scope === 'personal' || !scope) {
         setGroupMembers([]);
-        setMember("all");
         return;
       }
       try {
@@ -368,7 +368,7 @@ const ReportsPage = () => {
                           <TableCell>{isValidDate ? date.toLocaleDateString('pt-BR') : 'Data inválida'}</TableCell>
                           <TableCell>{t.category || 'N/A'}</TableCell>
                           {scope !== 'personal' && <TableCell>{t.memberName || 'N/A'}</TableCell>}
-                          <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-success-foreground' : 'text-destructive-foreground')}>
+                          <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-green-500' : 'text-red-500')}>
                             {t.type === 'income' ? '+' : '-'} {typeof t.amount === 'number' ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount) : 'N/A'}
                           </TableCell>
                         </TableRow>
