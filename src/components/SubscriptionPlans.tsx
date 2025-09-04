@@ -82,7 +82,7 @@ export const SubscriptionPlans = () => {
       case 1:
         return [
           'Todas as funcionalidades gratuitas',
-          'Grupos familiares ilimitados',
+          'Grupos ilimitados',
           'Relatórios avançados',
           'Notificações personalizadas',
           'Suporte prioritário',
