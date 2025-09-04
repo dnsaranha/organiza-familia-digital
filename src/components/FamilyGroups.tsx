@@ -106,7 +106,7 @@ export const FamilyGroups = () => {
       console.error('Erro ao carregar grupos:', error);
       toast({
         title: "Erro",
-        description: "Não foi possível carregar os grupos familiares.",
+        description: "Não foi possível carregar os grupos.",
         variant: "destructive",
       });
     } finally {
@@ -239,7 +239,7 @@ export const FamilyGroups = () => {
 
       toast({
         title: "Entrou no grupo!",
-        description: "Você entrou no grupo familiar com sucesso.",
+        description: "Você entrou no grupo com sucesso.",
       });
 
       setJoinCode("");
@@ -360,7 +360,7 @@ export const FamilyGroups = () => {
 
       toast({
         title: "Saiu do grupo",
-        description: "Você saiu do grupo familiar.",
+        description: "Você saiu do grupo.",
       });
 
       setRefreshKey(k => k + 1);
@@ -386,7 +386,7 @@ export const FamilyGroups = () => {
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Erro ao carregar os grupos</AlertTitle>
           <AlertDescription>
-            Não foi possível carregar os grupos familiares. Tente novamente mais tarde.
+            Não foi possível carregar os grupos. Tente novamente mais tarde.
           </AlertDescription>
         </Alert>
       </CardContent>
@@ -400,7 +400,7 @@ export const FamilyGroups = () => {
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              Grupos Familiares
+              Grupos
             </div>
             <div className="flex gap-2">
               <Dialog open={joinDialogOpen} onOpenChange={setJoinDialogOpen}>
@@ -430,7 +430,7 @@ export const FamilyGroups = () => {
           {loadingGroups ? (
             <div className="text-center py-8 text-muted-foreground"><Loader2 className="h-8 w-8 mx-auto animate-spin mb-3 opacity-50" /><p>Carregando grupos...</p></div>
           ) : groups.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground"><Users className="h-12 w-12 mx-auto mb-3 opacity-50" /><p>Nenhum grupo familiar ainda.</p><p className="text-sm">Crie um grupo ou entre em um existente!</p></div>
+            <div className="text-center py-8 text-muted-foreground"><Users className="h-12 w-12 mx-auto mb-3 opacity-50" /><p>Nenhum grupo ainda.</p><p className="text-sm">Crie um grupo ou entre em um existente!</p></div>
           ) : (
             <Accordion type="single" collapsible className="w-full space-y-4">
               {groups.map((group) => (

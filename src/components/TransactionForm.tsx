@@ -105,6 +105,9 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
 
     setLoading(true);
     try {
+      const d = new Date();
+      const localDateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
       const transactionData = {
         user_id: user.id,
         group_id: groupId,
@@ -112,7 +115,7 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
         amount: parseFloat(amount),
         category,
         description: description || null,
-        date: isEditMode ? transactionToEdit.date : new Date().toISOString(),
+        date: isEditMode ? transactionToEdit.date : localDateString,
         updated_at: new Date().toISOString(),
       };
 

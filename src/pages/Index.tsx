@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Header } from "@/components/Header";
 import { FinancialCard } from "@/components/FinancialCard";
 import { TransactionForm } from "@/components/TransactionForm";
 import { TransactionList } from "@/components/TransactionList";
@@ -130,8 +129,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
-      
       <main className="container mx-auto px-4 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
@@ -139,7 +136,7 @@ const Index = () => {
             Olá, bem-vindo de volta! 👋
           </h2>
           <p className="text-muted-foreground">
-            Aqui está um resumo das suas finanças familiares
+            Aqui está um resumo das suas finanças
           </p>
         </div>
 
@@ -200,14 +197,14 @@ const Index = () => {
             <DollarSign className="h-6 w-6 text-success mt-1" />
             <div>
               <h3 className="font-semibold text-success mb-2">
-                Sistema de Autenticação e Grupos Familiares Ativo! 🎉
+                Sistema de Autenticação e Grupos Ativo! 🎉
               </h3>
               <p className="text-muted-foreground text-sm mb-3">
-                Agora você pode criar grupos familiares, compartilhar tarefas agendadas entre membros da família 
+                Agora você pode criar grupos, compartilhar tarefas agendadas entre membros da família
                 e receber notificações por email e push. Seus dados estão protegidos e sincronizados com o Supabase.
               </p>
               <p className="text-xs text-muted-foreground">
-                Use os "Grupos Familiares" para compartilhar tarefas com sua família usando o código de convite.
+                Use os "Grupos" para compartilhar tarefas com sua família usando o código de convite.
               </p>
             </div>
           </div>
