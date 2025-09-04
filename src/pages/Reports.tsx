@@ -24,7 +24,8 @@ interface Transaction {
   category: string;
   amount: number;
   date: string;
-  profiles: { full_name: string } | null;
+  group_id: string | null;
+  memberName?: string;
 }
 
 interface GroupMember {
@@ -32,8 +33,14 @@ interface GroupMember {
   full_name: string;
 }
 
+interface Profile {
+  id: string;
+  full_name: string;
+}
+
 const ReportsPage = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -52,9 +59,7 @@ const ReportsPage = () => {
       if (!user) return;
       setLoading(true);
       try {
-        let query = supabase
-          .from('transactions')
-          .select('*, profiles:user_id(full_name)');
+        let query = supabase.from('transactions').select('*');
 
         if (scope === 'personal') {
           query = query.is('group_id', null).eq('user_id', user.id);
@@ -64,10 +69,14 @@ const ReportsPage = () => {
 
         const { data, error } = await query;
 
-        if (error) throw error;
-        setTransactions(data as Transaction[] || []);
+        if (error) {
+          console.error("Supabase error fetching transactions:", error);
+          throw error;
+        }
+
+        setTransactions(data || []);
       } catch (err) {
-        console.error("Erro ao buscar transações:", err);
+        console.error("Caught error in fetchTransactions:", err);
       } finally {
         setLoading(false);
       }
@@ -75,6 +84,19 @@ const ReportsPage = () => {
 
     fetchTransactions();
   }, [user, scope]);
+
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      try {
+        const { data, error } = await supabase.from('profiles').select('id, full_name');
+        if (error) throw error;
+        setProfiles(data || []);
+      } catch (error) {
+        console.error("Error fetching profiles:", error);
+      }
+    }
+    fetchProfiles();
+  }, []);
 
   useEffect(() => {
     const fetchGroupMembers = async () => {
@@ -85,10 +107,15 @@ const ReportsPage = () => {
       }
       try {
         const { data, error } = await (supabase as any).rpc('get_group_members', { p_group_id: scope });
-        if (error) throw error;
+
+        if (error) {
+          console.error("Supabase error fetching group members:", error);
+          throw error;
+        }
+
         setGroupMembers(data as GroupMember[] || []);
       } catch (err) {
-        console.error("Erro ao buscar membros do grupo:", err);
+        console.error("Caught error in fetchGroupMembers:", err);
       }
     };
     fetchGroupMembers();
@@ -117,8 +144,14 @@ const ReportsPage = () => {
       filtered = filtered.filter(t => t.user_id === member);
     }
 
-    setFilteredTransactions(filtered);
-  }, [transactions, dateRange, category, member]);
+    const profileMap = new Map(profiles.map(p => [p.id, p.full_name]));
+    const augmentedTransactions = filtered.map(t => ({
+      ...t,
+      memberName: profileMap.get(t.user_id) || 'Usuário desconhecido'
+    }));
+
+    setFilteredTransactions(augmentedTransactions);
+  }, [transactions, profiles, dateRange, category, member]);
 
   const expenseByCategory = useMemo(() => {
     const expenseData = filteredTransactions
@@ -271,7 +304,7 @@ const ReportsPage = () => {
                         <TableRow key={t.id}>
                           <TableCell>{isValidDate ? date.toLocaleDateString('pt-BR') : 'Data inválida'}</TableCell>
                           <TableCell>{t.category || 'N/A'}</TableCell>
-                          {scope !== 'personal' && <TableCell>{t.profiles?.full_name || 'N/A'}</TableCell>}
+                          {scope !== 'personal' && <TableCell>{t.memberName || 'N/A'}</TableCell>}
                           <TableCell className={cn('text-right font-medium', t.type === 'income' ? 'text-green-500' : 'text-red-500')}>
                             {t.type === 'income' ? '+' : '-'} {typeof t.amount === 'number' ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount) : 'N/A'}
                           </TableCell>
