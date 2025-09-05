@@ -22,10 +22,23 @@ export interface PluggyTransaction {
   category: string;
 }
 
+export interface PluggyInvestment {
+  id: string;
+  name: string;
+  balance: number;
+  currency: string;
+  type: string;
+  subtype: string;
+  institution: {
+    name: string;
+  };
+}
+
 
 export const useOpenBanking = () => {
   const [accounts, setAccounts] = useState<PluggyAccount[]>([]);
   const [transactions, setTransactions] = useState<PluggyTransaction[]>([]);
+  const [investments, setInvestments] = useState<PluggyInvestment[]>([]);
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
   const [itemId, setItemId] = useState<string | null>(null);
@@ -54,6 +67,26 @@ export const useOpenBanking = () => {
     }
   }, [toast]);
 
+  const loadInvestments = useCallback(async (currentItemId: string) => {
+    if (!currentItemId) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('pluggy-investments', {
+        body: { itemId: currentItemId },
+      });
+      if (error) throw error;
+      setInvestments(data.investments);
+    } catch (error) {
+      toast({
+        title: 'Erro ao Carregar Investimentos',
+        description: 'Não foi possível carregar seus investimentos.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
   // Verificar se já existe um item ativo
   useEffect(() => {
     const savedItemId = localStorage.getItem('pluggyItemId');
@@ -61,8 +94,9 @@ export const useOpenBanking = () => {
       setItemId(savedItemId);
       setConnected(true);
       loadAccounts(savedItemId);
+      loadInvestments(savedItemId);
     }
-  }, [loadAccounts]);
+  }, [loadAccounts, loadInvestments]);
 
   const initiateConnection = useCallback(async () => {
     setLoading(true);
@@ -89,7 +123,10 @@ export const useOpenBanking = () => {
       localStorage.setItem('pluggyItemId', newItemId);
       setConnected(true);
 
-      await loadAccounts(newItemId);
+      await Promise.all([
+        loadAccounts(newItemId),
+        loadInvestments(newItemId)
+      ]);
 
       toast({
         title: 'Conexão Bem-sucedida!',
@@ -139,6 +176,7 @@ export const useOpenBanking = () => {
       setConnected(false);
       setAccounts([]);
       setTransactions([]);
+      setInvestments([]);
       toast({
         title: 'Desconectado',
         description: 'Sua conexão com a Pluggy foi removida.',
@@ -157,6 +195,7 @@ export const useOpenBanking = () => {
   return {
     accounts,
     transactions,
+    investments,
     loading,
     connected,
     itemId,
@@ -165,6 +204,7 @@ export const useOpenBanking = () => {
     handleSuccess,
     loadAccounts,
     loadTransactions,
+    loadInvestments,
     disconnect,
     setConnectToken,
   };

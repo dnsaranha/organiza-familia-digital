@@ -26,10 +26,15 @@ const InvestmentsPage = () => {
   
   const { 
     connected: bankConnected, 
-    loading: bankLoading 
+    loading: bankLoading,
+    accounts,
+    transactions,
+    investments,
+    loadTransactions,
   } = useOpenBanking();
   
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // Símbolos padrão para demonstração
@@ -39,6 +44,12 @@ const InvestmentsPage = () => {
     // Carregar cotações iniciais
     getAssetQuotes(defaultSymbols);
   }, []);
+
+  useEffect(() => {
+    if (selectedAccountId) {
+      loadTransactions(selectedAccountId);
+    }
+  }, [selectedAccountId, loadTransactions]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -238,6 +249,150 @@ const InvestmentsPage = () => {
             <p className="text-xs text-muted-foreground">Total de proventos no mês.</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Seção Open Banking */}
+      {bankConnected && (
+        <div className="space-y-8">
+          <div>
+            <h2 className="text-2xl font-semibold">Consolidado Open Banking</h2>
+            <p className="text-muted-foreground">Saldos, transações e investimentos dos seus bancos conectados.</p>
+          </div>
+
+          {/* Contas Bancárias */}
+          <Card>
+            <CardHeader><CardTitle>Contas Bancárias</CardTitle></CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Banco</TableHead>
+                    <TableHead>Conta</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead className="text-right">Saldo</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {bankLoading ? (
+                    <TableRow><TableCell colSpan={4}><Skeleton className="h-5 w-full" /></TableCell></TableRow>
+                  ) : accounts.length > 0 ? (
+                    accounts.map(acc => (
+                      <TableRow
+                        key={acc.id}
+                        onClick={() => setSelectedAccountId(acc.id)}
+                        className={`cursor-pointer ${selectedAccountId === acc.id ? 'bg-muted/50' : ''}`}
+                      >
+                        <TableCell>{acc.marketingName ?? 'N/A'}</TableCell>
+                        <TableCell>{acc.number}</TableCell>
+                        <TableCell>{acc.subtype}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {acc.balance.toLocaleString('pt-BR', { style: 'currency', currency: acc.currency })}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow><TableCell colSpan={4} className="text-center">Nenhuma conta encontrada.</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          <div className="grid gap-8 md:grid-cols-2">
+            {/* Transações da Conta Selecionada */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Últimas Transações</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {selectedAccountId ? `Da conta ${accounts.find(a => a.id === selectedAccountId)?.number}` : 'Selecione uma conta para ver as transações'}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead className="text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bankLoading && selectedAccountId ? (
+                       Array.from({ length: 5 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                          <TableCell className="text-right"><Skeleton className="h-5 w-20 inline-block" /></TableCell>
+                        </TableRow>
+                      ))
+                    ) : transactions.length > 0 ? (
+                      transactions.slice(0, 10).map(tx => (
+                        <TableRow key={tx.id}>
+                          <TableCell>{tx.description}</TableCell>
+                          <TableCell>{new Date(tx.date).toLocaleDateString('pt-BR')}</TableCell>
+                          <TableCell className={`text-right font-medium ${tx.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                            {tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center h-24">
+                          {selectedAccountId ? 'Nenhuma transação encontrada.' : 'Selecione uma conta.'}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Investimentos do Open Banking */}
+            <Card>
+              <CardHeader><CardTitle>Investimentos (Open Banking)</CardTitle></CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Ativo</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead className="text-right">Saldo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {bankLoading ? (
+                      Array.from({ length: 3 }).map((_, i) => (
+                        <TableRow key={i}>
+                          <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                          <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                          <TableCell className="text-right"><Skeleton className="h-5 w-20 inline-block" /></TableCell>
+                        </TableRow>
+                      ))
+                    ) : investments.length > 0 ? (
+                      investments.map(inv => (
+                        <TableRow key={inv.id}>
+                          <TableCell className="font-medium">{inv.name}</TableCell>
+                          <TableCell>{inv.subtype}</TableCell>
+                          <TableCell className="text-right font-medium">
+                            {inv.balance.toLocaleString('pt-BR', { style: 'currency', currency: inv.currency })}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow><TableCell colSpan={3} className="text-center h-24">Nenhum investimento encontrado.</TableCell></TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Seção B3 */}
+      <div>
+        <h2 className="text-2xl font-semibold mt-8">Análise de Ativos (B3)</h2>
+        <p className="text-muted-foreground">Dados da sua carteira de ações, FIIs e ETFs.</p>
       </div>
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
