@@ -153,7 +153,7 @@ const InvestmentsPage = () => {
         </Card>
 
         <Card className="lg:col-span-3">
-          <CardHeader><CardTitle>Meus Ativos</CardTitle></Header>
+          <CardHeader><CardTitle>Meus Ativos</CardTitle></CardHeader>
           <CardContent>
             {error && <p className="text-red-500 text-center py-4">{error}</p>}
             <Table>
