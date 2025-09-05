@@ -1,70 +1,51 @@
 import { useState, useEffect, useCallback } from 'react';
-import { openBankingClient } from '@/lib/open-banking/client';
-import { OpenBankingAccount, OpenBankingTransaction } from '@/lib/open-banking/types';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+// Tipos simplificados para a resposta da Pluggy, ajuste conforme necessário
+export interface PluggyAccount {
+  id: string;
+  balance: number;
+  currency: string;
+  name: string;
+  type: string;
+  number: string;
+  subtype: string;
+  marketingName: string;
+}
+
+export interface PluggyTransaction {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  category: string;
+}
+
+
 export const useOpenBanking = () => {
-  const [accounts, setAccounts] = useState<OpenBankingAccount[]>([]);
-  const [transactions, setTransactions] = useState<OpenBankingTransaction[]>([]);
+  const [accounts, setAccounts] = useState<PluggyAccount[]>([]);
+  const [transactions, setTransactions] = useState<PluggyTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [consentId, setConsentId] = useState<string | null>(null);
+  const [itemId, setItemId] = useState<string | null>(null);
+  const [connectToken, setConnectToken] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // Verificar se já existe um consentimento ativo
-  useEffect(() => {
-    const savedConsentId = localStorage.getItem('openBankingConsentId');
-    if (savedConsentId) {
-      setConsentId(savedConsentId);
-      setConnected(true);
-      loadAccounts(savedConsentId);
-    }
-  }, []);
-
-  const initiateConnection = useCallback(async (institutionId: string) => {
+  const loadAccounts = useCallback(async (currentItemId: string) => {
+    if (!currentItemId) return;
     setLoading(true);
     try {
-      const permissions = [
-        'ACCOUNTS_READ',
-        'ACCOUNTS_BALANCES_READ',
-        'RESOURCES_READ',
-        'CUSTOMERS_PERSONAL_IDENTIFICATIONS_READ',
-        'CUSTOMERS_PERSONAL_ADITTIONALINFO_READ'
-      ];
-
-      const { consentUrl, consentId: newConsentId } = await openBankingClient.initiateConsent(
-        permissions, 
-        institutionId
-      );
-
-      setConsentId(newConsentId);
-      localStorage.setItem('openBankingConsentId', newConsentId);
-      
-      // Redirecionar para autorização
-      window.location.href = consentUrl;
-    } catch (error) {
-      toast({
-        title: 'Erro na Conexão',
-        description: 'Não foi possível iniciar a conexão com o banco.',
-        variant: 'destructive',
+      const { data, error } = await supabase.functions.invoke('pluggy-accounts', {
+        body: { itemId: currentItemId },
       });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  const loadAccounts = useCallback(async (currentConsentId: string) => {
-    if (!currentConsentId) return;
-
-    setLoading(true);
-    try {
-      const accountsData = await openBankingClient.getAccounts(currentConsentId);
-      setAccounts(accountsData);
+      if (error) throw error;
+      setAccounts(data.accounts);
       setConnected(true);
     } catch (error) {
       toast({
         title: 'Erro ao Carregar Contas',
-        description: 'Não foi possível carregar suas contas bancárias.',
+        description: 'Não foi possível carregar suas contas da Pluggy.',
         variant: 'destructive',
       });
       setConnected(false);
@@ -73,69 +54,118 @@ export const useOpenBanking = () => {
     }
   }, [toast]);
 
-  const loadTransactions = useCallback(async (
-    accountId: string, 
-    fromDate?: string, 
-    toDate?: string
-  ) => {
-    if (!consentId) return;
+  // Verificar se já existe um item ativo
+  useEffect(() => {
+    const savedItemId = localStorage.getItem('pluggyItemId');
+    if (savedItemId) {
+      setItemId(savedItemId);
+      setConnected(true);
+      loadAccounts(savedItemId);
+    }
+  }, [loadAccounts]);
 
+  const initiateConnection = useCallback(async () => {
     setLoading(true);
     try {
-      const transactionsData = await openBankingClient.getTransactions(
-        consentId, 
-        accountId, 
-        fromDate, 
-        toDate
-      );
-      setTransactions(transactionsData);
+      const { data, error } = await supabase.functions.invoke('pluggy-connect-token');
+      if (error) throw error;
+      setConnectToken(data.accessToken);
     } catch (error) {
       toast({
-        title: 'Erro ao Carregar Transações',
-        description: 'Não foi possível carregar as transações bancárias.',
+        title: 'Erro na Conexão',
+        description: 'Não foi possível obter o token de conexão da Pluggy.',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  }, [consentId, toast]);
+  }, [toast]);
 
-  const disconnect = useCallback(async () => {
-    if (!consentId) return;
-
+  const handleSuccess = useCallback(async (data: { item: { id: string } }) => {
     setLoading(true);
     try {
-      await openBankingClient.revokeConsent(consentId);
-      localStorage.removeItem('openBankingConsentId');
-      setConsentId(null);
+      const newItemId = data.item.id;
+      setItemId(newItemId);
+      localStorage.setItem('pluggyItemId', newItemId);
+      setConnected(true);
+
+      await loadAccounts(newItemId);
+
+      toast({
+        title: 'Conexão Bem-sucedida!',
+        description: 'Sua conta foi conectada com sucesso.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Erro ao Processar Conexão',
+        description: 'Sua conexão foi criada, mas houve um erro ao buscar os dados.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+      setConnectToken(null); // Fechar o widget
+    }
+  }, [toast, loadAccounts, setConnectToken]);
+
+  const loadTransactions = useCallback(async (accountId: string) => {
+    if (!itemId) return;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('pluggy-transactions', {
+        body: { accountId },
+      });
+      if (error) throw error;
+      setTransactions(data.transactions);
+    } catch (error) {
+      toast({
+        title: 'Erro ao Carregar Transações',
+        description: 'Não foi possível carregar as transações da sua conta.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [itemId, toast]);
+
+  const disconnect = useCallback(async () => {
+    if (!itemId) return;
+    setLoading(true);
+    try {
+      await supabase.functions.invoke('pluggy-delete-item', {
+        body: { itemId },
+      });
+      localStorage.removeItem('pluggyItemId');
+      setItemId(null);
       setConnected(false);
       setAccounts([]);
       setTransactions([]);
-      
       toast({
         title: 'Desconectado',
-        description: 'Conexão com o banco foi removida com sucesso.',
+        description: 'Sua conexão com a Pluggy foi removida.',
       });
     } catch (error) {
       toast({
         title: 'Erro ao Desconectar',
-        description: 'Não foi possível remover a conexão com o banco.',
+        description: 'Não foi possível remover a sua conexão.',
         variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
-  }, [consentId, toast]);
+  }, [itemId, toast]);
 
   return {
     accounts,
     transactions,
     loading,
     connected,
-    consentId,
+    itemId,
+    connectToken,
     initiateConnection,
+    handleSuccess,
     loadAccounts,
     loadTransactions,
     disconnect,
+    setConnectToken,
   };
 };
