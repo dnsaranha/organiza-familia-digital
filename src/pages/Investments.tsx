@@ -286,7 +286,7 @@ const InvestmentsPage = () => {
                         <TableCell>{acc.number}</TableCell>
                         <TableCell>{acc.subtype}</TableCell>
                         <TableCell className="text-right font-medium">
-                          {acc.balance.toLocaleString('pt-BR', { style: 'currency', currency: acc.currency })}
+                          {typeof acc.balance === 'number' ? acc.balance.toLocaleString('pt-BR', { style: 'currency', currency: acc.currency }) : 'N/A'}
                         </TableCell>
                       </TableRow>
                     ))
@@ -330,8 +330,8 @@ const InvestmentsPage = () => {
                         <TableRow key={tx.id}>
                           <TableCell>{tx.description}</TableCell>
                           <TableCell>{new Date(tx.date).toLocaleDateString('pt-BR')}</TableCell>
-                          <TableCell className={`text-right font-medium ${tx.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                            {tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          <TableCell className={`text-right font-medium ${typeof tx.amount === 'number' && tx.amount < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                            {typeof tx.amount === 'number' ? tx.amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : 'N/A'}
                           </TableCell>
                         </TableRow>
                       ))
@@ -374,7 +374,7 @@ const InvestmentsPage = () => {
                           <TableCell className="font-medium">{inv.name}</TableCell>
                           <TableCell>{inv.subtype}</TableCell>
                           <TableCell className="text-right font-medium">
-                            {inv.balance.toLocaleString('pt-BR', { style: 'currency', currency: inv.currency })}
+                            {typeof inv.balance === 'number' ? inv.balance.toLocaleString('pt-BR', { style: 'currency', currency: inv.currency }) : 'N/A'}
                           </TableCell>
                         </TableRow>
                       ))
