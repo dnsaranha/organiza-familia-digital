@@ -11,6 +11,9 @@ import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 import GroupsPage from "./pages/Groups";
 import ReportsPage from "./pages/Reports";
+import InvestmentsPage from "./pages/Investments";
+import NotificationSettingsPage from "./pages/NotificationSettings";
+import OpenFinanceConnectPage from "./pages/OpenFinanceConnect";
 import AppShell from "./components/AppShell";
 import { BudgetScopeProvider } from "./contexts/BudgetScopeContext";
 
@@ -57,6 +60,30 @@ const App = () => (
               element={
                 <AppShell>
                   <ReportsPage />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/investments"
+              element={
+                <AppShell>
+                  <InvestmentsPage />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/settings/notifications"
+              element={
+                <AppShell>
+                  <NotificationSettingsPage />
+                </AppShell>
+              }
+            />
+            <Route
+              path="/connect"
+              element={
+                <AppShell>
+                  <OpenFinanceConnectPage />
                 </AppShell>
               }
             />
