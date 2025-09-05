@@ -8,3 +8,19 @@ verify_jwt = true
 
 [functions.stripe-webhook]
 verify_jwt = false
+
+# Pluggy Edge Functions - tornar públicas para evitar 401 quando usuário não estiver autenticado
+[functions.pluggy-connect-token]
+verify_jwt = false
+
+[functions.pluggy-accounts]
+verify_jwt = false
+
+[functions.pluggy-transactions]
+verify_jwt = false
+
+[functions.pluggy-investments]
+verify_jwt = false
+
+[functions.pluggy-delete-item]
+verify_jwt = false

@@ -21,7 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { addDays, format } from "date-fns";
-import { Tables, Json } from "@/integrations/supabase/types";
+import { Tables, Json, TablesInsert } from "@/integrations/supabase/types";
 import { TransactionForm } from "./TransactionForm";
 
 type Transaction = Tables<'transactions'>;
@@ -179,7 +179,7 @@ export const TransactionList = ({ onDataChange }: TransactionListProps) => {
           existingTransactions.map(t => `${new Date(t.date).toISOString()}|${t.amount}|${t.category}`)
         );
 
-        const newTransactions: Omit<Transaction, 'created_at' | 'user_id' | 'group_id'>[] = [];
+        const newTransactions: TablesInsert<'transactions'>[] = [];
 
         for (const row of importedData) {
           if (!row['ID'] || !row['Data/Hora'] || !row['Valor'] || !row['Categoria']) {
