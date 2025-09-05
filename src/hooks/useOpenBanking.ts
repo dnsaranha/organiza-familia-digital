@@ -96,12 +96,12 @@ export const useOpenBanking = () => {
         setLoading(true);
         try {
           const { data, error } = await supabase
-            .from('stripe_customers')
+            .from('profiles')
             .select('pluggy_item_id')
-            .eq('user_id', user.id)
+            .eq('id', user.id)
             .single();
 
-          if (error && error.code !== 'PGRST116') { // PGRST116: 'exact one row not found'
+          if (error) {
             throw error;
           }
 
@@ -161,9 +161,9 @@ export const useOpenBanking = () => {
       const newItemId = data.item.id;
 
       const { error } = await supabase
-        .from('stripe_customers')
+        .from('profiles')
         .update({ pluggy_item_id: newItemId })
-        .eq('user_id', user.id);
+        .eq('id', user.id);
 
       if (error) throw error;
 
@@ -222,9 +222,9 @@ export const useOpenBanking = () => {
 
       // Remover o ID do banco de dados
       await supabase
-        .from('stripe_customers')
+        .from('profiles')
         .update({ pluggy_item_id: null })
-        .eq('user_id', user.id);
+        .eq('id', user.id);
 
       // Limpar o estado local
       setItemId(null);
