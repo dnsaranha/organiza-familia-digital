@@ -73,23 +73,50 @@ export type Database = {
           },
         ]
       }
+      pluggy_items: {
+        Row: {
+          created_at: string
+          id: string
+          institution_name: string | null
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          institution_name?: string | null
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          institution_name?: string | null
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           full_name: string | null
           id: string
+          pluggy_item_id: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           full_name?: string | null
           id: string
+          pluggy_item_id?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           full_name?: string | null
           id?: string
+          pluggy_item_id?: string | null
           updated_at?: string | null
         }
         Relationships: []
