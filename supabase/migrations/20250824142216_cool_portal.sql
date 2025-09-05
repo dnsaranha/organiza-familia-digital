@@ -44,6 +44,7 @@ CREATE TABLE IF NOT EXISTS stripe_customers (
 
 ALTER TABLE stripe_customers ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own customer data" ON stripe_customers;
 CREATE POLICY "Users can view their own customer data"
     ON stripe_customers
     FOR SELECT
@@ -80,6 +81,7 @@ CREATE TABLE IF NOT EXISTS stripe_subscriptions (
 
 ALTER TABLE stripe_subscriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own subscription data" ON stripe_subscriptions;
 CREATE POLICY "Users can view their own subscription data"
     ON stripe_subscriptions
     FOR SELECT
@@ -116,6 +118,7 @@ CREATE TABLE IF NOT EXISTS stripe_orders (
 
 ALTER TABLE stripe_orders ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own order data" ON stripe_orders;
 CREATE POLICY "Users can view their own order data"
     ON stripe_orders
     FOR SELECT
