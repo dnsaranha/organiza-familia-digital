@@ -1,6 +1,6 @@
 import * as React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Users, PanelLeft, Menu, PiggyBank, Settings, LogOut, AreaChart } from "lucide-react";
+import { Home, Users, PanelLeft, Menu, PiggyBank, Settings, LogOut, AreaChart, TrendingUp, Link } from "lucide-react";
 
 import {
   Sidebar,
@@ -126,6 +126,16 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </NavLink>
               </SidebarMenuItem>
               <SidebarMenuItem>
+                <NavLink to="/connect" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <Link className="size-4" />
+                      <span>Conectar</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <NavLink to="/groups" className="w-full">
                   {({ isActive }) => (
                     <SidebarMenuButton isActive={isActive}>
@@ -141,6 +151,26 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     <SidebarMenuButton isActive={isActive}>
                       <AreaChart className="size-4" />
                       <span>Relatórios</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/investments" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <TrendingUp className="size-4" />
+                      <span>Investimentos</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/settings/notifications" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <Settings className="size-4" />
+                      <span>Notificações</span>
                     </SidebarMenuButton>
                   )}
                 </NavLink>
