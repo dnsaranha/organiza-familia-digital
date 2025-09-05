@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from './useAuth';
 
 // Tipos simplificados para a resposta da Pluggy, ajuste conforme necessário
 export interface PluggyAccount {
@@ -44,6 +45,7 @@ export const useOpenBanking = () => {
   const [itemId, setItemId] = useState<string | null>(null);
   const [connectToken, setConnectToken] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const loadAccounts = useCallback(async (currentItemId: string) => {
     if (!currentItemId) return;
@@ -87,16 +89,45 @@ export const useOpenBanking = () => {
     }
   }, [toast]);
 
-  // Verificar se já existe um item ativo
+  // Carregar itemId do banco de dados quando o usuário for autenticado
   useEffect(() => {
-    const savedItemId = localStorage.getItem('pluggyItemId');
-    if (savedItemId) {
-      setItemId(savedItemId);
-      setConnected(true);
-      loadAccounts(savedItemId);
-      loadInvestments(savedItemId);
-    }
-  }, [loadAccounts, loadInvestments]);
+    const fetchItemId = async () => {
+      if (user) {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from('stripe_customers')
+            .select('pluggy_item_id')
+            .eq('user_id', user.id)
+            .single();
+
+          if (error && error.code !== 'PGRST116') { // PGRST116: 'exact one row not found'
+            throw error;
+          }
+
+          if (data && data.pluggy_item_id) {
+            const currentItemId = data.pluggy_item_id;
+            setItemId(currentItemId);
+            setConnected(true);
+            await Promise.all([
+              loadAccounts(currentItemId),
+              loadInvestments(currentItemId)
+            ]);
+          }
+        } catch (error) {
+          toast({
+            title: 'Erro ao buscar conexão',
+            description: 'Não foi possível verificar sua conexão com o Open Banking.',
+            variant: 'destructive',
+          });
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchItemId();
+  }, [user, loadAccounts, loadInvestments, toast]);
 
   const initiateConnection = useCallback(async () => {
     setLoading(true);
@@ -116,11 +147,27 @@ export const useOpenBanking = () => {
   }, [toast]);
 
   const handleSuccess = useCallback(async (data: { item: { id: string } }) => {
+    if (!user) {
+      toast({
+        title: 'Usuário não autenticado',
+        description: 'Você precisa estar logado para conectar uma conta.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const newItemId = data.item.id;
+
+      const { error } = await supabase
+        .from('stripe_customers')
+        .update({ pluggy_item_id: newItemId })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
       setItemId(newItemId);
-      localStorage.setItem('pluggyItemId', newItemId);
       setConnected(true);
 
       await Promise.all([
@@ -165,13 +212,21 @@ export const useOpenBanking = () => {
   }, [itemId, toast]);
 
   const disconnect = useCallback(async () => {
-    if (!itemId) return;
+    if (!itemId || !user) return;
     setLoading(true);
     try {
+      // Deletar o item na Pluggy
       await supabase.functions.invoke('pluggy-delete-item', {
         body: { itemId },
       });
-      localStorage.removeItem('pluggyItemId');
+
+      // Remover o ID do banco de dados
+      await supabase
+        .from('stripe_customers')
+        .update({ pluggy_item_id: null })
+        .eq('user_id', user.id);
+
+      // Limpar o estado local
       setItemId(null);
       setConnected(false);
       setAccounts([]);
