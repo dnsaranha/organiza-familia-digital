@@ -67,9 +67,15 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <>
                     <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild>
+                      <NavLink to="/connect">Conectar</NavLink>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <NavLink to="/settings/notifications">Notificações</NavLink>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <NavLink to="/pricing">Planos</NavLink>
-                  </DropdownMenuItem>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <NavLink to="/profile">Perfil</NavLink>
                     </DropdownMenuItem>
