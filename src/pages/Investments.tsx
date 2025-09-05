@@ -286,7 +286,7 @@ const InvestmentsPage = () => {
                         <TableCell>{acc.number}</TableCell>
                         <TableCell>{acc.subtype}</TableCell>
                         <TableCell className="text-right font-medium">
-                          {typeof acc.balance === 'number' ? acc.balance.toLocaleString('pt-BR', { style: 'currency', currency: acc.currency }) : 'N/A'}
+                          {typeof acc.balance === 'number' ? acc.balance.toLocaleString('pt-BR', { style: 'currency', currency: acc.currency || 'BRL' }) : 'N/A'}
                         </TableCell>
                       </TableRow>
                     ))
@@ -374,7 +374,7 @@ const InvestmentsPage = () => {
                           <TableCell className="font-medium">{inv.name}</TableCell>
                           <TableCell>{inv.subtype}</TableCell>
                           <TableCell className="text-right font-medium">
-                            {typeof inv.balance === 'number' ? inv.balance.toLocaleString('pt-BR', { style: 'currency', currency: inv.currency }) : 'N/A'}
+                            {typeof inv.balance === 'number' ? inv.balance.toLocaleString('pt-BR', { style: 'currency', currency: inv.currency || 'BRL' }) : 'N/A'}
                           </TableCell>
                         </TableRow>
                       ))
