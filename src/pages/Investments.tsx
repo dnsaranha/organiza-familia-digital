@@ -81,23 +81,6 @@ const InvestmentsPage = () => {
       setRefreshing(false);
     }
   };
-
-  const handleConnectBroker = () => {
-    // Simular conexão com corretora
-    const mockBrokerId = 'clear-corretora';
-    const mockAccessToken = 'mock-access-token-' + Date.now();
-    
-    localStorage.setItem('connectedBrokerId', mockBrokerId);
-    localStorage.setItem('brokerAccessToken', mockAccessToken);
-    
-    getPortfolio(mockBrokerId, mockAccessToken);
-    getDividends(mockBrokerId, mockAccessToken);
-    
-    toast({
-      title: 'Corretora Conectada',
-      description: 'Conexão com a corretora estabelecida com sucesso.',
-    });
-  };
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   const allocationData = useMemo(() => {
@@ -165,12 +148,6 @@ const InvestmentsPage = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          {!b3Connected && (
-            <Button onClick={handleConnectBroker} variant="outline">
-              <LinkIcon className="h-4 w-4 mr-2" />
-              Conectar Corretora
-            </Button>
-          )}
           <Button onClick={handleRefresh} disabled={isLoading} variant="outline">
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             Atualizar
