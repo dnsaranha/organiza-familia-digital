@@ -67,9 +67,15 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <>
                     <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
+                    <DropdownMenuItem asChild>
+                      <NavLink to="/connect">Conectar</NavLink>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <NavLink to="/settings/notifications">Notificações</NavLink>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
                       <NavLink to="/pricing">Planos</NavLink>
-                  </DropdownMenuItem>
+                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <NavLink to="/profile">Perfil</NavLink>
                     </DropdownMenuItem>
@@ -126,16 +132,6 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </NavLink>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <NavLink to="/connect" className="w-full">
-                  {({ isActive }) => (
-                    <SidebarMenuButton isActive={isActive}>
-                      <Link className="size-4" />
-                      <span>Conectar</span>
-                    </SidebarMenuButton>
-                  )}
-                </NavLink>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
                 <NavLink to="/groups" className="w-full">
                   {({ isActive }) => (
                     <SidebarMenuButton isActive={isActive}>
@@ -161,16 +157,6 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     <SidebarMenuButton isActive={isActive}>
                       <TrendingUp className="size-4" />
                       <span>Investimentos</span>
-                    </SidebarMenuButton>
-                  )}
-                </NavLink>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <NavLink to="/settings/notifications" className="w-full">
-                  {({ isActive }) => (
-                    <SidebarMenuButton isActive={isActive}>
-                      <Settings className="size-4" />
-                      <span>Notificações</span>
                     </SidebarMenuButton>
                   )}
                 </NavLink>
@@ -202,9 +188,15 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <NavLink to="/pricing">Planos</NavLink>
-                    </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <NavLink to="/connect">Conectar</NavLink>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <NavLink to="/settings/notifications">Notificações</NavLink>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <NavLink to="/pricing">Planos</NavLink>
+                  </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <NavLink to="/profile">Perfil</NavLink>
                   </DropdownMenuItem>
