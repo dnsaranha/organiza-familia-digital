@@ -19,6 +19,24 @@ export const mockPortfolio: Asset[] = [
     averagePrice: 160.00,
   },
   {
+    ticker: 'VALE3',
+    assetClass: 'Ação',
+    quantity: 75,
+    averagePrice: 65.20,
+  },
+  {
+    ticker: 'BOVA11',
+    assetClass: 'ETF',
+    quantity: 25,
+    averagePrice: 120.50,
+  },
+  {
+    ticker: 'AAPL',
+    assetClass: 'Stock',
+    quantity: 10,
+    averagePrice: 150.00,
+  },
+  {
     ticker: 'Tesouro Selic 2029',
     assetClass: 'Renda Fixa',
     quantity: 2,
