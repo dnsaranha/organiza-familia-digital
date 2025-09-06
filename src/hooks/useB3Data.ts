@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { b3Client } from "@/lib/b3/client";
 import { B3Asset, B3Portfolio, B3Dividend } from "@/lib/open-banking/types";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useB3Data = () => {
   const [assets, setAssets] = useState<B3Asset[]>([]);
@@ -17,6 +19,7 @@ export const useB3Data = () => {
   const [loading, setLoading] = useState(false);
   const [connected, setConnected] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Cache para cotações (5 minutos)
   const [quotesCache, setQuotesCache] = useState<

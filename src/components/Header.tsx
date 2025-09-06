@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { BudgetScopeSwitcher } from "./BudgetScopeSwitcher";
 import { useNavigate } from "react-router-dom";
+import React from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export const Header = () => {
@@ -37,16 +38,17 @@ export const Header = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-primary">Organiza</h1>
-              <p className="text-sm text-muted-foreground">Gestão Financeira Familiar</p>
+              <p className="text-sm text-muted-foreground">
+                Gestão Financeira Familiar
+              </p>
             </div>
           </div>
-          
           <div className="flex items-center gap-4">
             {user ? (
               <>
                 <BudgetScopeSwitcher />
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   size="sm"
                   onClick={() => navigate("/pricing")}
                   className="text-muted-foreground hover:text-primary"
@@ -71,9 +73,9 @@ export const Header = () => {
                 </Button>
               </>
             ) : (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => navigate("/auth")}
                 className="text-muted-foreground hover:text-primary"
               >

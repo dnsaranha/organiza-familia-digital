@@ -56,7 +56,7 @@ const EnhancedAssetTable = ({
     let filtered = assets.filter((asset) => {
       const matchesFilter =
         assetFilter === "all" ||
-        asset.type.toLowerCase() === assetFilter.toLowerCase();
+        (asset.type && asset.type.toLowerCase() === assetFilter.toLowerCase());
       const matchesSearch =
         asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
         asset.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -101,6 +101,9 @@ const EnhancedAssetTable = ({
   const formatPercent = (value: number) => `${value.toFixed(2)}%`;
 
   const getAssetTypeColor = (type: string) => {
+    if (!type) {
+      return "bg-gray-100 text-gray-800";
+    }
     switch (type.toLowerCase()) {
       case "ação":
         return "bg-blue-100 text-blue-800";
@@ -278,7 +281,7 @@ const EnhancedAssetTable = ({
                     </TableCell>
                     <TableCell>
                       <Badge className={getAssetTypeColor(asset.type)}>
-                        {asset.type}
+                        {asset.type || "N/A"}
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">

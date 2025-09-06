@@ -19,10 +19,18 @@ import {
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Loader2, Building2, CreditCard } from "lucide-react";
+import {
+  Download,
+  Loader2,
+  Building2,
+  CreditCard,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useOpenBanking } from "@/hooks/useOpenBanking";
 import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -72,6 +80,7 @@ const ReportsPage = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { scope } = useBudgetScope();
+  const navigate = useNavigate();
   const {
     connected: bankConnected,
     accounts,

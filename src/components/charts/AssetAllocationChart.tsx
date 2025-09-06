@@ -68,7 +68,7 @@ const AssetAllocationChart = ({
 
   const filteredAssets = assets.filter((asset) => {
     if (assetFilter === "all") return true;
-    return asset.type.toLowerCase() === assetFilter.toLowerCase();
+    return asset.type?.toLowerCase() === assetFilter.toLowerCase();
   });
 
   const allocationData: AllocationData[] =
@@ -76,7 +76,7 @@ const AssetAllocationChart = ({
       ? Object.entries(
           filteredAssets.reduce(
             (acc, asset) => {
-              const type = asset.type;
+              const type = asset.type || "Outros";
               acc[type] = (acc[type] || 0) + asset.marketValue;
               return acc;
             },
