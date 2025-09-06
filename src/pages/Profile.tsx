@@ -287,7 +287,6 @@ export default function Profile() {
             </form>
           </CardContent>
         </Card>
-        <div className="w-[80px] h-[80px] bg-white"></div>
       </div>
     </div>
   );

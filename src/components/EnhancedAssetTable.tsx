@@ -98,7 +98,12 @@ const EnhancedAssetTable = ({
     }).format(value);
   };
 
-  const formatPercent = (value: number) => `${value.toFixed(2)}%`;
+  const formatPercent = (value: number) => {
+    if (value === null || value === undefined || isNaN(value)) {
+      return "0.00%";
+    }
+    return `${value.toFixed(2)}%`;
+  };
 
   const getAssetTypeColor = (type: string) => {
     if (!type) {
