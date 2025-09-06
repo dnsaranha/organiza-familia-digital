@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useB3Data } from '@/hooks/useB3Data';
 import { useOpenBanking } from '@/hooks/useOpenBanking';
+import PortfolioPieChart from '@/components/charts/PortfolioPieChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -390,29 +391,25 @@ const InvestmentsPage = () => {
 
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
         <Card className="lg:col-span-1">
-          <CardHeader><CardTitle>Alocação por Classe</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>Distribuição da Carteira</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Participação por tipo de ativo
+            </p>
+          </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="flex items-center justify-center h-64"><Skeleton className="h-48 w-48 rounded-full" /></div>
-            ) : allocationData.length === 0 ? (
-              <div className="flex items-center justify-center h-64 text-muted-foreground">
-                <div className="text-center">
-                  <AlertTriangle className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p>Nenhum dado de alocação disponível</p>
-                  <p className="text-xs">Conecte sua corretora para ver a distribuição</p>
+            <div className="h-80">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Skeleton className="h-48 w-48 rounded-full" />
                 </div>
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height={256}>
-                <PieChart>
-                  <Pie data={allocationData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} fill="#8884d8" paddingAngle={5} dataKey="value" nameKey="name">
-                    {allocationData.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
-                  </Pie>
-                  <Tooltip formatter={(value: number) => value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            )}
+              ) : (
+                <PortfolioPieChart 
+                  portfolio={portfolio} 
+                  showMockData={!portfolio && !b3Connected} 
+                />
+              )}
+            </div>
           </CardContent>
         </Card>
         <Card className="lg:col-span-2">
