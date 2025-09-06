@@ -3,12 +3,51 @@ import { supabase } from '@/integrations/supabase/client';
 // Utilitários de segurança para integrações financeiras
 export class FinancialSecurity {
   
-  // Criptografar dados sensíveis antes de armazenar
-  static async encryptSensitiveData(data: string): Promise<string> {
+  // Gerar chave de criptografia a partir de senha
+  private static async generateKey(password: string): Promise<CryptoKey> {
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(password),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits', 'deriveKey']
+    );
+    
+    return crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt: encoder.encode('financial-app-salt'),
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  // Criptografar dados sensíveis com AES-GCM
+  static async encryptSensitiveData(data: string, userKey?: string): Promise<string> {
     try {
-      // Em produção, usar uma biblioteca de criptografia robusta
-      // Por enquanto, usar base64 como placeholder
-      return btoa(data);
+      const key = await this.generateKey(userKey || 'default-key');
+      const encoder = new TextEncoder();
+      const dataBuffer = encoder.encode(data);
+      
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        dataBuffer
+      );
+      
+      // Combinar IV + dados criptografados
+      const combined = new Uint8Array(iv.length + encrypted.byteLength);
+      combined.set(iv);
+      combined.set(new Uint8Array(encrypted), iv.length);
+      
+      return btoa(String.fromCharCode(...combined));
     } catch (error) {
       console.error('Erro ao criptografar dados:', error);
       throw new Error('Falha na criptografia');
@@ -16,9 +55,24 @@ export class FinancialSecurity {
   }
 
   // Descriptografar dados sensíveis
-  static async decryptSensitiveData(encryptedData: string): Promise<string> {
+  static async decryptSensitiveData(encryptedData: string, userKey?: string): Promise<string> {
     try {
-      return atob(encryptedData);
+      const key = await this.generateKey(userKey || 'default-key');
+      const combined = new Uint8Array(
+        atob(encryptedData).split('').map(char => char.charCodeAt(0))
+      );
+      
+      const iv = combined.slice(0, 12);
+      const encrypted = combined.slice(12);
+      
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        encrypted
+      );
+      
+      const decoder = new TextDecoder();
+      return decoder.decode(decrypted);
     } catch (error) {
       console.error('Erro ao descriptografar dados:', error);
       throw new Error('Falha na descriptografia');

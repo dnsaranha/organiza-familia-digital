@@ -37,6 +37,10 @@ const InvestmentsPage = () => {
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const bankTotalBalance = useMemo(() => {
+    return accounts.reduce((sum, acc) => sum + (typeof acc.balance === 'number' ? acc.balance : 0), 0);
+  }, [accounts]);
+
   // Símbolos padrão para demonstração
   const defaultSymbols = ['PETR4', 'VALE3', 'KNRI11', 'BOVA11', 'ITUB4', 'BBDC4'];
 
@@ -234,6 +238,18 @@ const InvestmentsPage = () => {
           <div>
             <h2 className="text-2xl font-semibold">Consolidado Open Banking</h2>
             <p className="text-muted-foreground">Saldos, transações e investimentos dos seus bancos conectados.</p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-sm font-medium">Saldo Consolidado (Bancos)</CardTitle></CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {bankTotalBalance.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                </div>
+                <p className="text-xs text-muted-foreground">Soma dos saldos das contas conectadas</p>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Contas Bancárias */}
