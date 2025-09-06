@@ -12,25 +12,21 @@ interface QuotesRequest {
 
 // Mapeamento de símbolos para Yahoo Finance
 const mapSymbolToYahoo = (symbol: string): string => {
-  // Ações brasileiras
+  // Criptomoedas (não precisam de sufixo)
+  if (['BTC', 'ETH'].includes(symbol)) {
+    return `${symbol}-USD`;
+  }
+
+  // Para a maioria dos ativos da B3 (ações, FIIs, BDRs, ETFs),
+  // o formato é 4 letras seguidas de 1 ou 2 números.
+  // Exemplos: PETR4, MGLU3, KNRI11, BOVA11, AAPL34.
+  // Todos eles usam o sufixo ".SA" no Yahoo Finance.
   if (symbol.match(/^[A-Z]{4}[0-9]{1,2}$/)) {
     return `${symbol}.SA`;
   }
-  
-  // FIIs brasileiros
-  if (symbol.match(/^[A-Z]{4}11$/)) {
-    return `${symbol}.SA`;
-  }
-  
-  // Criptomoedas
-  if (symbol === 'BTC') return 'BTC-USD';
-  if (symbol === 'ETH') return 'ETH-USD';
-  
-  // ETFs brasileiros
-  if (symbol.startsWith('BOVA') || symbol.startsWith('SMAL') || symbol.startsWith('IVVB')) {
-    return `${symbol}.SA`;
-  }
-  
+
+  // Se o símbolo não corresponder a nenhum padrão conhecido,
+  // retorna o símbolo como está (pode ser um ativo internacional).
   return symbol;
 };
 
@@ -50,63 +46,64 @@ Deno.serve(async (req) => {
       throw new Error('Símbolos inválidos ou não fornecidos');
     }
 
-    // Mapear símbolos para formato Yahoo Finance
     const yahooSymbols = symbols.map(mapSymbolToYahoo);
-    const symbolsParam = yahooSymbols.join(',');
 
-    // Buscar cotações via Yahoo Finance
-    const yahooResponse = await fetch(
-      `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolsParam}`,
-      {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        },
-      }
-    );
-
-    if (!yahooResponse.ok) {
-      throw new Error('Falha ao buscar cotações do Yahoo Finance');
+    const CHUNK_SIZE = 100;
+    const symbolChunks: string[][] = [];
+    for (let i = 0; i < yahooSymbols.length; i += CHUNK_SIZE) {
+      symbolChunks.push(yahooSymbols.slice(i, i + CHUNK_SIZE));
     }
 
-    const yahooData = await yahooResponse.json();
+    const allQuotes: any[] = [];
 
-    if (!yahooData.quoteResponse || !yahooData.quoteResponse.result) {
-      // Se a resposta principal falhar, ainda pode ser um erro de um símbolo específico
-      console.warn('Resposta do Yahoo Finance não contém quoteResponse.result. Verifique os símbolos:', symbols);
-      // Retorna uma lista vazia para não quebrar o front-end
-      return new Response(JSON.stringify({ quotes: [] }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    await Promise.all(
+      symbolChunks.map(async (chunk) => {
+        const symbolsParam = chunk.join(',');
+        const yahooResponse = await fetch(
+          `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbolsParam}`,
+          {
+            headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+          }
+        );
 
-    // Processar e formatar dados, filtrando resultados nulos ou sem preço
-    const quotes = yahooData.quoteResponse.result
-      .map((quote: any) => {
-        if (!quote || typeof quote.regularMarketPrice !== 'number') {
-          return null; // Ignorar resultados inválidos
+        if (!yahooResponse.ok) {
+          const errorBody = await yahooResponse.text();
+          console.error(
+            `Falha ao buscar cotações do Yahoo Finance. Status: ${yahooResponse.status}`,
+            { symbols: chunk, response: errorBody }
+          );
+          return;
         }
 
-        return {
-          symbol: quote.symbol.replace('.SA', ''), // Mapear de volta para o símbolo original
-          shortName: quote.shortName || quote.symbol.replace('.SA', ''),
-          longName: quote.longName || quote.shortName || quote.symbol.replace('.SA', ''),
-          currency: quote.currency || 'BRL',
-          regularMarketPrice: quote.regularMarketPrice,
-          regularMarketChange: quote.regularMarketChange || 0,
-          regularMarketChangePercent: quote.regularMarketChangePercent || 0,
-          regularMarketTime: quote.regularMarketTime ? new Date(quote.regularMarketTime * 1000).toISOString() : new Date().toISOString(),
-          marketCap: quote.marketCap || 0,
-          volume: quote.regularMarketVolume || 0,
-          averageDailyVolume3Month: quote.averageDailyVolume3Month || 0,
-          fiftyTwoWeekLow: quote.fiftyTwoWeekLow || 0,
-          fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || 0,
-          dividendYield: quote.dividendYield || null,
-          trailingPE: quote.trailingPE || null,
-          forwardPE: quote.forwardPE || null,
-        };
+        const yahooData = await yahooResponse.json();
+
+        if (yahooData.quoteResponse && yahooData.quoteResponse.result) {
+          const validQuotes = yahooData.quoteResponse.result.filter(
+            (quote: any) => quote && typeof quote.regularMarketPrice === 'number'
+          );
+          allQuotes.push(...validQuotes);
+        }
       })
-      .filter((quote: any): quote is any => quote !== null);
+    );
+
+    const quotes = allQuotes.map((quote: any) => ({
+      symbol: quote.symbol.replace('.SA', ''),
+      shortName: quote.shortName || quote.symbol.replace('.SA', ''),
+      longName: quote.longName || quote.shortName || quote.symbol.replace('.SA', ''),
+      currency: quote.currency || 'BRL',
+      regularMarketPrice: quote.regularMarketPrice,
+      regularMarketChange: quote.regularMarketChange || 0,
+      regularMarketChangePercent: quote.regularMarketChangePercent || 0,
+      regularMarketTime: quote.regularMarketTime ? new Date(quote.regularMarketTime * 1000).toISOString() : new Date().toISOString(),
+      marketCap: quote.marketCap || 0,
+      volume: quote.regularMarketVolume || 0,
+      averageDailyVolume3Month: quote.averageDailyVolume3Month || 0,
+      fiftyTwoWeekLow: quote.fiftyTwoWeekLow || 0,
+      fiftyTwoWeekHigh: quote.fiftyTwoWeekHigh || 0,
+      dividendYield: quote.dividendYield || null,
+      trailingPE: quote.trailingPE || null,
+      forwardPE: quote.forwardPE || null,
+    }));
 
     return new Response(
       JSON.stringify({ quotes }),
