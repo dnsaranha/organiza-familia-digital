@@ -26,30 +26,30 @@ export class B3Client {
   // Buscar cotações em tempo real via Yahoo Finance
   async getAssetQuotes(symbols: string[]): Promise<B3Asset[]> {
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "yahoo-finance-quotes",
-        {
-          body: { symbols },
-        },
-      );
+      const { data, error } = await supabase.functions.invoke("b3-quotes", {
+        body: { symbols },
+      });
 
       if (error) {
-        console.warn("Erro ao buscar cotações, usando dados mock:", error);
+        console.warn(
+          "Erro ao buscar cotações via Supabase, usando dados mock:",
+          error,
+        );
         // Return mock data with realistic prices
         return symbols.map((symbol) => ({
           symbol,
-          name: `${symbol} - Mock Data`,
+          name: `${symbol} - Dados Simulados`,
           regularMarketPrice: 30 + Math.random() * 100,
           regularMarketChangePercent: (Math.random() - 0.5) * 10,
         }));
       }
       return data.quotes || [];
     } catch (error) {
-      console.error("Erro ao buscar cotações Yahoo Finance:", error);
+      console.error("Erro ao buscar cotações B3:", error);
       // Return mock data as fallback
       return symbols.map((symbol) => ({
         symbol,
-        name: `${symbol} - Mock Data`,
+        name: `${symbol} - Dados Simulados`,
         regularMarketPrice: 30 + Math.random() * 100,
         regularMarketChangePercent: (Math.random() - 0.5) * 10,
       }));
