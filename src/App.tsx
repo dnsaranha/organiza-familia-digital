@@ -16,85 +16,107 @@ import NotificationSettingsPage from "./pages/NotificationSettings";
 import OpenFinanceConnectPage from "./pages/OpenFinanceConnect";
 import AppShell from "./components/AppShell";
 import { BudgetScopeProvider } from "./contexts/BudgetScopeContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BudgetScopeProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/success" element={<Success />} />
+  <ErrorBoundary
+    fallback={
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-destructive">
+            Algo deu errado
+          </h1>
+          <p className="text-muted-foreground">
+            Ocorreu um erro inesperado. Tente recarregar a página.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Recarregar Página
+          </button>
+        </div>
+      </div>
+    }
+  >
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <BudgetScopeProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/success" element={<Success />} />
 
-            <Route
-              path="/"
-              element={
-                <AppShell>
-                  <Index />
-                </AppShell>
-              }
-            />
-            <Route
-              path="/profile"
-              element={
-                <AppShell>
-                  <Profile />
-                </AppShell>
-              }
-            />
-            <Route
-              path="/groups"
-              element={
-                <AppShell>
-                  <GroupsPage />
-                </AppShell>
-              }
-            />
-            <Route
-              path="/reports"
-              element={
-                <AppShell>
-                  <ReportsPage />
-                </AppShell>
-              }
-            />
-            <Route
-              path="/investments"
-              element={
-                <AppShell>
-                  <InvestmentsPage />
-                </AppShell>
-              }
-            />
-            <Route
-              path="/settings/notifications"
-              element={
-                <AppShell>
-                  <NotificationSettingsPage />
-                </AppShell>
-              }
-            />
-            <Route
-              path="/connect"
-              element={
-                <AppShell>
-                  <OpenFinanceConnectPage />
-                </AppShell>
-              }
-            />
+              <Route
+                path="/"
+                element={
+                  <AppShell>
+                    <Index />
+                  </AppShell>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <AppShell>
+                    <Profile />
+                  </AppShell>
+                }
+              />
+              <Route
+                path="/groups"
+                element={
+                  <AppShell>
+                    <GroupsPage />
+                  </AppShell>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <AppShell>
+                    <ReportsPage />
+                  </AppShell>
+                }
+              />
+              <Route
+                path="/investments"
+                element={
+                  <AppShell>
+                    <InvestmentsPage />
+                  </AppShell>
+                }
+              />
+              <Route
+                path="/settings/notifications"
+                element={
+                  <AppShell>
+                    <NotificationSettingsPage />
+                  </AppShell>
+                }
+              />
+              <Route
+                path="/connect"
+                element={
+                  <AppShell>
+                    <OpenFinanceConnectPage />
+                  </AppShell>
+                }
+              />
 
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </BudgetScopeProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </BudgetScopeProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

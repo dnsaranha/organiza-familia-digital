@@ -23,3 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Tempo platform files
+**/tempobook/dynamic/
+**/tempobook/storyboards/
