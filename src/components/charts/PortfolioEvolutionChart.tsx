@@ -31,17 +31,17 @@ interface PortfolioEvolutionData {
 }
 
 interface PortfolioEvolutionChartProps {
-  data: PortfolioEvolutionData[];
+  data?: PortfolioEvolutionData[];
   loading?: boolean;
 }
 
 const PortfolioEvolutionChart = ({
-  data,
+  data = [],
   loading = false,
 }: PortfolioEvolutionChartProps) => {
   const [period, setPeriod] = useState("12m");
 
-  const filteredData = data.slice(-12); // Default to last 12 months
+  const filteredData = data && data.length > 0 ? data.slice(-12) : []; // Default to last 12 months
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -93,7 +93,7 @@ const PortfolioEvolutionChart = ({
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <ComposedChart data={filteredData}>
+            <ComposedChart data={filteredData.length > 0 ? filteredData : []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis yAxisId="left" tickFormatter={formatPercent} />
@@ -149,7 +149,7 @@ const PortfolioEvolutionChart = ({
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={250}>
-            <ComposedChart data={filteredData}>
+            <ComposedChart data={filteredData.length > 0 ? filteredData : []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis tickFormatter={formatCurrency} />

@@ -32,18 +32,18 @@ interface DividendData {
 }
 
 interface DividendHistoryChartProps {
-  data: DividendData[];
+  data?: DividendData[];
   loading?: boolean;
 }
 
 const DividendHistoryChart = ({
-  data,
+  data = [],
   loading = false,
 }: DividendHistoryChartProps) => {
   const [period, setPeriod] = useState("12m");
   const [groupBy, setGroupBy] = useState("monthly");
 
-  const filteredData = data.slice(-12); // Default to last 12 months
+  const filteredData = data && data.length > 0 ? data.slice(-12) : []; // Default to last 12 months
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -119,7 +119,7 @@ const DividendHistoryChart = ({
         </CardHeader>
         <CardContent>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={filteredData}>
+            <LineChart data={filteredData.length > 0 ? filteredData : []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" />
               <YAxis yAxisId="left" tickFormatter={formatPercent} />

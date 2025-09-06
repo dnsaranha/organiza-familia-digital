@@ -68,7 +68,33 @@ const AssetAllocationChart = ({
 
   const filteredAssets = assets.filter((asset) => {
     if (assetFilter === "all") return true;
-    return asset.type?.toLowerCase() === assetFilter.toLowerCase();
+    if (!asset.type) return false;
+
+    // Normalize asset type for comparison
+    const normalizedAssetType = asset.type.toLowerCase();
+    const normalizedFilter = assetFilter.toLowerCase();
+
+    // Handle different variations of asset types
+    if (normalizedFilter === "ação" || normalizedFilter === "acoes") {
+      return normalizedAssetType === "ação" || normalizedAssetType === "stock";
+    }
+    if (normalizedFilter === "fii" || normalizedFilter === "fiis") {
+      return (
+        normalizedAssetType === "fii" || normalizedAssetType.includes("fii")
+      );
+    }
+    if (normalizedFilter === "etf" || normalizedFilter === "etfs") {
+      return (
+        normalizedAssetType === "etf" || normalizedAssetType.includes("etf")
+      );
+    }
+    if (normalizedFilter === "renda fixa") {
+      return (
+        normalizedAssetType === "renda fixa" || normalizedAssetType === "bond"
+      );
+    }
+
+    return normalizedAssetType === normalizedFilter;
   });
 
   const allocationData: AllocationData[] =

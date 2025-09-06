@@ -54,12 +54,39 @@ const EnhancedAssetTable = ({
 
   const filteredAndSortedAssets = useMemo(() => {
     let filtered = assets.filter((asset) => {
-      const matchesFilter =
-        assetFilter === "all" ||
-        (asset.type && asset.type.toLowerCase() === assetFilter.toLowerCase());
+      let matchesFilter = false;
+
+      if (assetFilter === "all") {
+        matchesFilter = true;
+      } else if (asset.type) {
+        const normalizedAssetType = asset.type.toLowerCase();
+        const normalizedFilter = assetFilter.toLowerCase();
+
+        // Handle different variations of asset types
+        if (normalizedFilter === "ação" || normalizedFilter === "acoes") {
+          matchesFilter =
+            normalizedAssetType === "ação" || normalizedAssetType === "stock";
+        } else if (normalizedFilter === "fii" || normalizedFilter === "fiis") {
+          matchesFilter =
+            normalizedAssetType === "fii" ||
+            normalizedAssetType.includes("fii");
+        } else if (normalizedFilter === "etf" || normalizedFilter === "etfs") {
+          matchesFilter =
+            normalizedAssetType === "etf" ||
+            normalizedAssetType.includes("etf");
+        } else if (normalizedFilter === "renda fixa") {
+          matchesFilter =
+            normalizedAssetType === "renda fixa" ||
+            normalizedAssetType === "bond";
+        } else {
+          matchesFilter = normalizedAssetType === normalizedFilter;
+        }
+      }
+
       const matchesSearch =
         asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        asset.name.toLowerCase().includes(searchTerm.toLowerCase());
+        (asset.name &&
+          asset.name.toLowerCase().includes(searchTerm.toLowerCase()));
       return matchesFilter && matchesSearch;
     });
 
@@ -292,8 +319,18 @@ const EnhancedAssetTable = ({
                     <TableCell className="font-medium">
                       {formatCurrency(asset.currentPrice)}
                     </TableCell>
-                    <TableCell>
-                      {asset.quantity.toLocaleString("pt-BR")}
+                    <TableCell className="font-medium">
+                      {asset.quantity
+                        ? asset.quantity.toLocaleString("pt-BR", {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: asset.quantity < 1 ? 6 : 0,
+                          })
+                        : "0"}
+                      <div className="text-xs text-muted-foreground">
+                        {asset.quantity && asset.quantity > 1
+                          ? "ações"
+                          : "ação"}
+                      </div>
                     </TableCell>
                     <TableCell className="font-medium">
                       {formatCurrency(asset.marketValue)}

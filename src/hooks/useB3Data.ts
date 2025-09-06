@@ -194,29 +194,35 @@ export const useB3Data = () => {
     async (period: string = "12m") => {
       setLoading(true);
       try {
-        // Try to get real data from connected brokers first
-        const { data: pluggyItems } = await supabase
-          .from("pluggy_items")
-          .select("item_id")
-          .eq("user_id", user?.id);
+        // First try to get real investment data from Pluggy
+        if (user) {
+          const { data: pluggyItems } = await supabase
+            .from("pluggy_items")
+            .select("item_id")
+            .eq("user_id", user.id);
 
-        if (pluggyItems && pluggyItems.length > 0) {
-          // If we have connected accounts, try to get real evolution data
-          const { data, error } = await supabase.functions.invoke(
-            "pluggy-investments",
-            {
-              body: { itemId: pluggyItems[0].item_id },
-            },
-          );
-
-          if (!error && data?.investments) {
-            // Process real investment data into evolution format
-            const evolutionData = processInvestmentEvolution(
-              data.investments,
-              period,
+          if (pluggyItems && pluggyItems.length > 0) {
+            // Get investment data from Pluggy for each connected item
+            const investmentPromises = pluggyItems.map((item) =>
+              supabase.functions.invoke("pluggy-investments", {
+                body: { itemId: item.item_id },
+              }),
             );
-            setPortfolioEvolution(evolutionData);
-            return evolutionData;
+
+            const investmentResults = await Promise.all(investmentPromises);
+            const allInvestments = investmentResults.flatMap(
+              (result) => result.data?.investments || [],
+            );
+
+            if (allInvestments.length > 0) {
+              // Process real investment data into evolution format
+              const evolutionData = processInvestmentEvolution(
+                allInvestments,
+                period,
+              );
+              setPortfolioEvolution(evolutionData);
+              return evolutionData;
+            }
           }
         }
 
@@ -232,7 +238,10 @@ export const useB3Data = () => {
             "Não foi possível carregar dados de evolução patrimonial.",
           variant: "destructive",
         });
-        return [];
+        // Return mock data as fallback
+        const fallbackData = await b3Client.getPortfolioEvolution(period);
+        setPortfolioEvolution(fallbackData);
+        return fallbackData;
       } finally {
         setLoading(false);
       }
@@ -275,47 +284,46 @@ export const useB3Data = () => {
   const getEnhancedAssetsData = useCallback(async () => {
     setLoading(true);
     try {
-      // Try to get real data from connected brokers first
-      const { data: pluggyItems } = await supabase
-        .from("pluggy_items")
-        .select("item_id")
-        .eq("user_id", user?.id);
+      // First try to get real investment data from Pluggy
+      if (user) {
+        const { data: pluggyItems } = await supabase
+          .from("pluggy_items")
+          .select("item_id")
+          .eq("user_id", user.id);
 
-      if (pluggyItems && pluggyItems.length > 0) {
-        // Get real investment data from all connected accounts
-        const allInvestments = [];
-        for (const item of pluggyItems) {
-          const { data, error } = await supabase.functions.invoke(
-            "pluggy-investments",
-            {
+        if (pluggyItems && pluggyItems.length > 0) {
+          // Get investment data from Pluggy for each connected item
+          const investmentPromises = pluggyItems.map((item) =>
+            supabase.functions.invoke("pluggy-investments", {
               body: { itemId: item.item_id },
-            },
+            }),
           );
 
-          if (!error && data?.investments) {
-            allInvestments.push(...data.investments);
+          const investmentResults = await Promise.all(investmentPromises);
+          const allInvestments = investmentResults.flatMap(
+            (result) => result.data?.investments || [],
+          );
+
+          if (allInvestments.length > 0) {
+            // Transform Pluggy investment data to enhanced assets format
+            const enhancedData = allInvestments.map((inv) => ({
+              symbol: inv.name || inv.code || "N/A",
+              name: inv.name || "Investimento",
+              type: inv.type || inv.subtype || "Investimento",
+              currentPrice: inv.balance / (inv.quantity || 1),
+              quantity: inv.quantity || 1,
+              marketValue: inv.balance || 0,
+              cost: inv.balance || 0, // Pluggy doesn't provide cost basis
+              averagePrice: inv.balance / (inv.quantity || 1),
+              yieldOnCost: 0, // Would need historical data
+              accumulatedDividends: 0, // Would need dividend history
+              profitLoss: 0, // Would need cost basis
+              profitability: 0, // Would need cost basis
+            }));
+
+            setEnhancedAssets(enhancedData);
+            return enhancedData;
           }
-        }
-
-        if (allInvestments.length > 0) {
-          // Process real investment data into enhanced assets format
-          const enhancedData = allInvestments.map((inv, index) => ({
-            symbol: inv.name?.substring(0, 6) || `ASSET${index + 1}`,
-            name: inv.name || "Investimento",
-            quantity: 1,
-            averagePrice: inv.balance || 0,
-            currentPrice: inv.balance || 0,
-            marketValue: inv.balance || 0,
-            cost: inv.balance * 0.95 || 0, // Assume 5% gain for demo
-            gainLoss: (inv.balance || 0) * 0.05,
-            gainLossPercent: 5.0,
-            sector: inv.type || "Investimentos",
-            assetType: inv.subtype || "INVESTMENT",
-            accumulatedDividends: (inv.balance || 0) * 0.02, // Assume 2% dividend yield
-          }));
-
-          setEnhancedAssets(enhancedData);
-          return enhancedData;
         }
       }
 
@@ -330,7 +338,10 @@ export const useB3Data = () => {
         description: "Não foi possível carregar dados detalhados dos ativos.",
         variant: "destructive",
       });
-      return [];
+      // Return mock data as fallback
+      const fallbackData = await b3Client.getEnhancedAssets();
+      setEnhancedAssets(fallbackData);
+      return fallbackData;
     } finally {
       setLoading(false);
     }
@@ -340,16 +351,23 @@ export const useB3Data = () => {
   const getDividendHistoryData = useCallback(async () => {
     setLoading(true);
     try {
+      // For now, use mock data as Pluggy doesn't provide dividend history directly
+      // In a real implementation, you would need to track dividends separately
+      // or use a different data provider that includes dividend information
       const historyData = await b3Client.getDividendHistoryData();
       setDividendHistory(historyData);
       return historyData;
     } catch (error) {
+      console.error("Erro ao carregar histórico de dividendos:", error);
       toast({
         title: "Erro ao Carregar Histórico",
         description: "Não foi possível carregar histórico de dividendos.",
         variant: "destructive",
       });
-      return [];
+      // Return mock data as fallback
+      const fallbackData = await b3Client.getDividendHistoryData();
+      setDividendHistory(fallbackData);
+      return fallbackData;
     } finally {
       setLoading(false);
     }

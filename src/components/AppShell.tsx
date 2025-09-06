@@ -1,6 +1,17 @@
 import * as React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Home, Users, PanelLeft, Menu, PiggyBank, Settings, LogOut, AreaChart, TrendingUp, Link } from "lucide-react";
+import {
+  Home,
+  Users,
+  PanelLeft,
+  Menu,
+  PiggyBank,
+  Settings,
+  LogOut,
+  AreaChart,
+  TrendingUp,
+  Link,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -71,7 +82,9 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                       <NavLink to="/connect">Conectar</NavLink>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
-                      <NavLink to="/settings/notifications">Notificações</NavLink>
+                      <NavLink to="/settings/notifications">
+                        Notificações
+                      </NavLink>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <NavLink to="/pricing">Planos</NavLink>
@@ -79,7 +92,9 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     <DropdownMenuItem asChild>
                       <NavLink to="/profile">Perfil</NavLink>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout}>
+                      Sair
+                    </DropdownMenuItem>
                   </>
                 ) : (
                   <DropdownMenuItem asChild>
@@ -100,9 +115,9 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
     <>
       <Sidebar collapsible="icon">
         <div className="flex h-full flex-col">
-          <SidebarHeader className="flex items-center justify-between p-4">
-            <NavLink to="/" className="flex items-center gap-3">
-              <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
+          <SidebarHeader className="flex p-4">
+            <NavLink to="/" className="flex items-center gap-3 justify-center">
+              <div className="rounded-full p-2 bg-gradient-primary shadow-glow flex items-center gap-3 justify-center">
                 <PiggyBank className="h-6 w-6 text-primary-foreground" />
               </div>
               <div className="overflow-hidden transition-all duration-300 group-data-[collapsible=icon]:w-0">
@@ -112,15 +127,16 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </p>
               </div>
             </NavLink>
-            <SidebarTrigger>
+            <SidebarTrigger className="items-center content-center justify-center">
               <PanelLeft className="size-5" />
+              <div className="w-[80px] h-[80px] bg-white"></div>
             </SidebarTrigger>
           </SidebarHeader>
-          <SidebarContent className="flex-1">
-            <div className="p-2 flex justify-center">
+          <SidebarContent className="flex-1 items-start">
+            <div className="p-2 flex items-center justify-start">
               <BudgetScopeSwitcher />
             </div>
-            <SidebarMenu>
+            <SidebarMenu className="justify-center items-start">
               <SidebarMenuItem>
                 <NavLink to="/" className="w-full">
                   {({ isActive }) => (
@@ -167,7 +183,10 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-start group-data-[collapsible=icon]:justify-center gap-2">
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start group-data-[collapsible=icon]:justify-center gap-2"
+                  >
                     <div className="flex size-8 items-center justify-center rounded-full bg-muted">
                       <span>{user.email?.[0].toUpperCase()}</span>
                     </div>
@@ -200,7 +219,9 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                   <DropdownMenuItem asChild>
                     <NavLink to="/profile">Perfil</NavLink>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>Sair</DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleLogout}>
+                    Sair
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (

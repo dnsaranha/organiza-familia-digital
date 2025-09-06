@@ -86,6 +86,7 @@ const ReportsPage = () => {
     accounts,
     transactions: bankTransactions,
     loading: bankLoading,
+    loadTransactions,
   } = useOpenBanking();
 
   const pieChartRef = useRef<HTMLDivElement>(null);
@@ -98,6 +99,9 @@ const ReportsPage = () => {
   const [category, setCategory] = useState<string>("all");
   const [member, setMember] = useState<string>("all");
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [filteredBankTransactions, setFilteredBankTransactions] = useState<
+    any[]
+  >([]);
 
   const handlePdfExport = async () => {
     const pieChartElement = pieChartRef.current;
@@ -230,6 +234,43 @@ const ReportsPage = () => {
     fetchGroupMembers();
   }, [scope]);
 
+  // Load bank transactions when accounts are available
+  useEffect(() => {
+    const loadBankTransactions = async () => {
+      if (bankConnected && accounts.length > 0) {
+        // Load transactions for all accounts
+        try {
+          for (const account of accounts) {
+            await loadTransactions(account.id);
+          }
+        } catch (error) {
+          console.error("Error loading bank transactions:", error);
+        }
+      }
+    };
+    loadBankTransactions();
+  }, [bankConnected, accounts, loadTransactions]);
+
+  // Filter bank transactions based on date range and category
+  useEffect(() => {
+    let filtered = bankTransactions;
+
+    if (dateRange?.from && dateRange?.to) {
+      filtered = filtered.filter((t) => {
+        const transactionDate = new Date(t.date);
+        return (
+          transactionDate >= dateRange.from! && transactionDate <= dateRange.to!
+        );
+      });
+    }
+
+    if (category !== "all") {
+      filtered = filtered.filter((t) => t.category === category);
+    }
+
+    setFilteredBankTransactions(filtered);
+  }, [bankTransactions, dateRange, category]);
+
   const categories = useMemo(() => {
     const allCategories = transactions.map((t) => t.category).filter(Boolean);
     return ["all", ...Array.from(new Set(allCategories))];
@@ -285,6 +326,51 @@ const ReportsPage = () => {
       value,
     }));
   }, [filteredTransactions]);
+
+  // Bank expense by category for charts
+  const bankExpenseByCategory = useMemo(() => {
+    const expenseData = filteredBankTransactions
+      .filter((t) => t.amount < 0)
+      .reduce(
+        (acc, transaction) => {
+          const category = transaction.category || "Sem Categoria";
+          if (!acc[category]) {
+            acc[category] = 0;
+          }
+          acc[category] += Math.abs(transaction.amount);
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+    return Object.entries(expenseData).map(([name, value]) => ({
+      name,
+      value,
+    }));
+  }, [filteredBankTransactions]);
+
+  // Bank income vs expense data for charts
+  const bankIncomeVsExpenseData = useMemo(() => {
+    const monthlyData = filteredBankTransactions.reduce(
+      (acc, t) => {
+        const month = format(new Date(t.date), "MMM/yy", {
+          locale: ptBR,
+        });
+        if (!acc[month]) {
+          acc[month] = { name: month, income: 0, expense: 0 };
+        }
+        if (t.amount > 0) {
+          acc[month].income += t.amount;
+        } else {
+          acc[month].expense += Math.abs(t.amount);
+        }
+        return acc;
+      },
+      {} as Record<string, { name: string; income: number; expense: number }>,
+    );
+
+    return Object.values(monthlyData);
+  }, [filteredBankTransactions]);
 
   const incomeVsExpenseData = useMemo(() => {
     const monthlyData = filteredTransactions.reduce(
@@ -414,15 +500,13 @@ const ReportsPage = () => {
               <div className="p-4 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium">Entradas (Mês)</span>
+                  <span className="text-sm font-medium">
+                    Entradas (Período)
+                  </span>
                 </div>
                 <p className="text-2xl font-bold text-green-600">
-                  {bankTransactions
-                    .filter(
-                      (t) =>
-                        t.amount > 0 &&
-                        new Date(t.date).getMonth() === new Date().getMonth(),
-                    )
+                  {filteredBankTransactions
+                    .filter((t) => t.amount > 0)
                     .reduce((sum, t) => sum + t.amount, 0)
                     .toLocaleString("pt-BR", {
                       style: "currency",
@@ -433,16 +517,12 @@ const ReportsPage = () => {
               <div className="p-4 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingDown className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium">Saídas (Mês)</span>
+                  <span className="text-sm font-medium">Saídas (Período)</span>
                 </div>
                 <p className="text-2xl font-bold text-red-600">
                   {Math.abs(
-                    bankTransactions
-                      .filter(
-                        (t) =>
-                          t.amount < 0 &&
-                          new Date(t.date).getMonth() === new Date().getMonth(),
-                      )
+                    filteredBankTransactions
+                      .filter((t) => t.amount < 0)
                       .reduce((sum, t) => sum + t.amount, 0),
                   ).toLocaleString("pt-BR", {
                     style: "currency",
@@ -581,6 +661,30 @@ const ReportsPage = () => {
                 ))}
               </div>
 
+              {/* Bank Data Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Despesas Bancárias por Categoria</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <Suspense fallback={<ChartLoader />}>
+                      <ExpensePieChart data={bankExpenseByCategory} />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Receitas vs. Despesas Bancárias</CardTitle>
+                  </CardHeader>
+                  <CardContent className="h-[300px]">
+                    <Suspense fallback={<ChartLoader />}>
+                      <IncomeExpenseBarChart data={bankIncomeVsExpenseData} />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+              </div>
+
               <Card>
                 <CardHeader>
                   <CardTitle>Transações Bancárias</CardTitle>
@@ -602,35 +706,47 @@ const ReportsPage = () => {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {bankTransactions.map((transaction) => (
-                            <TableRow key={transaction.id}>
-                              <TableCell>
-                                {new Date(transaction.date).toLocaleDateString(
-                                  "pt-BR",
-                                )}
-                              </TableCell>
-                              <TableCell>{transaction.description}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">
-                                  {transaction.category}
-                                </Badge>
-                              </TableCell>
+                          {filteredBankTransactions.length > 0 ? (
+                            filteredBankTransactions.map((transaction) => (
+                              <TableRow key={transaction.id}>
+                                <TableCell>
+                                  {new Date(
+                                    transaction.date,
+                                  ).toLocaleDateString("pt-BR")}
+                                </TableCell>
+                                <TableCell>{transaction.description}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline">
+                                    {transaction.category}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell
+                                  className={cn(
+                                    "text-right font-medium",
+                                    transaction.amount >= 0
+                                      ? "text-green-500"
+                                      : "text-red-500",
+                                  )}
+                                >
+                                  {transaction.amount >= 0 ? "+" : ""}
+                                  {transaction.amount.toLocaleString("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  })}
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
                               <TableCell
-                                className={cn(
-                                  "text-right font-medium",
-                                  transaction.amount >= 0
-                                    ? "text-green-500"
-                                    : "text-red-500",
-                                )}
+                                colSpan={4}
+                                className="text-center py-8"
                               >
-                                {transaction.amount >= 0 ? "+" : ""}
-                                {transaction.amount.toLocaleString("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                })}
+                                Nenhuma transação encontrada para os filtros
+                                selecionados.
                               </TableCell>
                             </TableRow>
-                          ))}
+                          )}
                         </TableBody>
                       </Table>
                     </ScrollArea>
