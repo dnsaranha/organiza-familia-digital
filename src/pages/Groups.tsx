@@ -1,4 +1,3 @@
-import InvestmentsPage from "./Investments.tsx";
 import { FamilyGroups } from "@/components/FamilyGroups";
 
 const GroupsPage = () => {
@@ -9,7 +8,6 @@ const GroupsPage = () => {
         Gerencie seus grupos, convide novos membros e compartilhe suas finanças.
       </p>
       <FamilyGroups />
-      <InvestmentsPage>InvestmentsPage content</InvestmentsPage>
     </div>
   );
 };
