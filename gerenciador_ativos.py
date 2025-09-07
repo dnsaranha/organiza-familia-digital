@@ -1,28 +1,53 @@
 import yfinance as yf
 import pandas as pd
-import sqlite3
 from datetime import datetime, timedelta
+from supabase import create_client, Client
 
-def salvar_em_sqlite(df: pd.DataFrame, nome_banco: str = "ativos.db", nome_tabela: str = "dados_ativos"):
+def salvar_no_supabase(df: pd.DataFrame):
     """
-    Salva um DataFrame em uma tabela de um banco de dados SQLite.
+    Salva um DataFrame na tabela 'financial_assets' do Supabase.
 
     Args:
         df: DataFrame a ser salvo.
-        nome_banco: Nome do arquivo do banco de dados SQLite.
-        nome_tabela: Nome da tabela onde os dados serão salvos.
     """
     if df.empty:
-        print("DataFrame vazio. Nenhum dado para salvar no banco de dados.")
+        print("DataFrame vazio. Nenhum dado para salvar no Supabase.")
         return
 
+    # Credenciais do Supabase (encontradas em src/integrations/supabase/client.ts)
+    supabase_url = "https://deipytqxqkmyadabtjnd.supabase.co"
+    supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaXB5dHF4cWtteWFkYWJ0am5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3MzY0NzcsImV4cCI6MjA3MTMxMjQ3N30.p4j6kY61Giu3YIE0huyPjxh59JV6lYnOTsenbcyuAUM"
+
     try:
-        conexao = sqlite3.connect(nome_banco)
-        df.to_sql(nome_tabela, conexao, if_exists="replace", index=False)
-        print(f"Dados salvos com sucesso na tabela '{nome_tabela}' do banco '{nome_banco}'.")
-        conexao.close()
+        print("Conectando ao Supabase...")
+        supabase: Client = create_client(supabase_url, supabase_key)
+
+        # Renomear colunas para corresponder à tabela do banco de dados
+        df_renamed = df.rename(columns={
+            "nome": "name",
+            "setor": "sector",
+            "preco_atual": "current_price",
+            "dividendos_12m": "dividends_12m"
+        })
+
+        # Converter DataFrame para lista de dicionários
+        dados_para_upsert = df_renamed.to_dict(orient="records")
+
+        print(f"Enviando {len(dados_para_upsert)} registros via RPC 'bulk_upsert_assets'...")
+        # Chamar a função de banco de dados (RPC) para fazer o upsert
+        response = supabase.rpc("bulk_upsert_assets", {"assets_data": dados_para_upsert}).execute()
+
+        # A chamada RPC não retorna dados em caso de sucesso, então verificamos se há erro
+        if response.data is None and response.error is None:
+             print("Dados salvos no Supabase com sucesso!")
+        else:
+             print(f"A chamada RPC retornou um resultado inesperado: {response}")
+        # Opcional: imprimir resposta para depuração
+        # print("Resposta do Supabase:", response)
+
     except Exception as e:
-        print(f"Erro ao salvar dados no SQLite: {e}")
+        print(f"Erro ao salvar dados no Supabase: {e}")
+
 
 def obter_dados_ativos(lista_tickers: list) -> pd.DataFrame:
     """
@@ -40,30 +65,22 @@ def obter_dados_ativos(lista_tickers: list) -> pd.DataFrame:
         try:
             print(f"Buscando dados para o ticker: {ticker}...")
             ativo = yf.Ticker(ticker)
-
-            # O método info pode ser lento e às vezes falha para tickers inválidos
             info = ativo.info
 
-            # Validação para ticker inválido
             if not info or info.get('regularMarketPrice') is None:
                 print(f"-> Aviso: Não foi possível encontrar dados para o ticker '{ticker}'. Pulando.")
                 continue
 
-            # 1. Obter preço atual
             preco_atual = info.get('regularMarketPrice', 0)
-
-            # 2. Obter dividendos dos últimos 12 meses
             hoje = datetime.now()
             data_inicio_12m = hoje - timedelta(days=365)
 
             dividendos = ativo.dividends
             if not dividendos.empty:
-                # Remove a informação de fuso horário do índice para permitir a comparação
                 dividendos_12m = dividendos[dividendos.index.tz_localize(None) > data_inicio_12m].sum()
             else:
                 dividendos_12m = 0
 
-            # 3. Obter informações extras
             nome = info.get("longName", ticker)
             setor = info.get("sector", "N/A")
 
@@ -85,30 +102,19 @@ def obter_dados_ativos(lista_tickers: list) -> pd.DataFrame:
     return pd.DataFrame(dados_ativos)
 
 if __name__ == "__main__":
-    # --- Exemplo de Uso ---
-
-    # 1. Lista de ativos da sua corretora (incluindo um ticker inválido para teste)
-    meus_ativos = ["PETR4.SA", "VALE3.SA", "MXRF11.SA", "HCTR11.SA", "ATIVO_INVALIDO"]
+    meus_ativos = ["PETR4.SA", "VALE3.SA", "MXRF11.SA", "ITSA4.SA", "WEGE3.SA", "ATIVO_INVALIDO"]
 
     print("--- Iniciando busca de dados dos ativos ---")
     df_ativos = obter_dados_ativos(meus_ativos)
     print("--- Busca finalizada ---\n")
 
     if not df_ativos.empty:
-        # Saída 1: Exibir o DataFrame no console
         print("--- Resultado em formato de Tabela (DataFrame) ---")
         print(df_ativos)
         print("\n" + "="*50 + "\n")
 
-        # Saída 2: Exibir como JSON, conforme o exemplo do prompt
-        print("--- Resultado em formato JSON ---")
-        json_output = df_ativos.to_json(orient="records", indent=2, force_ascii=False)
-        print(json_output)
-        print("\n" + "="*50 + "\n")
-
-        # Saída 3: Salvar no banco de dados SQLite
-        print("--- Salvando dados no Banco de Dados ---")
-        salvar_em_sqlite(df_ativos, nome_banco="meus_investimentos.db")
+        print("--- Salvando dados no Supabase ---")
+        salvar_no_supabase(df_ativos)
 
     else:
         print("Nenhum dado de ativo foi obtido. Verifique os tickers informados.")
