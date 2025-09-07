@@ -225,6 +225,21 @@ export class B3Client {
       throw new Error("Falha ao buscar ativos");
     }
   }
+
+  // Buscar dados detalhados via Yahoo Finance
+  async getYFinanceData(tickers: string[]): Promise<any[]> {
+    try {
+      const { data, error } = await supabase.functions.invoke("yfinance-data", {
+        body: { tickers },
+      });
+
+      if (error) throw error;
+      return data.assets || [];
+    } catch (error) {
+      console.error("Erro ao buscar dados Yahoo Finance:", error);
+      throw new Error("Falha ao buscar dados do Yahoo Finance");
+    }
+  }
 }
 
 export const b3Client = new B3Client();

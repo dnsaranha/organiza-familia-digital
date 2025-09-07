@@ -280,7 +280,7 @@ export const useB3Data = () => {
     return evolutionData;
   };
 
-  // Buscar ativos detalhados
+  // Buscar ativos detalhados com integração Yahoo Finance
   const getEnhancedAssetsData = useCallback(async () => {
     setLoading(true);
     try {
@@ -305,21 +305,78 @@ export const useB3Data = () => {
           );
 
           if (allInvestments.length > 0) {
-            // Transform Pluggy investment data to enhanced assets format
-            const enhancedData = allInvestments.map((inv) => ({
-              symbol: inv.name || inv.code || "N/A",
-              name: inv.name || "Investimento",
-              type: inv.type || inv.subtype || "Investimento",
-              currentPrice: inv.balance / (inv.quantity || 1),
-              quantity: inv.quantity || 1,
-              marketValue: inv.balance || 0,
-              cost: inv.balance || 0, // Pluggy doesn't provide cost basis
-              averagePrice: inv.balance / (inv.quantity || 1),
-              yieldOnCost: 0, // Would need historical data
-              accumulatedDividends: 0, // Would need dividend history
-              profitLoss: 0, // Would need cost basis
-              profitability: 0, // Would need cost basis
-            }));
+            // Extract tickers from investment names/codes and format for Yahoo Finance
+            const tickers = allInvestments
+              .map((inv) => {
+                const name = inv.name || inv.code || "";
+                // Try to extract ticker from name (e.g., "PETR4", "VALE3", "MXRF11")
+                const tickerMatch = name.match(/([A-Z]{4}\d{1,2})/g);
+                if (tickerMatch && tickerMatch[0]) {
+                  return `${tickerMatch[0]}.SA`; // Add .SA for Brazilian stocks
+                }
+                return null;
+              })
+              .filter(Boolean) as string[];
+
+            let yfinanceData: any[] = [];
+            if (tickers.length > 0) {
+              try {
+                // Get enhanced data from Yahoo Finance
+                const { data: yfinanceResponse, error: yfinanceError } =
+                  await supabase.functions.invoke("yfinance-data", {
+                    body: { tickers },
+                  });
+
+                if (!yfinanceError && yfinanceResponse?.assets) {
+                  yfinanceData = yfinanceResponse.assets;
+                }
+              } catch (yfinanceErr) {
+                console.warn(
+                  "Erro ao buscar dados do Yahoo Finance:",
+                  yfinanceErr,
+                );
+              }
+            }
+
+            // Transform Pluggy investment data to enhanced assets format with Yahoo Finance data
+            const enhancedData = allInvestments.map((inv) => {
+              const name = inv.name || inv.code || "N/A";
+              const tickerMatch = name.match(/([A-Z]{4}\d{1,2})/g);
+              const ticker = tickerMatch ? `${tickerMatch[0]}.SA` : null;
+
+              // Find corresponding Yahoo Finance data
+              const yfinanceAsset = ticker
+                ? yfinanceData.find((asset) => asset.ticker === ticker)
+                : null;
+
+              const currentPrice =
+                yfinanceAsset?.preco_atual || inv.balance / (inv.quantity || 1);
+              const quantity = inv.quantity || 1;
+              const marketValue = currentPrice * quantity;
+              const cost = inv.balance || marketValue; // Use balance as cost if no better data
+              const profitLoss = marketValue - cost;
+              const profitability = cost > 0 ? (profitLoss / cost) * 100 : 0;
+              const accumulatedDividends = yfinanceAsset?.dividendos_12m || 0;
+              const yieldOnCost =
+                cost > 0 && accumulatedDividends > 0
+                  ? (accumulatedDividends / cost) * 100
+                  : 0;
+
+              return {
+                symbol: tickerMatch ? tickerMatch[0] : name,
+                name: yfinanceAsset?.nome || inv.name || "Investimento",
+                type: inv.type || inv.subtype || "Investimento",
+                currentPrice,
+                quantity,
+                marketValue,
+                cost,
+                averagePrice: cost / quantity,
+                yieldOnCost,
+                accumulatedDividends,
+                profitLoss,
+                profitability,
+              };
+            });
 
             setEnhancedAssets(enhancedData);
             return enhancedData;

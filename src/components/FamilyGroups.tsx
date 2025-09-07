@@ -577,15 +577,15 @@ export const FamilyGroups = () => {
                               <span className="font-mono text-xs bg-background px-2 py-1 rounded">
                                 {group.join_code}
                               </span>
-                              <button
+                              <div
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   copyJoinCode(group.join_code);
                                 }}
-                                className="h-6 px-2 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground"
+                                className="h-6 px-2 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground cursor-pointer"
                               >
                                 <Copy className="h-3 w-3" />
-                              </button>
+                              </div>
                             </div>
                           )}
                         </div>
@@ -593,25 +593,25 @@ export const FamilyGroups = () => {
                       <div className="flex items-center">
                         {group.is_owner && (
                           <>
-                            <button
+                            <div
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEditClick(group);
                               }}
-                              className="h-8 w-8 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:text-primary"
+                              className="h-8 w-8 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:text-primary cursor-pointer"
                             >
                               <Pencil className="h-4 w-4" />
-                            </button>
-                            <button
+                            </div>
+                            <div
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setDeletingGroup(group);
                                 setDeleteDialogOpen(true);
                               }}
-                              className="h-8 w-8 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:text-destructive"
+                              className="h-8 w-8 inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground text-muted-foreground hover:text-destructive cursor-pointer"
                             >
                               <Trash2 className="h-4 w-4" />
-                            </button>
+                            </div>
                           </>
                         )}
                         {!group.is_owner && (

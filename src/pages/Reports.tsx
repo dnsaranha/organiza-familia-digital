@@ -253,7 +253,14 @@ const ReportsPage = () => {
 
   // Filter bank transactions based on date range and category
   useEffect(() => {
-    let filtered = bankTransactions;
+    let filtered = bankTransactions.map((t) => ({
+      ...t,
+      // Fix credit card transactions showing as positive - expenses should be negative
+      amount:
+        t.amount > 0 && t.description?.toLowerCase().includes("cartão")
+          ? -Math.abs(t.amount)
+          : t.amount,
+    }));
 
     if (dateRange?.from && dateRange?.to) {
       filtered = filtered.filter((t) => {
@@ -272,9 +279,15 @@ const ReportsPage = () => {
   }, [bankTransactions, dateRange, category]);
 
   const categories = useMemo(() => {
-    const allCategories = transactions.map((t) => t.category).filter(Boolean);
+    const manualCategories = transactions
+      .map((t) => t.category)
+      .filter(Boolean);
+    const bankCategories = bankTransactions
+      .map((t) => t.category)
+      .filter(Boolean);
+    const allCategories = [...manualCategories, ...bankCategories];
     return ["all", ...Array.from(new Set(allCategories))];
-  }, [transactions]);
+  }, [transactions, bankTransactions]);
 
   useEffect(() => {
     let filtered = transactions;
