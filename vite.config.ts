@@ -10,6 +10,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     // @ts-ignore
     allowedHosts: process.env.TEMPO === "true" ? true : undefined,
+
     // Optimize for faster startup
     warmup: {
       clientFiles: ["./src/main.tsx", "./src/App.tsx"],
@@ -24,6 +25,7 @@ export default defineConfig(({ mode }) => ({
       "@tanstack/react-query",
       "@supabase/supabase-js",
     ],
+
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(
     Boolean,
