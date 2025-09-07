@@ -21,12 +21,17 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import {
+  mapInvestmentType,
+  investmentMapping,
+} from "@/lib/investment-mapping";
 
 interface AssetData {
   symbol: string;
   name: string;
   type: string;
+  subtype: string | null;
   marketValue: number;
   cost: number;
   dividends: number;
@@ -66,67 +71,54 @@ const AssetAllocationChart = ({
   const [assetFilter, setAssetFilter] = useState("all");
   const [viewType, setViewType] = useState<"type" | "asset">("type");
 
+  const filterOptions = useMemo(() => {
+    const mainTypes = investmentMapping.map((item) => item.label_pt);
+    return ["Todos", ...new Set(mainTypes)];
+  }, []);
+
   const filteredAssets = assets.filter((asset) => {
-    if (assetFilter === "all") return true;
-    if (!asset.type) return false;
-
-    // Normalize asset type for comparison
-    const normalizedAssetType = asset.type.toLowerCase();
-    const normalizedFilter = assetFilter.toLowerCase();
-
-    // Handle different variations of asset types
-    if (normalizedFilter === "ação" || normalizedFilter === "acoes") {
-      return normalizedAssetType === "ação" || normalizedAssetType === "stock";
-    }
-    if (normalizedFilter === "fii" || normalizedFilter === "fiis") {
-      return (
-        normalizedAssetType === "fii" || normalizedAssetType.includes("fii")
-      );
-    }
-    if (normalizedFilter === "etf" || normalizedFilter === "etfs") {
-      return (
-        normalizedAssetType === "etf" || normalizedAssetType.includes("etf")
-      );
-    }
-    if (normalizedFilter === "renda fixa") {
-      return (
-        normalizedAssetType === "renda fixa" || normalizedAssetType === "bond"
-      );
-    }
-
-    return normalizedAssetType === normalizedFilter;
+    if (assetFilter === "all" || assetFilter === "Todos") return true;
+    const mapped = mapInvestmentType(asset.type, asset.subtype);
+    const mainTypeLabel =
+      investmentMapping.find((t) => t.type === asset.type)?.label_pt ||
+      "Outros";
+    return mainTypeLabel === assetFilter;
   });
 
-  const allocationData: AllocationData[] =
-    viewType === "type"
-      ? Object.entries(
-          filteredAssets.reduce(
-            (acc, asset) => {
-              const type = asset.type || "Outros";
-              acc[type] = (acc[type] || 0) + asset.marketValue;
-              return acc;
-            },
-            {} as Record<string, number>,
-          ),
-        ).map(([name, value]) => {
-          const total = filteredAssets.reduce(
-            (sum, asset) => sum + asset.marketValue,
-            0,
-          );
-          return {
-            name,
-            value,
-            percentage: (value / total) * 100,
-          };
-        })
-      : filteredAssets.map((asset) => ({
-          name: asset.symbol,
-          value: asset.marketValue,
-          percentage:
-            (asset.marketValue /
-              filteredAssets.reduce((sum, a) => sum + a.marketValue, 0)) *
-            100,
-        }));
+  const allocationData: AllocationData[] = useMemo(() => {
+    const totalMarketValue = filteredAssets.reduce(
+      (sum, asset) => sum + asset.marketValue,
+      0,
+    );
+
+    if (totalMarketValue === 0) return [];
+
+    if (viewType === "type") {
+      const groupedData = filteredAssets.reduce(
+        (acc, asset) => {
+          const mapped = mapInvestmentType(asset.type, asset.subtype);
+          const mainTypeLabel =
+            investmentMapping.find((t) => t.type === asset.type)?.label_pt ||
+            "Outros";
+          acc[mainTypeLabel] = (acc[mainTypeLabel] || 0) + asset.marketValue;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      return Object.entries(groupedData).map(([name, value]) => ({
+        name,
+        value,
+        percentage: (value / totalMarketValue) * 100,
+      }));
+    } else {
+      return filteredAssets.map((asset) => ({
+        name: asset.symbol,
+        value: asset.marketValue,
+        percentage: (asset.marketValue / totalMarketValue) * 100,
+      }));
+    }
+  }, [filteredAssets, viewType]);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -142,6 +134,7 @@ const AssetAllocationChart = ({
       [
         "Ativo",
         "Tipo",
+        "Subtipo",
         "Quantidade",
         "Preço Atual",
         "Valor de Mercado",
@@ -152,10 +145,13 @@ const AssetAllocationChart = ({
         "Lucro/Prejuízo",
         "Rentabilidade (%)",
       ].join(","),
-      ...filteredAssets.map((asset) =>
-        [
+      ...filteredAssets.map((asset) => {
+        const mapped = mapInvestmentType(asset.type, asset.subtype);
+        return [
           asset.symbol,
-          asset.type,
+          investmentMapping.find((t) => t.type === asset.type)?.label_pt ||
+            "Outros",
+          mapped.label_pt,
           asset.quantity,
           asset.currentPrice,
           asset.marketValue,
@@ -165,8 +161,8 @@ const AssetAllocationChart = ({
           asset.dividends,
           asset.profitLoss,
           asset.profitability,
-        ].join(","),
-      ),
+        ].join(",");
+      }),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -217,15 +213,15 @@ const AssetAllocationChart = ({
               </SelectContent>
             </Select>
             <Select value={assetFilter} onValueChange={setAssetFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Filtrar por tipo..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="ação">Ações</SelectItem>
-                <SelectItem value="fii">FIIs</SelectItem>
-                <SelectItem value="etf">ETFs</SelectItem>
-                <SelectItem value="renda fixa">Renda Fixa</SelectItem>
+                {filterOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

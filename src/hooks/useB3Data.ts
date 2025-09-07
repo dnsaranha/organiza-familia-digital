@@ -365,7 +365,8 @@ export const useB3Data = () => {
               return {
                 symbol: tickerMatch ? tickerMatch[0] : name,
                 name: yfinanceAsset?.nome || inv.name || "Investimento",
-                type: inv.type || inv.subtype || "Investimento",
+                type: inv.type,
+                subtype: inv.subtype,
                 currentPrice,
                 quantity,
                 marketValue,

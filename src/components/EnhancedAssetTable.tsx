@@ -19,11 +19,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Download, Search, ArrowUpDown } from "lucide-react";
 import { useState, useMemo } from "react";
+import {
+  mapInvestmentType,
+  investmentMapping,
+} from "@/lib/investment-mapping";
 
 interface AssetData {
   symbol: string;
   name: string;
   type: string;
+  subtype: string | null;
   currentPrice: number;
   quantity: number;
   marketValue: number;
@@ -40,7 +45,7 @@ interface EnhancedAssetTableProps {
   loading?: boolean;
 }
 
-type SortField = keyof AssetData;
+type SortField = keyof AssetData | "mappedType";
 type SortDirection = "asc" | "desc";
 
 const EnhancedAssetTable = ({
@@ -52,36 +57,21 @@ const EnhancedAssetTable = ({
   const [sortField, setSortField] = useState<SortField>("marketValue");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
 
+  const filterOptions = useMemo(() => {
+    const mainTypes = investmentMapping.map((item) => item.label_pt);
+    const subtypes = investmentMapping.flatMap((item) =>
+      item.subtypes.map((sub) => sub.label_pt),
+    );
+    return ["Todos", ...new Set([...mainTypes, ...subtypes])];
+  }, []);
+
   const filteredAndSortedAssets = useMemo(() => {
     let filtered = assets.filter((asset) => {
-      let matchesFilter = false;
-
-      if (assetFilter === "all") {
-        matchesFilter = true;
-      } else if (asset.type) {
-        const normalizedAssetType = asset.type.toLowerCase();
-        const normalizedFilter = assetFilter.toLowerCase();
-
-        // Handle different variations of asset types
-        if (normalizedFilter === "ação" || normalizedFilter === "acoes") {
-          matchesFilter =
-            normalizedAssetType === "ação" || normalizedAssetType === "stock";
-        } else if (normalizedFilter === "fii" || normalizedFilter === "fiis") {
-          matchesFilter =
-            normalizedAssetType === "fii" ||
-            normalizedAssetType.includes("fii");
-        } else if (normalizedFilter === "etf" || normalizedFilter === "etfs") {
-          matchesFilter =
-            normalizedAssetType === "etf" ||
-            normalizedAssetType.includes("etf");
-        } else if (normalizedFilter === "renda fixa") {
-          matchesFilter =
-            normalizedAssetType === "renda fixa" ||
-            normalizedAssetType === "bond";
-        } else {
-          matchesFilter = normalizedAssetType === normalizedFilter;
-        }
-      }
+      const mapped = mapInvestmentType(asset.type, asset.subtype);
+      const matchesFilter =
+        assetFilter === "all" ||
+        assetFilter === "Todos" ||
+        mapped.label_pt === assetFilter;
 
       const matchesSearch =
         asset.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -91,8 +81,15 @@ const EnhancedAssetTable = ({
     });
 
     return filtered.sort((a, b) => {
-      const aValue = a[sortField];
-      const bValue = b[sortField];
+      let aValue, bValue;
+
+      if (sortField === "mappedType") {
+        aValue = mapInvestmentType(a.type, a.subtype).label_pt;
+        bValue = mapInvestmentType(b.type, b.subtype).label_pt;
+      } else {
+        aValue = a[sortField as keyof AssetData];
+        bValue = b[sortField as keyof AssetData];
+      }
 
       if (typeof aValue === "string" && typeof bValue === "string") {
         return sortDirection === "asc"
@@ -132,19 +129,24 @@ const EnhancedAssetTable = ({
     return `${value.toFixed(2)}%`;
   };
 
-  const getAssetTypeColor = (type: string) => {
-    if (!type) {
-      return "bg-gray-100 text-gray-800";
-    }
-    switch (type.toLowerCase()) {
-      case "ação":
-        return "bg-blue-100 text-blue-800";
-      case "fii":
-        return "bg-green-100 text-green-800";
-      case "etf":
-        return "bg-purple-100 text-purple-800";
-      case "renda fixa":
+  const getAssetTypeColor = (type: string, subtype: string | null) => {
+    const mapped = mapInvestmentType(type, subtype);
+    const mainType =
+      investmentMapping.find((t) => t.type === type)?.label_pt || "Outros";
+
+    switch (mainType) {
+      case "Renda Fixa":
         return "bg-orange-100 text-orange-800";
+      case "Renda Variável":
+        return "bg-blue-100 text-blue-800";
+      case "Fundos de Investimento":
+        return "bg-green-100 text-green-800";
+      case "Previdência":
+        return "bg-purple-100 text-purple-800";
+      case "ETF":
+        return "bg-indigo-100 text-indigo-800";
+      case "COE":
+        return "bg-pink-100 text-pink-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -166,11 +168,12 @@ const EnhancedAssetTable = ({
         "Lucro/Prejuízo",
         "Rentabilidade (%)",
       ].join(","),
-      ...filteredAndSortedAssets.map((asset) =>
-        [
+      ...filteredAndSortedAssets.map((asset) => {
+        const mapped = mapInvestmentType(asset.type, asset.subtype);
+        return [
           asset.symbol,
           asset.name,
-          asset.type,
+          mapped.label_pt,
           asset.currentPrice,
           asset.quantity,
           asset.marketValue,
@@ -180,8 +183,8 @@ const EnhancedAssetTable = ({
           asset.accumulatedDividends,
           asset.profitLoss,
           asset.profitability,
-        ].join(","),
-      ),
+        ].join(",");
+      }),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -244,15 +247,15 @@ const EnhancedAssetTable = ({
               />
             </div>
             <Select value={assetFilter} onValueChange={setAssetFilter}>
-              <SelectTrigger className="w-full md:w-32">
-                <SelectValue />
+              <SelectTrigger className="w-full md:w-48">
+                <SelectValue placeholder="Filtrar por tipo..." />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="ação">Ações</SelectItem>
-                <SelectItem value="fii">FIIs</SelectItem>
-                <SelectItem value="etf">ETFs</SelectItem>
-                <SelectItem value="renda fixa">Renda Fixa</SelectItem>
+                {filterOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button onClick={exportData} variant="outline" size="sm">
@@ -268,7 +271,7 @@ const EnhancedAssetTable = ({
             <TableHeader>
               <TableRow>
                 <SortableHeader field="symbol">Ativo</SortableHeader>
-                <SortableHeader field="type">Tipo</SortableHeader>
+                <SortableHeader field="mappedType">Tipo</SortableHeader>
                 <SortableHeader field="currentPrice">Preço</SortableHeader>
                 <SortableHeader field="quantity">Quantidade</SortableHeader>
                 <SortableHeader field="marketValue">
@@ -301,69 +304,74 @@ const EnhancedAssetTable = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAndSortedAssets.map((asset) => (
-                  <TableRow key={asset.symbol} className="hover:bg-muted/50">
-                    <TableCell className="font-medium">
-                      <div>
-                        <p className="font-semibold">{asset.symbol}</p>
-                        <p className="text-xs text-muted-foreground truncate max-w-24">
-                          {asset.name}
-                        </p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getAssetTypeColor(asset.type)}>
-                        {asset.type || "N/A"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(asset.currentPrice)}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {asset.quantity
-                        ? asset.quantity.toLocaleString("pt-BR", {
-                            minimumFractionDigits: 0,
-                            maximumFractionDigits: asset.quantity < 1 ? 6 : 0,
-                          })
-                        : "0"}
-                      <div className="text-xs text-muted-foreground">
-                        {asset.quantity && asset.quantity > 1
-                          ? "ações"
-                          : "ação"}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(asset.marketValue)}
-                    </TableCell>
-                    <TableCell>{formatCurrency(asset.cost)}</TableCell>
-                    <TableCell>{formatCurrency(asset.averagePrice)}</TableCell>
-                    <TableCell className="text-green-600 font-medium">
-                      {formatPercent(asset.yieldOnCost)}
-                    </TableCell>
-                    <TableCell className="text-blue-600 font-medium">
-                      {formatCurrency(asset.accumulatedDividends)}
-                    </TableCell>
-                    <TableCell
-                      className={`font-medium ${
-                        asset.profitLoss >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {formatCurrency(asset.profitLoss)}
-                    </TableCell>
-                    <TableCell
-                      className={`font-medium ${
-                        asset.profitability >= 0
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }`}
-                    >
-                      {asset.profitability >= 0 ? "+" : ""}
-                      {formatPercent(asset.profitability)}
-                    </TableCell>
-                  </TableRow>
-                ))
+                filteredAndSortedAssets.map((asset) => {
+                  const mapped = mapInvestmentType(asset.type, asset.subtype);
+                  return (
+                    <TableRow key={asset.symbol} className="hover:bg-muted/50">
+                      <TableCell className="font-medium">
+                        <div>
+                          <p className="font-semibold">{asset.symbol}</p>
+                          <p className="text-xs text-muted-foreground truncate max-w-24">
+                            {asset.name}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={getAssetTypeColor(
+                            asset.type,
+                            asset.subtype,
+                          )}
+                        >
+                          {mapped.label_pt || "N/A"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(asset.currentPrice)}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {asset.quantity
+                          ? asset.quantity.toLocaleString("pt-BR", {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: asset.quantity < 1 ? 6 : 0,
+                            })
+                          : "0"}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(asset.marketValue)}
+                      </TableCell>
+                      <TableCell>{formatCurrency(asset.cost)}</TableCell>
+                      <TableCell>
+                        {formatCurrency(asset.averagePrice)}
+                      </TableCell>
+                      <TableCell className="text-green-600 font-medium">
+                        {formatPercent(asset.yieldOnCost)}
+                      </TableCell>
+                      <TableCell className="text-blue-600 font-medium">
+                        {formatCurrency(asset.accumulatedDividends)}
+                      </TableCell>
+                      <TableCell
+                        className={`font-medium ${
+                          asset.profitLoss >= 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {formatCurrency(asset.profitLoss)}
+                      </TableCell>
+                      <TableCell
+                        className={`font-medium ${
+                          asset.profitability >= 0
+                            ? "text-green-600"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {asset.profitability >= 0 ? "+" : ""}
+                        {formatPercent(asset.profitability)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>

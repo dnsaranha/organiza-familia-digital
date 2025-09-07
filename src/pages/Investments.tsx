@@ -11,7 +11,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,12 +26,14 @@ import {
   PieChart as PieChartIcon,
   BarChart3,
   AlertTriangle,
+  Info,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import PortfolioEvolutionChart from "@/components/charts/PortfolioEvolutionChart";
 import AssetAllocationChart from "@/components/charts/AssetAllocationChart";
 import DividendHistoryChart from "@/components/charts/DividendHistoryChart";
 import EnhancedAssetTable from "@/components/EnhancedAssetTable";
+import { mapInvestmentType } from "@/lib/investment-mapping";
 
 const InvestmentsPage = () => {
   const {
@@ -144,37 +151,6 @@ const InvestmentsPage = () => {
       });
     } finally {
       setRefreshing(false);
-    }
-  };
-  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
-
-  const allocationData = useMemo(() => {
-    if (!portfolio || !portfolio.positions.length) return [];
-
-    const allocation = portfolio.positions.reduce(
-      (acc, position) => {
-        const assetClass = getAssetClassName(position.assetType);
-        acc[assetClass] = (acc[assetClass] || 0) + position.marketValue;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
-    return Object.entries(allocation).map(([name, value]) => ({ name, value }));
-  }, [portfolio]);
-
-  const getAssetClassName = (assetType: string): string => {
-    switch (assetType) {
-      case "STOCK":
-        return "Ações";
-      case "FII":
-        return "FIIs";
-      case "ETF":
-        return "ETFs";
-      case "BOND":
-        return "Renda Fixa";
-      default:
-        return "Outros";
     }
   };
 
@@ -536,22 +512,42 @@ const InvestmentsPage = () => {
                         </TableRow>
                       ))
                     ) : investments.length > 0 ? (
-                      investments.map((inv) => (
-                        <TableRow key={inv.id}>
-                          <TableCell className="font-medium">
-                            {inv.name}
-                          </TableCell>
-                          <TableCell>{inv.subtype}</TableCell>
-                          <TableCell className="text-right font-medium">
-                            {typeof inv.balance === "number"
-                              ? inv.balance.toLocaleString("pt-BR", {
-                                  style: "currency",
-                                  currency: inv.currency || "BRL",
-                                })
-                              : "N/A"}
-                          </TableCell>
-                        </TableRow>
-                      ))
+                      investments.map((inv) => {
+                        const mappedType = mapInvestmentType(
+                          inv.type,
+                          inv.subtype,
+                        );
+                        return (
+                          <TableRow key={inv.id}>
+                            <TableCell className="font-medium">
+                              {inv.name}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                {mappedType.label_pt}
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Info className="h-4 w-4 text-muted-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>{mappedType.descricao_pt}</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              {typeof inv.balance === "number"
+                                ? inv.balance.toLocaleString("pt-BR", {
+                                    style: "currency",
+                                    currency: inv.currency || "BRL",
+                                  })
+                                : "N/A"}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
                     ) : (
                       <TableRow>
                         <TableCell colSpan={3} className="text-center h-24">
@@ -576,7 +572,7 @@ const InvestmentsPage = () => {
           </TabsTrigger>
           <TabsTrigger value="allocation" className="flex items-center gap-2">
             <PieChartIcon className="h-4 w-4" />
-            Carteira de Ativos
+            Alocação de Ativos
           </TabsTrigger>
           <TabsTrigger value="dividends" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
