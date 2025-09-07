@@ -18,105 +18,119 @@ import AppShell from "./components/AppShell";
 import { BudgetScopeProvider } from "./contexts/BudgetScopeContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 
-const queryClient = new QueryClient();
+// Configure QueryClient with optimized settings for faster startup
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes
+      retry: 1, // Reduce retries for faster startup
+      refetchOnWindowFocus: false, // Prevent unnecessary refetches during startup
+    },
+  },
+});
 
-const App = () => (
-  <ErrorBoundary
-    fallback={
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-destructive">
-            Algo deu errado
-          </h1>
-          <p className="text-muted-foreground">
-            Ocorreu um erro inesperado. Tente recarregar a página.
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-          >
-            Recarregar Página
-          </button>
+const App = () => {
+  console.log("🎯 App component rendering at:", new Date().toISOString());
+
+  return (
+    <ErrorBoundary
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center p-8">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
+              Something went wrong
+            </h1>
+            <p className="text-gray-600 mb-4">
+              We're sorry, but something unexpected happened.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Reload Page
+            </button>
+          </div>
         </div>
-      </div>
-    }
-  >
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BudgetScopeProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/success" element={<Success />} />
+      }
+    >
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <BudgetScopeProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/success" element={<Success />} />
 
-              <Route
-                path="/"
-                element={
-                  <AppShell>
-                    <Index />
-                  </AppShell>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <AppShell>
-                    <Profile />
-                  </AppShell>
-                }
-              />
-              <Route
-                path="/groups"
-                element={
-                  <AppShell>
-                    <GroupsPage />
-                  </AppShell>
-                }
-              />
-              <Route
-                path="/reports"
-                element={
-                  <AppShell>
-                    <ReportsPage />
-                  </AppShell>
-                }
-              />
-              <Route
-                path="/investments"
-                element={
-                  <AppShell>
-                    <InvestmentsPage />
-                  </AppShell>
-                }
-              />
-              <Route
-                path="/settings/notifications"
-                element={
-                  <AppShell>
-                    <NotificationSettingsPage />
-                  </AppShell>
-                }
-              />
-              <Route
-                path="/connect"
-                element={
-                  <AppShell>
-                    <OpenFinanceConnectPage />
-                  </AppShell>
-                }
-              />
+                <Route
+                  path="/"
+                  element={
+                    <AppShell>
+                      <Index />
+                    </AppShell>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <AppShell>
+                      <Profile />
+                    </AppShell>
+                  }
+                />
+                <Route
+                  path="/groups"
+                  element={
+                    <AppShell>
+                      <GroupsPage />
+                    </AppShell>
+                  }
+                />
+                <Route
+                  path="/reports"
+                  element={
+                    <AppShell>
+                      <ReportsPage />
+                    </AppShell>
+                  }
+                />
+                <Route
+                  path="/investments"
+                  element={
+                    <AppShell>
+                      <InvestmentsPage />
+                    </AppShell>
+                  }
+                />
+                <Route
+                  path="/settings/notifications"
+                  element={
+                    <AppShell>
+                      <NotificationSettingsPage />
+                    </AppShell>
+                  }
+                />
+                <Route
+                  path="/connect"
+                  element={
+                    <AppShell>
+                      <OpenFinanceConnectPage />
+                    </AppShell>
+                  }
+                />
 
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </BudgetScopeProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </ErrorBoundary>
-);
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </BudgetScopeProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
