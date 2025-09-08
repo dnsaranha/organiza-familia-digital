@@ -86,7 +86,6 @@ const ReportsPage = () => {
     accounts,
     transactions: bankTransactions,
     loading: bankLoading,
-    loadTransactions,
   } = useOpenBanking();
 
   const pieChartRef = useRef<HTMLDivElement>(null);
@@ -99,9 +98,20 @@ const ReportsPage = () => {
   const [category, setCategory] = useState<string>("all");
   const [member, setMember] = useState<string>("all");
   const [groupMembers, setGroupMembers] = useState<GroupMember[]>([]);
+  const [selectedAccountIds, setSelectedAccountIds] = useState<string[]>([]);
   const [filteredBankTransactions, setFilteredBankTransactions] = useState<
     any[]
   >([]);
+
+  const handleAccountSelection = (accountId: string) => {
+    setSelectedAccountIds((prev) => {
+      if (prev.includes(accountId)) {
+        return prev.filter((id) => id !== accountId);
+      } else {
+        return [...prev, accountId];
+      }
+    });
+  };
 
   const handlePdfExport = async () => {
     const pieChartElement = pieChartRef.current;
@@ -235,33 +245,18 @@ const ReportsPage = () => {
   }, [scope]);
 
   // Load bank transactions when accounts are available
+  // Filter bank transactions based on selections
   useEffect(() => {
-    const loadBankTransactions = async () => {
-      if (bankConnected && accounts.length > 0) {
-        // Load transactions for all accounts
-        try {
-          for (const account of accounts) {
-            await loadTransactions(account.id);
-          }
-        } catch (error) {
-          console.error("Error loading bank transactions:", error);
-        }
-      }
-    };
-    loadBankTransactions();
-  }, [bankConnected, accounts, loadTransactions]);
+    let filtered = bankTransactions;
 
-  // Filter bank transactions based on date range and category
-  useEffect(() => {
-    let filtered = bankTransactions.map((t) => ({
-      ...t,
-      // Fix credit card transactions showing as positive - expenses should be negative
-      amount:
-        t.amount > 0 && t.description?.toLowerCase().includes("cartão")
-          ? -Math.abs(t.amount)
-          : t.amount,
-    }));
+    // Filter by selected accounts
+    if (selectedAccountIds.length > 0) {
+      filtered = filtered.filter((t) =>
+        selectedAccountIds.includes(t.accountId),
+      );
+    }
 
+    // Filter by date range
     if (dateRange?.from && dateRange?.to) {
       filtered = filtered.filter((t) => {
         const transactionDate = new Date(t.date);
@@ -271,12 +266,23 @@ const ReportsPage = () => {
       });
     }
 
+    // Filter by category
     if (category !== "all") {
       filtered = filtered.filter((t) => t.category === category);
     }
 
-    setFilteredBankTransactions(filtered);
-  }, [bankTransactions, dateRange, category]);
+    // Fix credit card transactions showing as positive - expenses should be negative
+    const correctedAmounts = filtered.map((t) => ({
+      ...t,
+      amount:
+        t.amount > 0 &&
+        accounts.find((a) => a.id === t.accountId)?.type === "CREDIT"
+          ? -Math.abs(t.amount)
+          : t.amount,
+    }));
+
+    setFilteredBankTransactions(correctedAmounts);
+  }, [bankTransactions, selectedAccountIds, dateRange, category, accounts]);
 
   const categories = useMemo(() => {
     const manualCategories = transactions
@@ -499,15 +505,18 @@ const ReportsPage = () => {
               <div className="p-4 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <CreditCard className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Saldo Total</span>
+                  <span className="text-sm font-medium">Saldo Selecionado</span>
                 </div>
                 <p className="text-2xl font-bold">
-                  {accounts
-                    .reduce((sum, acc) => sum + acc.balance, 0)
-                    .toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
+                  {(selectedAccountIds.length > 0
+                    ? accounts
+                        .filter((acc) => selectedAccountIds.includes(acc.id))
+                        .reduce((sum, acc) => sum + acc.balance, 0)
+                    : accounts.reduce((sum, acc) => sum + acc.balance, 0)
+                  ).toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
                 </p>
               </div>
               <div className="p-4 bg-muted/30 rounded-lg">
@@ -653,7 +662,20 @@ const ReportsPage = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {accounts.map((account) => (
-                  <Card key={account.id}>
+                  <Card
+                    key={account.id}
+                    onClick={() => handleAccountSelection(account.id)}
+                    className={cn(
+                      "cursor-pointer transition-all hover:shadow-lg",
+                      selectedAccountIds.includes(account.id)
+                        ? "ring-2 ring-primary ring-offset-2"
+                        : "ring-0",
+                      selectedAccountIds.length > 0 &&
+                        !selectedAccountIds.includes(account.id)
+                        ? "opacity-50"
+                        : "opacity-100",
+                    )}
+                  >
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base">
                         {account.marketingName || account.name}
