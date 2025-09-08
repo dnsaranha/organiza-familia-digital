@@ -214,7 +214,7 @@ const Index = () => {
                     .map((account) => (
                       <div
                         key={account.id}
-                        className="p-4 bg-muted/30 rounded-lg snap-center min-w-[80%] md:min-w-0"
+                        className="p-4 bg-muted/30 rounded-lg snap-center min-w-[280px] md:min-w-0"
                       >
                         <div className="flex items-center gap-2 mb-2">
                           <Wallet className="h-4 w-4 text-muted-foreground" />
@@ -248,7 +248,7 @@ const Index = () => {
                     .map((account) => (
                       <div
                         key={account.id}
-                        className="p-4 bg-muted/30 rounded-lg snap-center min-w-[80%] md:min-w-0"
+                        className="p-4 bg-muted/30 rounded-lg snap-center min-w-[280px] md:min-w-0"
                       >
                         <div className="flex items-center gap-2 mb-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
