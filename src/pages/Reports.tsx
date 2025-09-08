@@ -38,6 +38,10 @@ import { cn } from "@/lib/utils";
 import { useRef } from "react";
 import { DateRange } from "react-day-picker";
 import { useBudgetScope } from "@/contexts/BudgetScopeContext";
+import {
+  accountTypeMapping,
+  mapAccountSubtype,
+} from "@/lib/account-mapping";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -660,40 +664,92 @@ const ReportsPage = () => {
           {/* Banking Transactions Reports */}
           {bankConnected ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {accounts.map((account) => (
-                  <Card
-                    key={account.id}
-                    onClick={() => handleAccountSelection(account.id)}
-                    className={cn(
-                      "cursor-pointer transition-all hover:shadow-lg",
-                      selectedAccountIds.includes(account.id)
-                        ? "ring-2 ring-primary ring-offset-2"
-                        : "ring-0",
-                      selectedAccountIds.length > 0 &&
-                        !selectedAccountIds.includes(account.id)
-                        ? "opacity-50"
-                        : "opacity-100",
-                    )}
-                  >
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">
-                        {account.marketingName || account.name}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        {account.type} • {account.subtype}
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-2xl font-bold">
-                        {account.balance.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: account.currency || "BRL",
-                        })}
-                      </p>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Contas Bancárias</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {accounts
+                      .filter((acc) => acc.type === "BANK")
+                      .map((account) => (
+                        <Card
+                          key={account.id}
+                          onClick={() => handleAccountSelection(account.id)}
+                          className={cn(
+                            "cursor-pointer transition-all hover:shadow-lg",
+                            selectedAccountIds.includes(account.id)
+                              ? "ring-2 ring-primary ring-offset-2"
+                              : "ring-0",
+                            selectedAccountIds.length > 0 &&
+                              !selectedAccountIds.includes(account.id)
+                              ? "opacity-50"
+                              : "opacity-100",
+                          )}
+                        >
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">
+                              {account.marketingName || account.name}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                              {accountTypeMapping[account.type] ||
+                                account.type}{" "}
+                              • {mapAccountSubtype(account.subtype)}
+                            </p>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-2xl font-bold">
+                              {account.balance.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: account.currency || "BRL",
+                              })}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-lg font-medium mb-3">Cartões de Crédito</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {accounts
+                      .filter((acc) => acc.type === "CREDIT")
+                      .map((account) => (
+                        <Card
+                          key={account.id}
+                          onClick={() => handleAccountSelection(account.id)}
+                          className={cn(
+                            "cursor-pointer transition-all hover:shadow-lg",
+                            selectedAccountIds.includes(account.id)
+                              ? "ring-2 ring-primary ring-offset-2"
+                              : "ring-0",
+                            selectedAccountIds.length > 0 &&
+                              !selectedAccountIds.includes(account.id)
+                              ? "opacity-50"
+                              : "opacity-100",
+                          )}
+                        >
+                          <CardHeader className="pb-3">
+                            <CardTitle className="text-base">
+                              {account.marketingName || account.name}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                              {accountTypeMapping[account.type] ||
+                                account.type}{" "}
+                              • {mapAccountSubtype(account.subtype)}
+                            </p>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-2xl font-bold">
+                              {account.balance.toLocaleString("pt-BR", {
+                                style: "currency",
+                                currency: account.currency || "BRL",
+                              })}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                </div>
               </div>
 
               {/* Bank Data Charts */}
