@@ -13,6 +13,10 @@ import { useBudgetScope } from "@/contexts/BudgetScopeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
+  accountTypeMapping,
+  mapAccountSubtype,
+} from "@/lib/account-mapping";
+import {
   Wallet,
   TrendingUp,
   TrendingDown,
@@ -197,87 +201,131 @@ const Index = () => {
         {/* Banking Overview - Show when connected */}
         {bankConnected && accounts.length > 0 && (
           <div className="mb-8">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-primary" />
-                    <CardTitle>Contas Bancárias Conectadas</CardTitle>
-                  </div>
-                  <Badge variant="default">{accounts.length} conta(s)</Badge>
+            <div className="space-y-6">
+              {/* Contas Bancárias Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="h-5 w-5 text-primary" />
+                  <h3 className="text-xl font-semibold">Contas Bancárias</h3>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {accounts.slice(0, 3).map((account) => (
-                    <div
-                      key={account.id}
-                      className="p-4 bg-muted/30 rounded-lg"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">
-                          {account.marketingName || account.name}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-1">
-                        {account.type} • {account.subtype}
-                      </p>
-                      <p className="text-lg font-bold">
-                        {account.balance.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: account.currency || "BRL",
-                        })}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                {bankTransactions.length > 0 && (
-                  <div className="mt-4">
-                    <h4 className="text-sm font-medium mb-3">
-                      Últimas Transações Bancárias
-                    </h4>
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {bankTransactions.slice(0, 5).map((transaction) => (
-                        <div
-                          key={transaction.id}
-                          className="flex justify-between items-center p-2 bg-muted/20 rounded"
-                        >
-                          <div>
-                            <p className="text-sm font-medium">
-                              {transaction.description}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(transaction.date).toLocaleDateString(
-                                "pt-BR",
-                              )}
-                            </p>
-                          </div>
-                          <span
-                            className={`text-sm font-medium ${
-                              transaction.amount >= 0
-                                ? "text-green-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {transaction.amount >= 0 ? "+" : ""}
-                            {transaction.amount.toLocaleString("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            })}
+                <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3">
+                  {accounts
+                    .filter((acc) => acc.type === "BANK")
+                    .map((account) => (
+                      <div
+                        key={account.id}
+                        className="p-4 bg-muted/30 rounded-lg snap-center min-w-[80%] md:min-w-0"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <Wallet className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {account.marketingName || account.name}
                           </span>
                         </div>
-                      ))}
-                    </div>
+                        <p className="text-xs text-muted-foreground mb-1">
+                          {mapAccountSubtype(account.subtype)}
+                        </p>
+                        <p className="text-lg font-bold">
+                          {account.balance.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: account.currency || "BRL",
+                          })}
+                        </p>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Cartões de Crédito Section */}
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  <h3 className="text-xl font-semibold">Cartões de Crédito</h3>
+                </div>
+                <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3">
+                  {accounts
+                    .filter((acc) => acc.type === "CREDIT")
+                    .map((account) => (
+                      <div
+                        key={account.id}
+                        className="p-4 bg-muted/30 rounded-lg snap-center min-w-[80%] md:min-w-0"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <CreditCard className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {account.marketingName || account.name}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-1">
+                          {account.brand
+                            ? `${account.brand} - ${mapAccountSubtype(account.subtype)}`
+                            : mapAccountSubtype(account.subtype)}
+                        </p>
+                        <p className="text-lg font-bold">
+                          {account.balance.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: account.currency || "BRL",
+                          })}
+                        </p>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Transactions */}
+            {bankTransactions.length > 0 && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    Últimas Transações Bancárias
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {bankTransactions.slice(0, 10).map((transaction) => (
+                      <div
+                        key={transaction.id}
+                        className="flex justify-between items-center p-2 bg-muted/20 rounded"
+                      >
+                        <div>
+                          <p className="text-sm font-medium">
+                            {transaction.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(transaction.date).toLocaleDateString(
+                              "pt-BR",
+                            )}
+                          </p>
+                        </div>
+                        <span
+                          className={`text-sm font-medium ${
+                            transaction.amount >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {transaction.amount >= 0 ? "+" : ""}
+                          {transaction.amount.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
+      </main>
+    </div>
+  );
+};
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+export default Index;
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Transaction Form */}
           <div>
             <TransactionForm onSave={handleDataRefresh} />
