@@ -38,6 +38,10 @@ import { cn } from "@/lib/utils";
 import { useRef } from "react";
 import { DateRange } from "react-day-picker";
 import { useBudgetScope } from "@/contexts/BudgetScopeContext";
+import {
+  accountTypeMapping,
+  mapAccountSubtype,
+} from "@/lib/account-mapping";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -681,7 +685,8 @@ const ReportsPage = () => {
                         {account.marketingName || account.name}
                       </CardTitle>
                       <p className="text-sm text-muted-foreground">
-                        {account.type} • {account.subtype}
+                        {accountTypeMapping[account.type] || account.type} •{" "}
+                        {mapAccountSubtype(account.subtype)}
                       </p>
                     </CardHeader>
                     <CardContent>
