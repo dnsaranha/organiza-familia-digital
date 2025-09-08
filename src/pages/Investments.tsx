@@ -34,6 +34,7 @@ import AssetAllocationChart from "@/components/charts/AssetAllocationChart";
 import DividendHistoryChart from "@/components/charts/DividendHistoryChart";
 import EnhancedAssetTable from "@/components/EnhancedAssetTable";
 import { mapInvestmentType } from "@/lib/investment-mapping";
+import { mapAccountSubtype } from "@/lib/account-mapping";
 
 const InvestmentsPage = () => {
   const {
@@ -391,7 +392,7 @@ const InvestmentsPage = () => {
                       >
                         <TableCell>{acc.marketingName ?? "N/A"}</TableCell>
                         <TableCell>{acc.number}</TableCell>
-                        <TableCell>{acc.subtype}</TableCell>
+                        <TableCell>{mapAccountSubtype(acc.subtype)}</TableCell>
                         <TableCell className="text-right font-medium">
                           {typeof acc.balance === "number"
                             ? acc.balance.toLocaleString("pt-BR", {
