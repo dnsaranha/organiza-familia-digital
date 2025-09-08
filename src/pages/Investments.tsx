@@ -61,9 +61,8 @@ const InvestmentsPage = () => {
     connected: bankConnected,
     loading: bankLoading,
     accounts,
-    transactions,
+    transactions: bankTransactions,
     investments,
-    loadTransactions,
   } = useOpenBanking();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -110,11 +109,12 @@ const InvestmentsPage = () => {
     getBenchmarkData,
   ]);
 
-  useEffect(() => {
-    if (selectedAccountId) {
-      loadTransactions(selectedAccountId);
+  const filteredTransactions = useMemo(() => {
+    if (!selectedAccountId) {
+      return [];
     }
-  }, [selectedAccountId, loadTransactions]);
+    return bankTransactions.filter((tx) => tx.accountId === selectedAccountId);
+  }, [bankTransactions, selectedAccountId]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -450,8 +450,8 @@ const InvestmentsPage = () => {
                           </TableCell>
                         </TableRow>
                       ))
-                    ) : transactions.length > 0 ? (
-                      transactions.slice(0, 10).map((tx) => (
+                    ) : filteredTransactions.length > 0 ? (
+                      filteredTransactions.slice(0, 10).map((tx) => (
                         <TableRow key={tx.id}>
                           <TableCell>{tx.description}</TableCell>
                           <TableCell>
