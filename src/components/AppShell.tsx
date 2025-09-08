@@ -51,7 +51,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
   };
 
   const mobileView = (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col min-h-screen bg-background">
       <header className="sticky top-0 z-40 w-full border-b bg-background">
         <div className="container flex h-16 items-center justify-between">
           <NavLink to="/" className="flex items-center gap-3">
@@ -106,7 +106,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
       </header>
-      <main className="pb-20">{children}</main>
+      <main className="flex-grow pb-20">{children}</main>
       <BottomNavBar />
     </div>
   );

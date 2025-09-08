@@ -562,7 +562,7 @@ const ReportsPage = () => {
       )}
 
       {/* Reports Tabs */}
-      <Tabs defaultValue="manual" className="space-y-6">
+      <Tabs defaultValue="manual" className="space-y-6 pb-20">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="manual">Transações Manuais</TabsTrigger>
           <TabsTrigger value="banking" disabled={!bankConnected}>

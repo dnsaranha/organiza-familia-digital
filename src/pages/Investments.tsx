@@ -565,7 +565,7 @@ const InvestmentsPage = () => {
       )}
 
       {/* Enhanced Dashboards */}
-      <Tabs defaultValue="evolution" className="space-y-6">
+      <Tabs defaultValue="evolution" className="space-y-6 pb-20">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="evolution" className="flex items-center gap-2">
             <TrendingUp className="h-4 w-4" />
