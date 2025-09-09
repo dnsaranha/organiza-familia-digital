@@ -52,7 +52,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
 
   const mobileView = (
     <div className="flex flex-col min-h-screen bg-background">
-      <header className="sticky top-0 z-40 w-full border-b bg-background">
+      <header className="sticky top-0 z-40 w-full border-b bg-background transform-gpu">
         <div className="container flex h-16 items-center justify-between">
           <NavLink to="/" className="flex items-center gap-3">
             <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
@@ -106,8 +106,10 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
       </header>
-      <main className="flex-grow pb-20">{children}</main>
-      <BottomNavBar />
+      <main className="flex-grow pb-20 transform-gpu">{children}</main>
+      <div className="transform-gpu">
+        <BottomNavBar />
+      </div>
     </div>
   );
 

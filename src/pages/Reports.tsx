@@ -419,7 +419,7 @@ const ReportsPage = () => {
   }, [filteredTransactions]);
 
   const ChartLoader = () => (
-    <div className="h-full flex items-center justify-center text-muted-foreground">
+    <div className="flex items-center justify-center text-muted-foreground">
       <Loader2 className="h-8 w-8 animate-spin" />
     </div>
   );
@@ -601,7 +601,7 @@ const ReportsPage = () => {
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                <div className="flex items-center justify-center text-muted-foreground">
                   <Loader2 className="h-8 w-8 animate-spin" />
                 </div>
               ) : (
@@ -782,7 +782,7 @@ const ReportsPage = () => {
                 </CardHeader>
                 <CardContent>
                   {bankLoading ? (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
+                    <div className="flex items-center justify-center text-muted-foreground">
                       <Loader2 className="h-8 w-8 animate-spin" />
                     </div>
                   ) : (
