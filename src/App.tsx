@@ -14,6 +14,7 @@ import ReportsPage from "./pages/Reports";
 import InvestmentsPage from "./pages/Investments";
 import NotificationSettingsPage from "./pages/NotificationSettings";
 import OpenFinanceConnectPage from "./pages/OpenFinanceConnect";
+import TasksPage from "./pages/Tasks";
 import AppShell from "./components/AppShell";
 import { BudgetScopeProvider } from "./contexts/BudgetScopeContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -118,6 +119,14 @@ const App = () => {
                   element={
                     <AppShell>
                       <OpenFinanceConnectPage />
+                    </AppShell>
+                  }
+                />
+                <Route
+                  path="/tasks"
+                  element={
+                    <AppShell>
+                      <TasksPage />
                     </AppShell>
                   }
                 />

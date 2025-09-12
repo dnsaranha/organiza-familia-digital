@@ -365,6 +365,66 @@ export type Database = {
         }
         Relationships: []
       }
+      tasks: {
+        Row: {
+          id: string
+          user_id: string
+          group_id: string | null
+          title: string
+          description: string | null
+          value: number | null
+          category: string | null
+          scheduled_date: string | null
+          status: "pending" | "completed"
+          created_at: string
+          is_completed: boolean
+          completed_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          group_id?: string | null
+          title: string
+          description?: string | null
+          value?: number | null
+          category?: string | null
+          scheduled_date?: string | null
+          status?: "pending" | "completed"
+          created_at?: string
+          is_completed?: boolean
+          completed_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          group_id?: string | null
+          title?: string
+          description?: string | null
+          value?: number | null
+          category?: string | null
+          scheduled_date?: string | null
+          status?: "pending" | "completed"
+
+          is_completed?: boolean
+          completed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
     }
     Views: {
       stripe_user_orders: {
