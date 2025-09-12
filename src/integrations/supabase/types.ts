@@ -420,7 +420,7 @@ export type Database = {
             foreignKeyName: "tasks_group_id_fkey"
             columns: ["group_id"]
             isOneToOne: false
-            referencedRelation: "groups"
+            referencedRelation: "family_groups"
             referencedColumns: ["id"]
           }
         ]

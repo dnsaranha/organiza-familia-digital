@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS public.tasks (
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-    group_id uuid REFERENCES public.groups(id) ON DELETE CASCADE,
+    group_id uuid REFERENCES public.family_groups(id) ON DELETE CASCADE,
     title text NOT NULL,
     description text,
     value numeric(10, 2),

@@ -38,7 +38,7 @@ const TasksPage = () => {
     try {
       const { data, error } = await supabase
         .from("tasks")
-        .select(`*, group:groups(name)`)
+        .select(`*, group:family_groups(name)`)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
