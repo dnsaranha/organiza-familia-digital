@@ -24,3 +24,7 @@ verify_jwt = false
 
 [functions.pluggy-delete-item]
 verify_jwt = false
+
+[functions.trigger-task-notifications]
+verify_jwt = false
+schedule = "*/5 * * * *"
