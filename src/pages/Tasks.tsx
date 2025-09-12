@@ -188,7 +188,13 @@ const TasksPage = () => {
     }
 
     try {
-      const scheduleDateTime = `${formData.schedule_date}T${formData.schedule_time}:00`;
+      // Combine date and time inputs into a single string
+      const localDateTimeString = `${formData.schedule_date}T${formData.schedule_time}:00`;
+      // Create a Date object from the local time string
+      const localDate = new Date(localDateTimeString);
+      // Convert the local Date object to a UTC ISO string for storage
+      const scheduleDateTime = localDate.toISOString();
+
       const localCreatedAt = new Date().toISOString();
 
       const taskData = {
