@@ -410,140 +410,142 @@ const TasksPage = () => {
       </div>
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{selectedTask ? 'Editar Tarefa' : 'Nova Tarefa'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="title">Título *</Label>
-                <Input
-                  id="title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="Ex: Pagar conta de luz"
-                  required
-                />
+          <div className="pr-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="title">Título *</Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="Ex: Pagar conta de luz"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="task_type">Tipo de Tarefa</Label>
+                  <Select value={formData.task_type} onValueChange={(value: any) => setFormData({ ...formData, task_type: value })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {taskTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                      <Label htmlFor="value">Valor (R$)</Label>
+                      <Input
+                          id="value"
+                          type="number"
+                          step="0.01"
+                          value={formData.value}
+                          onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
+                          placeholder="Ex: 150.50"
+                      />
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="category">Categoria</Label>
+                      <Input
+                          id="category"
+                          value={formData.category}
+                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                          placeholder="Ex: Contas de casa"
+                      />
+                  </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="task_type">Tipo de Tarefa</Label>
-                <Select value={formData.task_type} onValueChange={(value: any) => setFormData({ ...formData, task_type: value })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Label htmlFor="group">Compartilhar com Grupo (opcional)</Label>
+                <Select value={formData.group_id} onValueChange={(value) => setFormData({ ...formData, group_id: value })}>
+                  <SelectTrigger><SelectValue placeholder="Selecione um grupo ou deixe pessoal" /></SelectTrigger>
                   <SelectContent>
-                    {taskTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                    <SelectItem value="personal">Apenas pessoal</SelectItem>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="value">Valor (R$)</Label>
-                    <Input
-                        id="value"
-                        type="number"
-                        step="0.01"
-                        value={formData.value}
-                        onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
-                        placeholder="Ex: 150.50"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="category">Categoria</Label>
-                    <Input
-                        id="category"
-                        value={formData.category}
-                        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        placeholder="Ex: Contas de casa"
-                    />
-                </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="group">Compartilhar com Grupo (opcional)</Label>
-              <Select value={formData.group_id} onValueChange={(value) => setFormData({ ...formData, group_id: value })}>
-                <SelectTrigger><SelectValue placeholder="Selecione um grupo ou deixe pessoal" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="personal">Apenas pessoal</SelectItem>
-                  {groups.map((group) => (
-                    <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Adicione detalhes sobre a tarefa..."
-                className="resize-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="schedule_date">Data *</Label>
-                <Input
-                  id="schedule_date"
-                  type="date"
-                  value={formData.schedule_date}
-                  onChange={(e) => setFormData({ ...formData, schedule_date: e.target.value })}
-                  required
+                <Label htmlFor="description">Descrição</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Adicione detalhes sobre a tarefa..."
+                  className="resize-none"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="schedule_time">Horário *</Label>
-                <Input
-                  id="schedule_time"
-                  type="time"
-                  value={formData.schedule_time}
-                  onChange={(e) => setFormData({ ...formData, schedule_time: e.target.value })}
-                  required
-                />
-              </div>
-            </div>
 
-            <div className="space-y-4">
-              <Label className="text-sm font-medium">Notificações</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="schedule_date">Data *</Label>
+                  <Input
+                    id="schedule_date"
+                    type="date"
+                    value={formData.schedule_date}
+                    onChange={(e) => setFormData({ ...formData, schedule_date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="schedule_time">Horário *</Label>
+                  <Input
+                    id="schedule_time"
+                    type="time"
+                    value={formData.schedule_time}
+                    onChange={(e) => setFormData({ ...formData, schedule_time: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Email</span>
+                <Label className="text-sm font-medium">Notificações</Label>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Email</span>
+                    </div>
+                    <Switch
+                      checked={formData.notification_email}
+                      onCheckedChange={(checked) => setFormData({ ...formData, notification_email: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={formData.notification_email}
-                    onCheckedChange={(checked) => setFormData({ ...formData, notification_email: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Smartphone className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">Notificação Push</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Smartphone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">Notificação Push</span>
+                    </div>
+                    <Switch
+                      checked={formData.notification_push}
+                      onCheckedChange={(checked) => setFormData({ ...formData, notification_push: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={formData.notification_push}
-                    onCheckedChange={(checked) => setFormData({ ...formData, notification_push: checked })}
-                  />
                 </div>
               </div>
-            </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {selectedTask ? 'Salvar Alterações' : 'Agendar Tarefa'}
-              </Button>
-            </div>
-          </form>
+              <div className="flex justify-end gap-2 pt-3">
+                <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit">
+                  {selectedTask ? 'Salvar Alterações' : 'Agendar Tarefa'}
+                </Button>
+              </div>
+            </form>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
