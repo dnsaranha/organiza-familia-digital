@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Bell, Mail, Smartphone, Plus, Clock, CheckCircle, Trash2, Edit } from "lucide-react";
+import { Calendar, Bell, Mail, Smartphone, Plus, Clock, CheckCircle, Trash2, Edit, Minus, PlusIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useTaskNotifications } from "@/hooks/useTaskNotifications";
@@ -15,6 +15,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Combobox } from "@/components/ui/combobox";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface ScheduledTask {
   id: string;
@@ -46,10 +48,12 @@ const taskTypes = [
 const TasksPage = () => {
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
   const [groups, setGroups] = useState<FamilyGroup[]>([]);
+  const [categories, setCategories] = useState<{ label: string; value: string }[]>([]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ScheduledTask | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -73,11 +77,13 @@ const TasksPage = () => {
     if (user) {
       loadTasks();
       loadGroups();
+      loadCategories();
     }
   }, [user]);
 
   useEffect(() => {
     if (selectedTask) {
+      setTransactionType(selectedTask.value && selectedTask.value > 0 ? 'income' : 'expense');
       setFormData({
         title: selectedTask.title,
         description: selectedTask.description || '',
@@ -87,7 +93,7 @@ const TasksPage = () => {
         notification_email: selectedTask.notification_email,
         notification_push: selectedTask.notification_push,
         group_id: selectedTask.group_id || 'personal',
-        value: selectedTask.value || 0,
+        value: selectedTask.value ? Math.abs(selectedTask.value) : 0,
         category: selectedTask.category || '',
       });
     } else {
@@ -108,6 +114,7 @@ const TasksPage = () => {
         value: 0,
         category: '',
     });
+    setTransactionType('expense');
   }
 
   const loadTasks = async () => {
@@ -144,6 +151,25 @@ const TasksPage = () => {
     }
   };
 
+  const loadCategories = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('category')
+        .not('category', 'is', null)
+        .order('category', { ascending: true });
+
+      if (error) throw error;
+
+      const distinctCategories = [...new Set(data.map(item => item.category))];
+      setCategories(distinctCategories.map(c => ({ label: c, value: c })));
+
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+    }
+  };
+
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       const searchLower = searchTerm.toLowerCase().split(' ');
@@ -166,10 +192,10 @@ const TasksPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title || !formData.schedule_date || !formData.schedule_time) {
+    if (!formData.title || !formData.schedule_date || !formData.schedule_time || (formData.value !== 0 && !formData.category)) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha todos os campos obrigatórios.",
+        description: "Por favor, preencha o título, data, horário e categoria (se houver valor).",
         variant: "destructive",
       });
       return;
@@ -188,14 +214,13 @@ const TasksPage = () => {
     }
 
     try {
-      // Combine date and time inputs into a single string
       const localDateTimeString = `${formData.schedule_date}T${formData.schedule_time}:00`;
-      // Create a Date object from the local time string
       const localDate = new Date(localDateTimeString);
-      // Convert the local Date object to a UTC ISO string for storage
       const scheduleDateTime = localDate.toISOString();
 
       const localCreatedAt = new Date().toISOString();
+
+      const valueWithSign = formData.value * (transactionType === 'income' ? 1 : -1);
 
       const taskData = {
           title: formData.title,
@@ -206,7 +231,7 @@ const TasksPage = () => {
           notification_push: formData.notification_push,
           user_id: user?.id,
           group_id: formData.group_id === 'personal' ? null : formData.group_id,
-          value: formData.value,
+          value: valueWithSign,
           category: formData.category,
           created_at: selectedTask ? selectedTask.created_at : localCreatedAt,
       };
@@ -449,23 +474,50 @@ const TasksPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                       <Label htmlFor="value">Valor (R$)</Label>
-                      <Input
-                          id="value"
-                          type="number"
-                          step="0.01"
-                          value={formData.value}
-                          onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
-                          placeholder="Ex: 150.50"
-                      />
+                      <div className="flex items-center gap-2">
+                        <Input
+                            id="value"
+                            type="number"
+                            step="0.01"
+                            value={formData.value}
+                            onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
+                            placeholder="Ex: 150.50"
+                        />
+                        {formData.value > 0 && (
+                            <ToggleGroup
+                                type="single"
+                                variant="outline"
+                                value={transactionType}
+                                onValueChange={(value: 'income' | 'expense') => {
+                                    if (value) setTransactionType(value);
+                                }}
+                            >
+                                <ToggleGroupItem value="income" aria-label="Toggle income">
+                                    <PlusIcon className="h-4 w-4" />
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="expense" aria-label="Toggle expense">
+                                    <Minus className="h-4 w-4" />
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                        )}
+                      </div>
                   </div>
                   <div className="space-y-2">
-                      <Label htmlFor="category">Categoria</Label>
-                      <Input
-                          id="category"
-                          value={formData.category}
-                          onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                          placeholder="Ex: Contas de casa"
-                      />
+                        <Label htmlFor="category">Categoria *</Label>
+                        <Combobox
+                            options={categories}
+                            value={formData.category}
+                            onChange={(value) => {
+                                const newCategory = !categories.some(c => c.value === value);
+                                if (newCategory && value) {
+                                    setCategories([...categories, { label: value, value }]);
+                                }
+                                setFormData({ ...formData, category: value })
+                            }}
+                            placeholder="Selecione ou crie..."
+                            searchPlaceholder="Buscar categoria..."
+                            noResultsMessage="Nenhuma categoria encontrada."
+                        />
                   </div>
               </div>
 
