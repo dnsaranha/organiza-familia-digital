@@ -1,26 +1,45 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Star, Zap, Loader2, ArrowLeft } from 'lucide-react';
-import { stripeProducts } from '@/stripe-config';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Check, Crown, Star, Zap, Loader2, ArrowLeft } from "lucide-react";
+import { stripeProducts } from "@/stripe-config";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export const SubscriptionPlans = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-  const navigate = useNavigate();
 
-  const handleSubscribe = async (priceId: string, mode: 'payment' | 'subscription') => {
+  // Safe navigation function that checks for router context
+  const navigate = (() => {
+    try {
+      const routerNavigate = useNavigate();
+      return routerNavigate;
+    } catch (error) {
+      // Fallback navigation using window.location if router context is not available
+      return (path: string) => {
+        if (path.startsWith("/")) {
+          window.location.href = window.location.origin + path;
+        } else {
+          window.location.href = path;
+        }
+      };
+    }
+  })();
+
+  const handleSubscribe = async (
+    priceId: string,
+    mode: "payment" | "subscription",
+  ) => {
     if (!user) {
       toast({
-        title: 'Erro',
-        description: 'Você precisa estar logado para fazer uma assinatura.',
-        variant: 'destructive',
+        title: "Erro",
+        description: "Você precisa estar logado para fazer uma assinatura.",
+        variant: "destructive",
       });
       return;
     }
@@ -28,30 +47,34 @@ export const SubscriptionPlans = () => {
     setLoading(priceId);
 
     try {
-      const { data, error } = await supabase.functions.invoke('stripe-checkout', {
-        body: {
-          price_id: priceId,
-          success_url: `${window.location.origin}/success`,
-          cancel_url: `${window.location.origin}/pricing`,
-          mode,
+      const { data, error } = await supabase.functions.invoke(
+        "stripe-checkout",
+        {
+          body: {
+            price_id: priceId,
+            success_url: `${window.location.origin}/success`,
+            cancel_url: `${window.location.origin}/pricing`,
+            mode,
+          },
         },
-      });
+      );
 
       if (error) {
-        throw new Error(error.message || 'Erro ao criar sessão de checkout');
+        throw new Error(error.message || "Erro ao criar sessão de checkout");
       }
 
       if (data.url) {
         window.location.href = data.url;
       } else {
-        throw new Error('URL de checkout não recebida');
+        throw new Error("URL de checkout não recebida");
       }
     } catch (error: any) {
-      console.error('Erro no checkout:', error);
+      console.error("Erro no checkout:", error);
       toast({
-        title: 'Erro no checkout',
-        description: error.message || 'Não foi possível iniciar o processo de pagamento.',
-        variant: 'destructive',
+        title: "Erro no checkout",
+        description:
+          error.message || "Não foi possível iniciar o processo de pagamento.",
+        variant: "destructive",
       });
     } finally {
       setLoading(null);
@@ -75,26 +98,26 @@ export const SubscriptionPlans = () => {
     switch (index) {
       case 0:
         return [
-          'Gestão básica de transações',
-          'Relatórios simples',
-          'Suporte por email',
+          "Gestão básica de transações",
+          "Relatórios simples",
+          "Suporte por email",
         ];
       case 1:
         return [
-          'Todas as funcionalidades gratuitas',
-          'Grupos ilimitados',
-          'Relatórios avançados',
-          'Notificações personalizadas',
-          'Suporte prioritário',
+          "Todas as funcionalidades gratuitas",
+          "Grupos ilimitados",
+          "Relatórios avançados",
+          "Notificações personalizadas",
+          "Suporte prioritário",
         ];
       case 2:
         return [
-          'Todas as funcionalidades básicas',
-          'Análises financeiras avançadas',
-          'Integração com bancos',
-          'Consultoria financeira',
-          'Suporte 24/7',
-          'Recursos exclusivos',
+          "Todas as funcionalidades básicas",
+          "Análises financeiras avançadas",
+          "Integração com bancos",
+          "Consultoria financeira",
+          "Suporte 24/7",
+          "Recursos exclusivos",
         ];
       default:
         return [];
@@ -102,8 +125,8 @@ export const SubscriptionPlans = () => {
   };
 
   const formatPrice = (price: number, currency: string) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
       currency: currency,
     }).format(price);
   };
@@ -113,7 +136,7 @@ export const SubscriptionPlans = () => {
         <Button
           variant="ghost"
           className="absolute top-0 left-0"
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Voltar
@@ -122,7 +145,8 @@ export const SubscriptionPlans = () => {
           Escolha seu Plano
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Encontre o plano perfeito para suas necessidades de gestão financeira familiar
+          Encontre o plano perfeito para suas necessidades de gestão financeira
+          familiar
         </p>
       </div>
 
@@ -132,8 +156,8 @@ export const SubscriptionPlans = () => {
             key={product.priceId}
             className={`relative overflow-hidden transition-all duration-300 hover:scale-105 ${
               index === 1
-                ? 'border-primary shadow-lg bg-gradient-card'
-                : 'bg-gradient-card shadow-card'
+                ? "border-primary shadow-lg bg-gradient-card"
+                : "bg-gradient-card shadow-card"
             }`}
           >
             {index === 1 && (
@@ -141,13 +165,17 @@ export const SubscriptionPlans = () => {
                 Mais Popular
               </Badge>
             )}
-            
+
             <CardHeader className="text-center pb-4">
-              <div className={`mx-auto mb-4 rounded-full p-3 ${
-                index === 0 ? 'bg-muted' :
-                index === 1 ? 'bg-gradient-primary text-primary-foreground' :
-                'bg-gradient-expense text-expense-foreground'
-              }`}>
+              <div
+                className={`mx-auto mb-4 rounded-full p-3 ${
+                  index === 0
+                    ? "bg-muted"
+                    : index === 1
+                      ? "bg-gradient-primary text-primary-foreground"
+                      : "bg-gradient-expense text-expense-foreground"
+                }`}
+              >
                 {getIcon(index)}
               </div>
               <CardTitle className="text-2xl font-bold">
@@ -155,8 +183,10 @@ export const SubscriptionPlans = () => {
               </CardTitle>
               <div className="text-3xl font-bold text-primary">
                 {formatPrice(product.price, product.currency)}
-                {product.mode === 'subscription' && (
-                  <span className="text-sm font-normal text-muted-foreground">/mês</span>
+                {product.mode === "subscription" && (
+                  <span className="text-sm font-normal text-muted-foreground">
+                    /mês
+                  </span>
                 )}
               </div>
             </CardHeader>
@@ -180,10 +210,10 @@ export const SubscriptionPlans = () => {
                 disabled={loading === product.priceId}
                 className={`w-full ${
                   index === 1
-                    ? 'bg-gradient-primary text-primary-foreground shadow-button hover:scale-105'
+                    ? "bg-gradient-primary text-primary-foreground shadow-button hover:scale-105"
                     : index === 2
-                    ? 'bg-gradient-expense text-expense-foreground shadow-expense hover:scale-105'
-                    : 'bg-gradient-success text-success-foreground shadow-success hover:scale-105'
+                      ? "bg-gradient-expense text-expense-foreground shadow-expense hover:scale-105"
+                      : "bg-gradient-success text-success-foreground shadow-success hover:scale-105"
                 } transition-smooth`}
               >
                 {loading === product.priceId ? (
@@ -193,7 +223,11 @@ export const SubscriptionPlans = () => {
                   </>
                 ) : (
                   <>
-                    {product.price === 0 ? 'Começar Grátis' : product.mode === 'subscription' ? 'Assinar Agora' : 'Comprar Agora'}
+                    {product.price === 0
+                      ? "Começar Grátis"
+                      : product.mode === "subscription"
+                        ? "Assinar Agora"
+                        : "Comprar Agora"}
                   </>
                 )}
               </Button>
@@ -204,11 +238,9 @@ export const SubscriptionPlans = () => {
 
       <div className="mt-16 text-center">
         <div className="bg-muted/50 rounded-lg p-8 max-w-4xl mx-auto">
-          <h3 className="text-2xl font-bold mb-4">
-            Garantia de 30 dias
-          </h3>
+          <h3 className="text-2xl font-bold mb-4">Garantia de 30 dias</h3>
           <p className="text-muted-foreground">
-            Experimente qualquer plano por 30 dias. Se não ficar satisfeito, 
+            Experimente qualquer plano por 30 dias. Se não ficar satisfeito,
             devolvemos seu dinheiro sem perguntas.
           </p>
         </div>

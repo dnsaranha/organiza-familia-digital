@@ -3,6 +3,7 @@
 ## Project info
 
 **URL**: https://lovable.dev/projects/ef37d5b4-ec7f-4cc3-9833-672ee87ad103
+**Tempo Canvas**: https://6c66bf5a-dc09-46c7-97c1-611d69efaaeb.canvases.tempo.build
 
 ## How can I edit this code?
 

@@ -1,11 +1,17 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Header } from "@/components/Header";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -34,7 +40,9 @@ export default function Profile() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         navigate("/auth");
       } else {
@@ -51,7 +59,11 @@ export default function Profile() {
         if (!user) return;
 
         // Fetch profile
-        const { data: profileData, error: profileError, status } = await supabase
+        const {
+          data: profileData,
+          error: profileError,
+          status,
+        } = await supabase
           .from("profiles")
           .select(`full_name, avatar_url`)
           .eq("id", user.id)
@@ -67,21 +79,22 @@ export default function Profile() {
         }
 
         // Fetch preferences using raw SQL
-        const { data: preferencesData, error: preferencesError } = await supabase
-          .from('user_preferences')
-          .select('month_start_day, carry_over_balance')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        const { data: preferencesData, error: preferencesError } =
+          await supabase
+            .from("user_preferences")
+            .select("month_start_day, carry_over_balance")
+            .eq("user_id", user.id)
+            .maybeSingle();
 
-        if (preferencesError && preferencesError.code !== 'PGRST116') { // Ignore 'no rows' error
+        if (preferencesError && preferencesError.code !== "PGRST116") {
+          // Ignore 'no rows' error
           throw preferencesError;
         }
 
         if (preferencesData) {
-            setMonthStartDay(preferencesData.month_start_day);
-            setCarryOverBalance(preferencesData.carry_over_balance);
+          setMonthStartDay(preferencesData.month_start_day);
+          setCarryOverBalance(preferencesData.carry_over_balance);
         }
-
       } catch (error) {
         toast({
           title: "Erro ao carregar perfil",
@@ -108,20 +121,20 @@ export default function Profile() {
       let newAvatarUrl = avatarUrl;
 
       if (newAvatar) {
-        const fileExt = newAvatar.name.split('.').pop();
+        const fileExt = newAvatar.name.split(".").pop();
         const filePath = `${user.id}/${Math.random()}.${fileExt}`;
 
         const { error: uploadError } = await supabase.storage
-          .from('avatars')
+          .from("avatars")
           .upload(filePath, newAvatar);
 
         if (uploadError) {
           throw uploadError;
         }
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('avatars')
-          .getPublicUrl(filePath);
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("avatars").getPublicUrl(filePath);
 
         newAvatarUrl = publicUrl;
       }
@@ -133,7 +146,9 @@ export default function Profile() {
         updated_at: new Date().toISOString(),
       };
 
-      const { error: profileError } = await supabase.from("profiles").upsert(profileUpdates);
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert(profileUpdates);
       if (profileError) throw profileError;
 
       const preferencesUpdates = {
@@ -144,15 +159,16 @@ export default function Profile() {
       };
 
       const { error: preferencesError } = await supabase
-        .from('user_preferences')
+        .from("user_preferences")
         .upsert(preferencesUpdates);
       if (preferencesError) throw preferencesError;
 
       toast({
         title: "Perfil atualizado!",
-        description: "Seu perfil e suas preferências foram atualizados com sucesso.",
+        description:
+          "Seu perfil e suas preferências foram atualizados com sucesso.",
       });
-      navigate('/');
+      navigate("/");
     } catch (error) {
       toast({
         title: "Erro ao atualizar o perfil",
@@ -171,14 +187,21 @@ export default function Profile() {
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle>Perfil de Usuário</CardTitle>
-            <CardDescription>Atualize suas informações de perfil e preferências.</CardDescription>
+            <CardDescription>
+              Atualize suas informações de perfil e preferências.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={updateProfile} className="space-y-6">
               <div className="space-y-4">
                 <div>
                   <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="text" value={user?.email || ""} disabled />
+                  <Input
+                    id="email"
+                    type="text"
+                    value={user?.email || ""}
+                    disabled
+                  />
                 </div>
                 <div>
                   <Label htmlFor="fullName">Nome Completo</Label>
@@ -193,8 +216,13 @@ export default function Profile() {
                   <Label>Avatar</Label>
                   <div className="flex items-center gap-4">
                     <Avatar className="h-20 w-20">
-                      <AvatarImage src={avatarPreview || avatarUrl} alt={fullName || ""} />
-                      <AvatarFallback>{fullName?.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarImage
+                        src={avatarPreview || avatarUrl}
+                        alt={fullName || ""}
+                      />
+                      <AvatarFallback>
+                        {fullName?.charAt(0).toUpperCase()}
+                      </AvatarFallback>
                     </Avatar>
                     <Input
                       id="avatarFile"
@@ -210,7 +238,9 @@ export default function Profile() {
               <Separator />
 
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Preferências Financeiras</h3>
+                <h3 className="text-lg font-medium">
+                  Preferências Financeiras
+                </h3>
                 <div className="space-y-2">
                   <Label htmlFor="monthStartDay">Dia de Início do Mês</Label>
                   <Input
@@ -219,10 +249,13 @@ export default function Profile() {
                     min="1"
                     max="28"
                     value={monthStartDay}
-                    onChange={(e) => setMonthStartDay(parseInt(e.target.value, 10))}
+                    onChange={(e) =>
+                      setMonthStartDay(parseInt(e.target.value, 10))
+                    }
                   />
                   <p className="text-sm text-muted-foreground">
-                    Defina o dia em que seu mês financeiro começa (ex: 1 para o dia primeiro).
+                    Defina o dia em que seu mês financeiro começa (ex: 1 para o
+                    dia primeiro).
                   </p>
                 </div>
                 <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
@@ -240,7 +273,11 @@ export default function Profile() {
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
-                <Button type="button" variant="outline" onClick={() => navigate('/')}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate("/")}
+                >
                   Voltar
                 </Button>
                 <Button type="submit" disabled={loading}>
