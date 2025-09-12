@@ -1,17 +1,18 @@
-// This is a placeholder service worker for future Web Push API implementation.
-// It establishes the necessary foundation without implementing full push logic yet.
+const CACHE_NAME = "meu-app-cache-v1";
+const urlsToCache = ["/", "/index.html"];
 
-self.addEventListener('install', (event) => {
-  console.log('Service Worker: Install event');
-  // The service worker is being installed.
+self.addEventListener("install", event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(urlsToCache);
+    })
+  );
 });
 
-self.addEventListener('activate', (event) => {
-    console.log('Service Worker: Activate event');
-    // The service worker is being activated.
-});
-
-self.addEventListener('fetch', (event) => {
-  // This service worker does not intercept fetch requests for now.
-  // This is a placeholder for future caching strategies.
+self.addEventListener("fetch", event => {
+  event.respondWith(
+    caches.match(event.request).then(response => {
+      return response || fetch(event.request);
+    })
+  );
 });
