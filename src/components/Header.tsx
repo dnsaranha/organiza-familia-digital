@@ -3,12 +3,29 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { BudgetScopeSwitcher } from "./BudgetScopeSwitcher";
 import { useNavigate } from "react-router-dom";
+import React from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export const Header = () => {
   const { user, signOut } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Safe navigation function that checks for router context
+  const navigate = (() => {
+    try {
+      const routerNavigate = useNavigate();
+      return routerNavigate;
+    } catch (error) {
+      // Fallback navigation using window.location if router context is not available
+      return (path: string) => {
+        if (path.startsWith("/")) {
+          window.location.href = window.location.origin + path;
+        } else {
+          window.location.href = path;
+        }
+      };
+    }
+  })();
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -28,62 +45,6 @@ export const Header = () => {
   };
 
   return (
-    <header className="border-b border-border bg-gradient-card shadow-card">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full p-2 bg-gradient-primary">
-              <PiggyBank className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-primary">Organiza</h1>
-              <p className="text-sm text-muted-foreground">Gestão Financeira Familiar</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {user ? (
-              <>
-                <BudgetScopeSwitcher />
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => navigate("/pricing")}
-                  className="text-muted-foreground hover:text-primary"
-                >
-                  Planos
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/profile")}
-                  className="text-muted-foreground hover:text-primary"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleSignOut}
-                  className="text-muted-foreground hover:text-primary"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </>
-            ) : (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate("/auth")}
-                className="text-muted-foreground hover:text-primary"
-              >
-                <LogIn className="h-4 w-4 mr-2" />
-                Entrar
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
-    </header>
+    <header className="border-b border-border bg-gradient-card shadow-card"></header>
   );
 };
