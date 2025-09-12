@@ -11,6 +11,7 @@ import {
   AreaChart,
   TrendingUp,
   Link,
+  CheckSquare,
 } from "lucide-react";
 
 import {
@@ -173,6 +174,16 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                     <SidebarMenuButton isActive={isActive}>
                       <TrendingUp className="size-4" />
                       <span>Investimentos</span>
+                    </SidebarMenuButton>
+                  )}
+                </NavLink>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <NavLink to="/tasks" className="w-full">
+                  {({ isActive }) => (
+                    <SidebarMenuButton isActive={isActive}>
+                      <CheckSquare className="size-4" />
+                      <span>Tarefas</span>
                     </SidebarMenuButton>
                   )}
                 </NavLink>
