@@ -2,13 +2,16 @@ CREATE TABLE push_subscriptions (
     id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
     subscription JSONB NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE (user_id, subscription ->> 'endpoint')
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE public.push_subscriptions IS 'Stores user subscriptions for web push notifications.';
 COMMENT ON COLUMN public.push_subscriptions.user_id IS 'The user associated with this subscription.';
 COMMENT ON COLUMN public.push_subscriptions.subscription IS 'The PushSubscription object from the browser.';
+
+-- Create a unique index on the user_id and the subscription's endpoint.
+-- This is the correct way to enforce uniqueness on a JSONB property.
+CREATE UNIQUE INDEX push_subscriptions_user_endpoint_idx ON public.push_subscriptions (user_id, (subscription->>'endpoint'));
 
 -- Enable Row Level Security
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
