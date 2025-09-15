@@ -15,6 +15,7 @@ import InvestmentsPage from "./pages/Investments";
 import NotificationSettingsPage from "./pages/NotificationSettings";
 import OpenFinanceConnectPage from "./pages/OpenFinanceConnect";
 import TasksPage from "./pages/Tasks";
+import { PWASettings } from "./pages/PWASettings";
 import AppShell from "./components/AppShell";
 import { BudgetScopeProvider } from "./contexts/BudgetScopeContext";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -127,6 +128,14 @@ const App = () => {
                   element={
                     <AppShell>
                       <TasksPage />
+                    </AppShell>
+                  }
+                />
+                <Route
+                  path="/pwa"
+                  element={
+                    <AppShell>
+                      <PWASettings />
                     </AppShell>
                   }
                 />

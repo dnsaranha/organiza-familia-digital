@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useToast } from './use-toast';
-import { useAuth } from './useAuth';
-import { supabase } from '@/integrations/supabase/client';
 
 // Base64 to Uint8Array conversion for VAPID keys
 const urlBase64ToUint8Array = (base64String: string) => {
@@ -19,7 +17,7 @@ const urlBase64ToUint8Array = (base64String: string) => {
   return outputArray;
 };
 
-// Temp public VAPID key - in production this should be from env
+// Temp VAPID key - in production this should be from environment
 const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa40HI8Gk-N5UYb-tKh4YWPiVtQ9MrxF8QXI11Y7Gf43YNH5QaQ8w5pJgYjVK0';
 
 export const usePushNotifications = () => {
@@ -28,7 +26,6 @@ export const usePushNotifications = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [subscription, setSubscription] = useState<PushSubscription | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
 
   useEffect(() => {
     // Check if push notifications are supported
@@ -61,7 +58,7 @@ export const usePushNotifications = () => {
   };
 
   const subscribeToPush = async () => {
-    if (!isSupported || !user) {
+    if (!isSupported) {
       toast({
         title: 'Notificações não suportadas',
         description: 'Seu navegador não suporta notificações push.',
@@ -95,20 +92,6 @@ export const usePushNotifications = () => {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       });
 
-      // Save subscription to database
-      const { error } = await supabase
-        .from('push_subscriptions')
-        .upsert({
-          user_id: user.id,
-          subscription: JSON.stringify(pushSubscription.toJSON()),
-          endpoint: pushSubscription.endpoint,
-          created_at: new Date().toISOString(),
-        });
-
-      if (error) {
-        throw error;
-      }
-
       setSubscription(pushSubscription);
       setIsSubscribed(true);
       
@@ -134,23 +117,13 @@ export const usePushNotifications = () => {
   };
 
   const unsubscribeFromPush = async () => {
-    if (!subscription || !user) return false;
+    if (!subscription) return false;
 
     setIsLoading(true);
 
     try {
       // Unsubscribe from push service
       await subscription.unsubscribe();
-
-      // Remove subscription from database
-      const { error } = await supabase
-        .from('push_subscriptions')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (error) {
-        throw error;
-      }
 
       setSubscription(null);
       setIsSubscribed(false);
@@ -176,23 +149,24 @@ export const usePushNotifications = () => {
   };
 
   const sendTestNotification = async () => {
-    if (!isSubscribed || !user) return;
+    if (!isSubscribed) return;
 
     try {
-      const { error } = await supabase.functions.invoke('send-push-notification', {
-        body: {
-          userId: user.id,
-          title: '🧪 Teste de Notificação',
+      // Send a local test notification
+      if ('serviceWorker' in navigator) {
+        const registration = await navigator.serviceWorker.ready;
+        registration.showNotification('🧪 Teste de Notificação', {
           body: 'Esta é uma notificação de teste do Organiza!',
           icon: '/icons/icon-192x192.png',
-        }
-      });
-
-      if (error) throw error;
+          badge: '/icons/icon-96x96.png',
+          tag: 'test-notification',
+          requireInteraction: false,
+        });
+      }
 
       toast({
         title: 'Notificação enviada!',
-        description: 'Você deve receber uma notificação em breve.',
+        description: 'Você deve ver uma notificação em breve.',
       });
 
     } catch (error) {

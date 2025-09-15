@@ -9,6 +9,7 @@ export const useTaskNotifications = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Update the task notification system to include PWA notifications
   useEffect(() => {
     if (!user) return;
 
@@ -29,18 +30,40 @@ export const useTaskNotifications = () => {
           return;
         }
 
-        upcomingTasks?.forEach((task) => {
+        upcomingTasks?.forEach(async (task) => {
           const scheduleTime = new Date(task.schedule_date);
           const timeUntilTask = scheduleTime.getTime() - now.getTime();
 
           if (timeUntilTask > 0 && timeUntilTask <= 5 * 60 * 1000) {
             // 5 minutos
             if (task.notification_push) {
-              sendNotification(`⏰ ${task.title}`, {
-                body:
-                  task.description || "Tarefa agendada próxima do vencimento",
-                icon: "/favicon.ico",
-              });
+              // Try PWA notification first
+              if ('serviceWorker' in navigator) {
+                try {
+                  const registration = await navigator.serviceWorker.ready;
+                  await registration.showNotification(`⏰ ${task.title}`, {
+                    body: task.description || "Tarefa agendada próxima do vencimento",
+                    icon: '/icons/icon-192x192.png',
+                    badge: '/icons/icon-96x96.png',
+                    tag: `task-${task.id}`,
+                    requireInteraction: false,
+                    silent: false,
+                  });
+                } catch (error) {
+                  console.log('PWA notification failed, falling back to basic notification');
+                  // Fallback to basic notification
+                  sendNotification(`⏰ ${task.title}`, {
+                    body: task.description || "Tarefa agendada próxima do vencimento",
+                    icon: "/icons/icon-192x192.png",
+                  });
+                }
+              } else {
+                // Fallback to basic notification
+                sendNotification(`⏰ ${task.title}`, {
+                  body: task.description || "Tarefa agendada próxima do vencimento",
+                  icon: "/icons/icon-192x192.png",
+                });
+              }
             }
 
             toast({
