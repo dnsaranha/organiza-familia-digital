@@ -57,7 +57,7 @@ const TasksPage = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    task_type: 'custom' as const,
+    task_type: 'custom' as 'payment_reminder' | 'budget_alert' | 'income_reminder' | 'custom',
     schedule_date: '',
     schedule_time: '',
     notification_email: true,
@@ -105,7 +105,7 @@ const TasksPage = () => {
     setFormData({
         title: '',
         description: '',
-        task_type: 'custom' as const,
+        task_type: 'custom' as 'payment_reminder' | 'budget_alert' | 'income_reminder' | 'custom',
         schedule_date: '',
         schedule_time: '',
         notification_email: true,
@@ -360,7 +360,8 @@ const TasksPage = () => {
           className="max-w-sm"
         />
         <DateRangePicker
-          onUpdate={({ range }) => setDateRange({ from: range.from, to: range.to as Date | undefined })}
+          date={{ from: dateRange.from, to: dateRange.to }}
+          onDateChange={(range) => setDateRange({ from: range?.from, to: range?.to })}
         />
       </div>
 

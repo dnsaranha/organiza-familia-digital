@@ -7,6 +7,7 @@ import { ScheduledTasks } from "@/components/ScheduledTasks";
 import { FamilyGroups } from "@/components/FamilyGroups";
 import { SubscriptionStatus } from "@/components/SubscriptionStatus";
 import { useAuth } from "@/hooks/useAuth";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { useOpenBanking } from "@/hooks/useOpenBanking";
 import { supabase } from "@/integrations/supabase/client";
 import { useBudgetScope } from "@/contexts/BudgetScopeContext";
@@ -175,6 +176,9 @@ const Index = () => {
             Aqui está um resumo das suas finanças
           </p>
         </div>
+
+        {/* PWA Install Prompt */}
+        <PWAInstallPrompt />
 
         {/* Financial Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">

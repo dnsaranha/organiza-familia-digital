@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_assets: {
+        Row: {
+          current_price: number | null
+          dividends_12m: number | null
+          name: string | null
+          sector: string | null
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          current_price?: number | null
+          dividends_12m?: number | null
+          name?: string | null
+          sector?: string | null
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          current_price?: number | null
+          dividends_12m?: number | null
+          name?: string | null
+          sector?: string | null
+          ticker?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           created_at: string
@@ -121,8 +148,30 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          id: number
+          subscription: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          subscription: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          subscription?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduled_tasks: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           group_id: string | null
@@ -135,8 +184,10 @@ export type Database = {
           title: string
           updated_at: string
           user_id: string
+          value: number | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           group_id?: string | null
@@ -149,8 +200,10 @@ export type Database = {
           title: string
           updated_at?: string
           user_id: string
+          value?: number | null
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           group_id?: string | null
@@ -163,6 +216,7 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+          value?: number | null
         }
         Relationships: [
           {
@@ -402,6 +456,10 @@ export type Database = {
       }
     }
     Functions: {
+      bulk_upsert_assets: {
+        Args: { assets_data: Json }
+        Returns: undefined
+      }
       get_group_members: {
         Args: { p_group_id: string }
         Returns: {
