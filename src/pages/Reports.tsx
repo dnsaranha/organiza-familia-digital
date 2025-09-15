@@ -368,7 +368,7 @@ const ReportsPage = () => {
 
     return Object.entries(expenseData).map(([name, value]) => ({
       name,
-      value,
+      value: value as number,
     }));
   }, [filteredBankTransactions]);
 
@@ -392,7 +392,7 @@ const ReportsPage = () => {
       {} as Record<string, { name: string; income: number; expense: number }>,
     );
 
-    return Object.values(monthlyData);
+    return Object.values(monthlyData) as { name: string; income: number; expense: number; }[];
   }, [filteredBankTransactions]);
 
   const incomeVsExpenseData = useMemo(() => {

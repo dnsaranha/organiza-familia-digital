@@ -13,6 +13,7 @@ export interface PluggyAccount {
   number: string;
   subtype: string;
   marketingName: string;
+  brand?: string;
 }
 
 export interface PluggyTransaction {
