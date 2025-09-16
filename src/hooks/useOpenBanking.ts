@@ -440,6 +440,35 @@ export const useOpenBanking = () => {
     [user, supabase, toast],
   );
 
+  // Função para recarregar todos os dados
+  const refreshAllData = useCallback(async () => {
+    if (!user || userItemIds.length === 0) return;
+    
+    setLoading(true);
+    try {
+      const [loadedAccounts] = await Promise.all([
+        loadAllAccounts(userItemIds),
+        loadAllInvestments(userItemIds),
+      ]);
+      if (loadedAccounts.length > 0) {
+        await loadAllTransactions(loadedAccounts);
+      }
+      
+      toast({
+        title: "Dados Bancários Atualizados",
+        description: "Todos os dados do Open Banking foram atualizados.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro na Atualização",
+        description: "Não foi possível atualizar os dados bancários.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user, userItemIds, loadAllAccounts, loadAllInvestments, loadAllTransactions, toast]);
+
   return {
     accounts,
     transactions,
@@ -454,5 +483,6 @@ export const useOpenBanking = () => {
     loadInvestments,
     disconnect,
     setConnectToken,
+    refreshAllData,
   };
 };
