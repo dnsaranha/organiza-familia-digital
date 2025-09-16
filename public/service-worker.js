@@ -26,24 +26,7 @@ self.addEventListener('install', (event) => {
 });
 
 // Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activate event');
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Deleting old cache', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => {
-      console.log('Service Worker: Claiming clients');
-      return self.clients.claim();
-    })
-  );
-});
+// (moved down to combine with task checking setup)
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
@@ -149,4 +132,70 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
+  
+  if (event.data && event.data.type === 'VISIBILITY_CHANGE') {
+    if (event.data.visible) {
+      startTaskChecking();
+    } else {
+      stopTaskChecking();
+    }
+  }
+});
+
+// Check for scheduled tasks every 30 seconds when page is visible
+const checkScheduledTasks = async () => {
+  try {
+    // Post message to main thread to check tasks
+    const clients = await self.clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true
+    });
+    
+    clients.forEach(client => {
+      client.postMessage({
+        type: 'CHECK_SCHEDULED_TASKS',
+        payload: { 
+          now: new Date().toISOString(), 
+          upcoming: new Date(Date.now() + 1 * 60 * 1000).toISOString() 
+        }
+      });
+    });
+  } catch (error) {
+    console.log('Error checking scheduled tasks:', error);
+  }
+};
+
+// Set up periodic task checking
+let taskCheckInterval;
+const startTaskChecking = () => {
+  if (taskCheckInterval) clearInterval(taskCheckInterval);
+  taskCheckInterval = setInterval(checkScheduledTasks, 30000); // Every 30 seconds
+};
+
+const stopTaskChecking = () => {
+  if (taskCheckInterval) {
+    clearInterval(taskCheckInterval);
+    taskCheckInterval = null;
+  }
+};
+
+// Start checking when service worker activates and claim clients
+self.addEventListener('activate', (event) => {
+  console.log('Service Worker: Activate event');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cacheName) => {
+          if (cacheName !== CACHE_NAME) {
+            console.log('Service Worker: Deleting old cache', cacheName);
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    }).then(() => {
+      console.log('Service Worker: Claiming clients');
+      startTaskChecking(); // Start periodic task checking
+      return self.clients.claim();
+    })
+  );
 });
