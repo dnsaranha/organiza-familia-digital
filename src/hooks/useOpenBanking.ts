@@ -440,19 +440,47 @@ export const useOpenBanking = () => {
     [user, supabase, toast],
   );
 
-  // Função para recarregar todos os dados
+  // Função para recarregar todos os dados  
   const refreshAllData = useCallback(async () => {
-    if (!user || userItemIds.length === 0) return;
+    if (!user) {
+      toast({
+        title: "Usuário não autenticado",
+        description: "Você precisa estar logado para atualizar os dados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Usar os IDs mais atuais da base de dados
+    const { data: itemsRows } = await supabase
+      .from("pluggy_items")
+      .select("item_id")
+      .eq("user_id", user.id);
+    
+    const currentIds = (itemsRows ?? []).map((r) => r.item_id);
+    
+    if (currentIds.length === 0) {
+      toast({
+        title: "Nenhuma conta conectada",
+        description: "Conecte uma conta para atualizar os dados.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setLoading(true);
     try {
       const [loadedAccounts] = await Promise.all([
-        loadAllAccounts(userItemIds),
-        loadAllInvestments(userItemIds),
+        loadAllAccounts(currentIds),
+        loadAllInvestments(currentIds),
       ]);
+      
       if (loadedAccounts.length > 0) {
         await loadAllTransactions(loadedAccounts);
       }
+      
+      // Atualizar também os IDs locais
+      setUserItemIds(currentIds);
       
       toast({
         title: "Dados Bancários Atualizados",
@@ -467,7 +495,7 @@ export const useOpenBanking = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, userItemIds, loadAllAccounts, loadAllInvestments, loadAllTransactions, toast]);
+  }, [user, loadAllAccounts, loadAllInvestments, loadAllTransactions, toast]);
 
   return {
     accounts,

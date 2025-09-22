@@ -377,10 +377,10 @@ const InvestmentsPage = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="min-w-[100px]">Banco</TableHead>
-                      <TableHead className="min-w-[80px]">Conta</TableHead>
-                      <TableHead className="min-w-[100px]">Tipo</TableHead>
-                      <TableHead className="text-right min-w-[100px]">Saldo</TableHead>
+                      <TableHead className="min-w-[120px]">Banco</TableHead>
+                      <TableHead className="min-w-[100px]">Conta</TableHead>
+                      <TableHead className="min-w-[120px]">Tipo</TableHead>
+                      <TableHead className="text-right min-w-[120px]">Saldo</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -439,9 +439,9 @@ const InvestmentsPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[150px]">Descrição</TableHead>
-                        <TableHead className="min-w-[80px]">Data</TableHead>
-                        <TableHead className="text-right min-w-[100px]">Valor</TableHead>
+                        <TableHead className="min-w-[180px]">Descrição</TableHead>
+                        <TableHead className="min-w-[100px]">Data</TableHead>
+                        <TableHead className="text-right min-w-[120px]">Valor</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

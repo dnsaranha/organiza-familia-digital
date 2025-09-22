@@ -179,6 +179,7 @@ export type Database = {
           is_completed: boolean | null
           notification_email: boolean | null
           notification_push: boolean | null
+          notified_at: string | null
           schedule_date: string
           task_type: string
           title: string
@@ -195,6 +196,7 @@ export type Database = {
           is_completed?: boolean | null
           notification_email?: boolean | null
           notification_push?: boolean | null
+          notified_at?: string | null
           schedule_date: string
           task_type: string
           title: string
@@ -211,6 +213,7 @@ export type Database = {
           is_completed?: boolean | null
           notification_email?: boolean | null
           notification_push?: boolean | null
+          notified_at?: string | null
           schedule_date?: string
           task_type?: string
           title?: string
