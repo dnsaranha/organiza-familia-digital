@@ -62,9 +62,20 @@ export const useOpenBanking = () => {
           },
         );
         if (error) throw error;
-        setAccounts(data.accounts);
+        const mapped = (data?.accounts ?? []).map((acc: any) => ({
+          id: acc.id,
+          balance: typeof acc.balance === "number" ? acc.balance : (acc.balance?.current ?? acc.balance?.available ?? 0),
+          currency: acc.currencyCode ?? acc.currency ?? "BRL",
+          name: acc.name ?? acc.marketingName ?? acc.institution?.name ?? "Conta",
+          type: acc.type ?? acc.accountType ?? "BANK",
+          number: acc.number ?? acc.accountNumber ?? "",
+          subtype: acc.subtype ?? acc.accountSubType ?? "",
+          marketingName: acc.marketingName ?? acc.institution?.name ?? acc.name ?? "",
+          brand: acc.brand ?? acc.institution?.name,
+        }));
+        setAccounts(mapped);
         setConnected(true);
-        return data.accounts;
+        return mapped;
       } catch (error) {
         toast({
           title: "Erro ao Carregar Contas",
