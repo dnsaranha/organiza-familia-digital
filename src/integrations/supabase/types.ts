@@ -439,6 +439,34 @@ export type Database = {
           payment_intent_id: string | null
           payment_status: string | null
         }
+        Insert: {
+          amount_subtotal?: number | null
+          amount_total?: number | null
+          checkout_session_id?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          order_date?: string | null
+          order_id?: number | null
+          order_status?:
+            | Database["public"]["Enums"]["stripe_order_status"]
+            | null
+          payment_intent_id?: string | null
+          payment_status?: string | null
+        }
+        Update: {
+          amount_subtotal?: number | null
+          amount_total?: number | null
+          checkout_session_id?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          order_date?: string | null
+          order_id?: number | null
+          order_status?:
+            | Database["public"]["Enums"]["stripe_order_status"]
+            | null
+          payment_intent_id?: string | null
+          payment_status?: string | null
+        }
         Relationships: []
       }
       stripe_user_subscriptions: {
