@@ -6,6 +6,7 @@ import { useAuth } from './useAuth';
 // Tipos simplificados para a resposta da Pluggy, ajuste conforme necessário
 export interface PluggyAccount {
   id: string;
+  itemId: string; // ID da conexão Pluggy
   balance: number;
   currency: string;
   name: string;
@@ -64,6 +65,7 @@ export const useOpenBanking = () => {
         if (error) throw error;
         const mapped = (data?.accounts ?? []).map((acc: any) => ({
           id: acc.id,
+          itemId: currentItemId, // Incluir o itemId para rastreamento
           balance: typeof acc.balance === "number" ? acc.balance : (acc.balance?.current ?? acc.balance?.available ?? 0),
           currency: acc.currencyCode ?? acc.currency ?? "BRL",
           name: acc.name ?? acc.marketingName ?? acc.institution?.name ?? "Conta",
@@ -129,10 +131,23 @@ export const useOpenBanking = () => {
           itemIds.map((id) =>
             supabase.functions.invoke("pluggy-accounts", {
               body: { itemId: id },
-            }),
+            }).then(response => ({ itemId: id, response }))
           ),
         );
-        const merged = results.flatMap((r) => r.data?.accounts ?? []);
+        const merged = results.flatMap((r) => 
+          (r.response.data?.accounts ?? []).map((acc: any) => ({
+            id: acc.id,
+            itemId: r.itemId, // Incluir o itemId para rastreamento
+            balance: typeof acc.balance === "number" ? acc.balance : (acc.balance?.current ?? acc.balance?.available ?? 0),
+            currency: acc.currencyCode ?? acc.currency ?? "BRL",
+            name: acc.name ?? acc.marketingName ?? acc.institution?.name ?? "Conta",
+            type: acc.type ?? acc.accountType ?? "BANK",
+            number: acc.number ?? acc.accountNumber ?? "",
+            subtype: acc.subtype ?? acc.accountSubType ?? "",
+            marketingName: acc.marketingName ?? acc.institution?.name ?? acc.name ?? "",
+            brand: acc.brand ?? acc.institution?.name,
+          }))
+        );
         setAccounts(merged);
         setConnected(true);
         return merged;
