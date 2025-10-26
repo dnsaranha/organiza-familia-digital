@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_assets: {
+        Row: {
+          current_price: number | null
+          dividends_12m: number | null
+          name: string | null
+          sector: string | null
+          ticker: string
+          updated_at: string
+        }
+        Insert: {
+          current_price?: number | null
+          dividends_12m?: number | null
+          name?: string | null
+          sector?: string | null
+          ticker: string
+          updated_at?: string
+        }
+        Update: {
+          current_price?: number | null
+          dividends_12m?: number | null
+          name?: string | null
+          sector?: string | null
+          ticker?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           created_at: string
@@ -121,8 +148,30 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          id: number
+          subscription: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          subscription: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          subscription?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduled_tasks: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           group_id: string | null
@@ -130,13 +179,16 @@ export type Database = {
           is_completed: boolean | null
           notification_email: boolean | null
           notification_push: boolean | null
+          notified_at: string | null
           schedule_date: string
           task_type: string
           title: string
           updated_at: string
           user_id: string
+          value: number | null
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           group_id?: string | null
@@ -144,13 +196,16 @@ export type Database = {
           is_completed?: boolean | null
           notification_email?: boolean | null
           notification_push?: boolean | null
+          notified_at?: string | null
           schedule_date: string
           task_type: string
           title: string
           updated_at?: string
           user_id: string
+          value?: number | null
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           group_id?: string | null
@@ -158,11 +213,13 @@ export type Database = {
           is_completed?: boolean | null
           notification_email?: boolean | null
           notification_push?: boolean | null
+          notified_at?: string | null
           schedule_date?: string
           task_type?: string
           title?: string
           updated_at?: string
           user_id?: string
+          value?: number | null
         }
         Relationships: [
           {
@@ -382,6 +439,34 @@ export type Database = {
           payment_intent_id: string | null
           payment_status: string | null
         }
+        Insert: {
+          amount_subtotal?: number | null
+          amount_total?: number | null
+          checkout_session_id?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          order_date?: string | null
+          order_id?: number | null
+          order_status?:
+            | Database["public"]["Enums"]["stripe_order_status"]
+            | null
+          payment_intent_id?: string | null
+          payment_status?: string | null
+        }
+        Update: {
+          amount_subtotal?: number | null
+          amount_total?: number | null
+          checkout_session_id?: string | null
+          currency?: string | null
+          customer_id?: string | null
+          order_date?: string | null
+          order_id?: number | null
+          order_status?:
+            | Database["public"]["Enums"]["stripe_order_status"]
+            | null
+          payment_intent_id?: string | null
+          payment_status?: string | null
+        }
         Relationships: []
       }
       stripe_user_subscriptions: {
@@ -402,6 +487,7 @@ export type Database = {
       }
     }
     Functions: {
+      bulk_upsert_assets: { Args: { assets_data: Json }; Returns: undefined }
       get_group_members: {
         Args: { p_group_id: string }
         Returns: {
@@ -412,7 +498,7 @@ export type Database = {
         }[]
       }
       get_user_groups: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           id: string
@@ -432,10 +518,7 @@ export type Database = {
         Args: { _group_id: string; _user_id?: string }
         Returns: boolean
       }
-      join_group: {
-        Args: { _join_code: string }
-        Returns: string
-      }
+      join_group: { Args: { _join_code: string }; Returns: string }
       remove_group_member: {
         Args: { p_group_id: string; p_user_id: string }
         Returns: undefined

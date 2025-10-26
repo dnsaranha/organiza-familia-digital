@@ -63,6 +63,7 @@ const InvestmentsPage = () => {
     accounts,
     transactions: bankTransactions,
     investments,
+    refreshAllData,
   } = useOpenBanking();
 
   const [refreshing, setRefreshing] = useState(false);
@@ -138,6 +139,11 @@ const InvestmentsPage = () => {
           await getPortfolio(brokerId, accessToken);
           await getDividends(brokerId, accessToken);
         }
+      }
+
+      // Atualizar dados bancários também
+      if (bankConnected && refreshAllData) {
+        await refreshAllData();
       }
 
       toast({
@@ -367,16 +373,17 @@ const InvestmentsPage = () => {
               <CardTitle>Contas Bancárias</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Banco</TableHead>
-                    <TableHead>Conta</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead className="text-right">Saldo</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[120px]">Banco</TableHead>
+                      <TableHead className="min-w-[100px]">Conta</TableHead>
+                      <TableHead className="min-w-[120px]">Tipo</TableHead>
+                      <TableHead className="text-right min-w-[120px]">Saldo</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                   {bankLoading ? (
                     <TableRow>
                       <TableCell colSpan={4}>
@@ -410,8 +417,9 @@ const InvestmentsPage = () => {
                       </TableCell>
                     </TableRow>
                   )}
-                </TableBody>
-              </Table>
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
 
@@ -427,15 +435,16 @@ const InvestmentsPage = () => {
                 </p>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead className="text-right">Valor</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[180px]">Descrição</TableHead>
+                        <TableHead className="min-w-[100px]">Data</TableHead>
+                        <TableHead className="text-right min-w-[120px]">Valor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                     {bankLoading && selectedAccountId ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
@@ -478,8 +487,9 @@ const InvestmentsPage = () => {
                         </TableCell>
                       </TableRow>
                     )}
-                  </TableBody>
-                </Table>
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
 
@@ -489,15 +499,16 @@ const InvestmentsPage = () => {
                 <CardTitle>Investimentos (Open Banking)</CardTitle>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Ativo</TableHead>
-                      <TableHead>Tipo</TableHead>
-                      <TableHead className="text-right">Saldo</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[150px]">Ativo</TableHead>
+                        <TableHead className="min-w-[100px]">Tipo</TableHead>
+                        <TableHead className="text-right min-w-[100px]">Saldo</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                     {bankLoading ? (
                       Array.from({ length: 3 }).map((_, i) => (
                         <TableRow key={i}>
@@ -556,8 +567,9 @@ const InvestmentsPage = () => {
                         </TableCell>
                       </TableRow>
                     )}
-                  </TableBody>
-                </Table>
+                    </TableBody>
+                  </Table>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -566,22 +578,26 @@ const InvestmentsPage = () => {
 
       {/* Enhanced Dashboards */}
       <Tabs defaultValue="evolution" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="evolution" className="flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsTrigger value="evolution" className="flex items-center gap-2 text-xs lg:text-sm">
             <TrendingUp className="h-4 w-4" />
-            Evolução Patrimonial
+            <span className="hidden sm:inline">Evolução Patrimonial</span>
+            <span className="sm:hidden">Evolução</span>
           </TabsTrigger>
-          <TabsTrigger value="allocation" className="flex items-center gap-2">
+          <TabsTrigger value="allocation" className="flex items-center gap-2 text-xs lg:text-sm">
             <PieChartIcon className="h-4 w-4" />
-            Alocação de Ativos
+            <span className="hidden sm:inline">Alocação de Ativos</span>
+            <span className="sm:hidden">Alocação</span>
           </TabsTrigger>
-          <TabsTrigger value="dividends" className="flex items-center gap-2">
+          <TabsTrigger value="dividends" className="flex items-center gap-2 text-xs lg:text-sm">
             <BarChart3 className="h-4 w-4" />
-            Histórico de Proventos
+            <span className="hidden sm:inline">Histórico de Proventos</span>
+            <span className="sm:hidden">Proventos</span>
           </TabsTrigger>
-          <TabsTrigger value="assets" className="flex items-center gap-2">
+          <TabsTrigger value="assets" className="flex items-center gap-2 text-xs lg:text-sm">
             <AlertTriangle className="h-4 w-4" />
-            Meus Ativos
+            <span className="hidden sm:inline">Meus Ativos</span>
+            <span className="sm:hidden">Ativos</span>
           </TabsTrigger>
         </TabsList>
 

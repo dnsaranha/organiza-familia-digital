@@ -26,6 +26,7 @@ import {
   CreditCard,
   TrendingUp,
   TrendingDown,
+  RefreshCw,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useOpenBanking } from "@/hooks/useOpenBanking";
@@ -90,6 +91,7 @@ const ReportsPage = () => {
     accounts,
     transactions: bankTransactions,
     loading: bankLoading,
+    refreshAllData,
   } = useOpenBanking();
 
   const pieChartRef = useRef<HTMLDivElement>(null);
@@ -368,7 +370,7 @@ const ReportsPage = () => {
 
     return Object.entries(expenseData).map(([name, value]) => ({
       name,
-      value,
+      value: value as number,
     }));
   }, [filteredBankTransactions]);
 
@@ -392,7 +394,7 @@ const ReportsPage = () => {
       {} as Record<string, { name: string; income: number; expense: number }>,
     );
 
-    return Object.values(monthlyData);
+    return Object.values(monthlyData) as { name: string; income: number; expense: number; }[];
   }, [filteredBankTransactions]);
 
   const incomeVsExpenseData = useMemo(() => {
@@ -434,6 +436,17 @@ const ReportsPage = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          {bankConnected && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={refreshAllData}
+              disabled={bankLoading}
+            >
+              <RefreshCw className={`md:mr-2 h-4 w-4 ${bankLoading ? "animate-spin" : ""}`} />
+              <span className="hidden md:inline">Atualizar Dados</span>
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handlePdfExport}>
             <Download className="md:mr-2 h-4 w-4" />
             <span className="hidden md:inline">Exportar PDF</span>
@@ -447,45 +460,47 @@ const ReportsPage = () => {
 
       {/* Filter Bar */}
       <Card className="mb-8">
-        <CardContent className="p-4 flex flex-wrap items-center gap-4">
-          <div className="flex-1 min-w-[200px]">
-            <label className="text-sm font-medium mb-1 block">Período</label>
-            <DateRangePicker date={dateRange} onDateChange={setDateRange} />
-          </div>
-          <div className="flex-1 min-w-[150px]">
-            <label className="text-sm font-medium mb-1 block">Categoria</label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
-                <SelectValue placeholder="Todas" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c === "all" ? "Todas" : c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1 min-w-[150px]">
-            <label className="text-sm font-medium mb-1 block">Membro</label>
-            <Select
-              value={member}
-              onValueChange={setMember}
-              disabled={scope === "personal"}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Todos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                {groupMembers.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.full_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <CardContent className="p-4 space-y-4 lg:space-y-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-1 block">Período</label>
+              <DateRangePicker date={dateRange} onDateChange={setDateRange} />
+            </div>
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-1 block">Categoria</label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((c) => (
+                    <SelectItem key={c} value={c}>
+                      {c === "all" ? "Todas" : c}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1">
+              <label className="text-sm font-medium mb-1 block">Membro</label>
+              <Select
+                value={member}
+                onValueChange={setMember}
+                disabled={scope === "personal"}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  {groupMembers.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -606,15 +621,16 @@ const ReportsPage = () => {
                 </div>
               ) : (
                 <ScrollArea className="h-[300px]">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        {scope !== "personal" && <TableHead>Membro</TableHead>}
-                        <TableHead className="text-right">Valor</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="min-w-[80px]">Data</TableHead>
+                          <TableHead className="min-w-[100px]">Categoria</TableHead>
+                          {scope !== "personal" && <TableHead className="min-w-[100px]">Membro</TableHead>}
+                          <TableHead className="text-right min-w-[100px]">Valor</TableHead>
+                        </TableRow>
+                      </TableHeader>
                     <TableBody>
                       {filteredTransactions.map((t) => {
                         const date = t.date
@@ -653,7 +669,8 @@ const ReportsPage = () => {
                         );
                       })}
                     </TableBody>
-                  </Table>
+                    </Table>
+                  </div>
                 </ScrollArea>
               )}
             </CardContent>
@@ -667,7 +684,7 @@ const ReportsPage = () => {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-medium mb-3">Contas Bancárias</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
                     {accounts
                       .filter((acc) => acc.type === "BANK")
                       .map((account) => (
@@ -710,7 +727,7 @@ const ReportsPage = () => {
 
                 <div>
                   <h3 className="text-lg font-medium mb-3">Cartões de Crédito</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
                     {accounts
                       .filter((acc) => acc.type === "CREDIT")
                       .map((account) => (
@@ -787,15 +804,16 @@ const ReportsPage = () => {
                     </div>
                   ) : (
                     <ScrollArea className="h-[300px]">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Data</TableHead>
-                            <TableHead>Descrição</TableHead>
-                            <TableHead>Categoria</TableHead>
-                            <TableHead className="text-right">Valor</TableHead>
-                          </TableRow>
-                        </TableHeader>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead className="min-w-[80px]">Data</TableHead>
+                              <TableHead className="min-w-[150px]">Descrição</TableHead>
+                              <TableHead className="min-w-[100px]">Categoria</TableHead>
+                              <TableHead className="text-right min-w-[100px]">Valor</TableHead>
+                            </TableRow>
+                          </TableHeader>
                         <TableBody>
                           {filteredBankTransactions.length > 0 ? (
                             filteredBankTransactions.map((transaction) => (
@@ -838,8 +856,9 @@ const ReportsPage = () => {
                               </TableCell>
                             </TableRow>
                           )}
-                        </TableBody>
-                      </Table>
+                          </TableBody>
+                        </Table>
+                      </div>
                     </ScrollArea>
                   )}
                 </CardContent>

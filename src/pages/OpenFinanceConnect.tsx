@@ -41,6 +41,7 @@ import {
   Unlink,
   Share2,
   Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { PluggyConnect } from "react-pluggy-connect";
 import { useToast } from "@/hooks/use-toast";
@@ -57,6 +58,7 @@ const OpenFinanceConnectPage = () => {
     handleSuccess,
     connectToken,
     setConnectToken,
+    refreshAllData,
   } = useOpenBanking();
 
   const { toast } = useToast();
@@ -222,7 +224,7 @@ const OpenFinanceConnectPage = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          setConnectionToRemove(account.id);
+                          setConnectionToRemove(account.itemId);
                           setShowDisconnectDialog(true);
                         }}
                         className="h-8 w-8 p-0 text-destructive hover:text-destructive"
@@ -251,6 +253,15 @@ const OpenFinanceConnectPage = () => {
 
               {bankConnected && (
                 <>
+                  <Button
+                    variant="outline"
+                    onClick={refreshAllData}
+                    disabled={isLoading}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Atualizar
+                  </Button>
                   <Button
                     variant="outline"
                     onClick={() => setShowShareDialog(true)}

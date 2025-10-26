@@ -24,3 +24,9 @@ verify_jwt = false
 
 [functions.pluggy-delete-item]
 verify_jwt = false
+
+[functions.check-scheduled-tasks]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false

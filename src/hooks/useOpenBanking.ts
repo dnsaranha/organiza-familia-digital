@@ -6,6 +6,7 @@ import { useAuth } from './useAuth';
 // Tipos simplificados para a resposta da Pluggy, ajuste conforme necessário
 export interface PluggyAccount {
   id: string;
+  itemId: string; // ID da conexão Pluggy
   balance: number;
   currency: string;
   name: string;
@@ -13,6 +14,7 @@ export interface PluggyAccount {
   number: string;
   subtype: string;
   marketingName: string;
+  brand?: string;
 }
 
 export interface PluggyTransaction {
@@ -61,9 +63,21 @@ export const useOpenBanking = () => {
           },
         );
         if (error) throw error;
-        setAccounts(data.accounts);
+        const mapped = (data?.accounts ?? []).map((acc: any) => ({
+          id: acc.id,
+          itemId: currentItemId, // Incluir o itemId para rastreamento
+          balance: typeof acc.balance === "number" ? acc.balance : (acc.balance?.current ?? acc.balance?.available ?? 0),
+          currency: acc.currencyCode ?? acc.currency ?? "BRL",
+          name: acc.name ?? acc.marketingName ?? acc.institution?.name ?? "Conta",
+          type: acc.type ?? acc.accountType ?? "BANK",
+          number: acc.number ?? acc.accountNumber ?? "",
+          subtype: acc.subtype ?? acc.accountSubType ?? "",
+          marketingName: acc.marketingName ?? acc.institution?.name ?? acc.name ?? "",
+          brand: acc.brand ?? acc.institution?.name,
+        }));
+        setAccounts(mapped);
         setConnected(true);
-        return data.accounts;
+        return mapped;
       } catch (error) {
         toast({
           title: "Erro ao Carregar Contas",
@@ -117,10 +131,23 @@ export const useOpenBanking = () => {
           itemIds.map((id) =>
             supabase.functions.invoke("pluggy-accounts", {
               body: { itemId: id },
-            }),
+            }).then(response => ({ itemId: id, response }))
           ),
         );
-        const merged = results.flatMap((r) => r.data?.accounts ?? []);
+        const merged = results.flatMap((r) => 
+          (r.response.data?.accounts ?? []).map((acc: any) => ({
+            id: acc.id,
+            itemId: r.itemId, // Incluir o itemId para rastreamento
+            balance: typeof acc.balance === "number" ? acc.balance : (acc.balance?.current ?? acc.balance?.available ?? 0),
+            currency: acc.currencyCode ?? acc.currency ?? "BRL",
+            name: acc.name ?? acc.marketingName ?? acc.institution?.name ?? "Conta",
+            type: acc.type ?? acc.accountType ?? "BANK",
+            number: acc.number ?? acc.accountNumber ?? "",
+            subtype: acc.subtype ?? acc.accountSubType ?? "",
+            marketingName: acc.marketingName ?? acc.institution?.name ?? acc.name ?? "",
+            brand: acc.brand ?? acc.institution?.name,
+          }))
+        );
         setAccounts(merged);
         setConnected(true);
         return merged;
@@ -439,6 +466,63 @@ export const useOpenBanking = () => {
     [user, supabase, toast],
   );
 
+  // Função para recarregar todos os dados  
+  const refreshAllData = useCallback(async () => {
+    if (!user) {
+      toast({
+        title: "Usuário não autenticado",
+        description: "Você precisa estar logado para atualizar os dados.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Usar os IDs mais atuais da base de dados
+    const { data: itemsRows } = await supabase
+      .from("pluggy_items")
+      .select("item_id")
+      .eq("user_id", user.id);
+    
+    const currentIds = (itemsRows ?? []).map((r) => r.item_id);
+    
+    if (currentIds.length === 0) {
+      toast({
+        title: "Nenhuma conta conectada",
+        description: "Conecte uma conta para atualizar os dados.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const [loadedAccounts] = await Promise.all([
+        loadAllAccounts(currentIds),
+        loadAllInvestments(currentIds),
+      ]);
+      
+      if (loadedAccounts.length > 0) {
+        await loadAllTransactions(loadedAccounts);
+      }
+      
+      // Atualizar também os IDs locais
+      setUserItemIds(currentIds);
+      
+      toast({
+        title: "Dados Bancários Atualizados",
+        description: "Todos os dados do Open Banking foram atualizados.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erro na Atualização",
+        description: "Não foi possível atualizar os dados bancários.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [user, loadAllAccounts, loadAllInvestments, loadAllTransactions, toast]);
+
   return {
     accounts,
     transactions,
@@ -453,5 +537,6 @@ export const useOpenBanking = () => {
     loadInvestments,
     disconnect,
     setConnectToken,
+    refreshAllData,
   };
 };
