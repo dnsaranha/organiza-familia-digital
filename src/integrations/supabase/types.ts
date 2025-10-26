@@ -487,10 +487,7 @@ export type Database = {
       }
     }
     Functions: {
-      bulk_upsert_assets: {
-        Args: { assets_data: Json }
-        Returns: undefined
-      }
+      bulk_upsert_assets: { Args: { assets_data: Json }; Returns: undefined }
       get_group_members: {
         Args: { p_group_id: string }
         Returns: {
@@ -501,7 +498,7 @@ export type Database = {
         }[]
       }
       get_user_groups: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           id: string
@@ -521,10 +518,7 @@ export type Database = {
         Args: { _group_id: string; _user_id?: string }
         Returns: boolean
       }
-      join_group: {
-        Args: { _join_code: string }
-        Returns: string
-      }
+      join_group: { Args: { _join_code: string }; Returns: string }
       remove_group_member: {
         Args: { p_group_id: string; p_user_id: string }
         Returns: undefined

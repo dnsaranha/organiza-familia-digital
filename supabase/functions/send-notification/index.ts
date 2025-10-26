@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.55.0';
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -12,8 +11,7 @@ const corsHeaders = {
 
 interface NotificationRequest {
   taskId: string;
-  email?: string;
-  userEmail?: string;
+  userEmail: string;
   title: string;
   description?: string;
   scheduleDate: string;
@@ -25,19 +23,14 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { taskId, email, userEmail, title, description, scheduleDate }: NotificationRequest = await req.json();
+    const { taskId, userEmail, title, description, scheduleDate }: NotificationRequest = await req.json();
 
-    console.log("Processing notification for task:", taskId);
-
-    // Criar cliente Supabase para acessar dados
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    console.log("Processing notification for task:", taskId, "to:", userEmail);
 
     const emailResponse = await resend.emails.send({
       from: "Organiza <onboarding@resend.dev>",
-      to: [email || userEmail || "usuario@exemplo.com"],
-      subject: `Lembrete: ${title}`,
+      to: [userEmail],
+      subject: `⏰ Lembrete: ${title}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #2563eb; text-align: center;">💰 Organiza - Lembrete</h1>
