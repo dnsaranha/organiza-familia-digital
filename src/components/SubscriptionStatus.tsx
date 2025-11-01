@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ export const SubscriptionStatus = () => {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
@@ -146,7 +148,7 @@ export const SubscriptionStatus = () => {
               <p className="text-lg font-bold text-primary">{formatPrice(stripeProducts[0].price, stripeProducts[0].currency)}</p>
             </div>
             <Button 
-              onClick={() => window.location.href = '/pricing'}
+              onClick={() => navigate('/pricing')}
               className="bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
             >
               Fazer Upgrade
@@ -225,7 +227,7 @@ export const SubscriptionStatus = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => window.location.href = '/pricing'}
+            onClick={() => navigate('/pricing')}
           >
             Alterar Plano
           </Button>

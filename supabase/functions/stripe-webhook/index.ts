@@ -138,18 +138,18 @@ async function syncCustomerFromStripe(customerId: string) {
       return;
     }
 
-    const { data: existingSubscription, error: getSubError } = await supabase
-      .from('stripe_user_subscriptions')
+    const { data: existingCustomer, error: getCustomerError } = await supabase
+      .from('stripe_customers')
       .select('user_id')
       .eq('customer_id', customerId)
-      .single();
+      .maybeSingle();
 
-    if (getSubError && getSubError.code !== 'PGRST116') { // Ignore 'not found' error
-      console.error(`Error fetching user_id for customer ${customerId}:`, getSubError);
+    if (getCustomerError) {
+      console.error(`Error fetching user_id for customer ${customerId}:`, getCustomerError);
       throw new Error('Failed to fetch user from database');
     }
 
-    const userId = existingSubscription?.user_id ?? (customer.metadata.user_id || null);
+    const userId = existingCustomer?.user_id ?? (customer.metadata.user_id || null);
 
     if (!userId) {
       console.error(`user_id not found for customer ${customerId}. Cannot sync subscription.`);
@@ -161,8 +161,8 @@ async function syncCustomerFromStripe(customerId: string) {
     if (!subscription) {
       console.info(`No active subscriptions found for customer: ${customerId}. Setting status to 'canceled'.`);
       const { error: noSubError } = await supabase
-        .from('stripe_user_subscriptions')
-        .update({ subscription_status: 'canceled' })
+        .from('stripe_subscriptions')
+        .update({ status: 'canceled', deleted_at: null })
         .eq('customer_id', customerId);
 
       if (noSubError) {
@@ -174,11 +174,10 @@ async function syncCustomerFromStripe(customerId: string) {
     const paymentMethod = subscription.default_payment_method as Stripe.PaymentMethod | null;
 
     const subscriptionData = {
-      user_id: userId,
       customer_id: customerId,
       subscription_id: subscription.id,
       price_id: subscription.items.data[0]?.price.id,
-      subscription_status: subscription.status,
+      status: subscription.status,
       current_period_start: subscription.current_period_start,
       current_period_end: subscription.current_period_end,
       cancel_at_period_end: subscription.cancel_at_period_end,
@@ -187,7 +186,7 @@ async function syncCustomerFromStripe(customerId: string) {
     };
 
     const { error: subError } = await supabase
-      .from('stripe_user_subscriptions')
+      .from('stripe_subscriptions')
       .upsert(subscriptionData, { onConflict: 'customer_id' });
 
     if (subError) {

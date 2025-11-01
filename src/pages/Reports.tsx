@@ -427,54 +427,55 @@ const ReportsPage = () => {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-8 gap-3 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Relatórios Avançados</h1>
-          <p className="text-muted-foreground">
-            Analise suas finanças com gráficos detalhados e filtros interativos.
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Relatórios Avançados</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Analise suas finanças com gráficos e filtros
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {bankConnected && (
             <Button 
               variant="outline" 
               size="sm" 
               onClick={refreshAllData}
               disabled={bankLoading}
+              className="flex-1 sm:flex-none"
             >
-              <RefreshCw className={`md:mr-2 h-4 w-4 ${bankLoading ? "animate-spin" : ""}`} />
-              <span className="hidden md:inline">Atualizar Dados</span>
+              <RefreshCw className={`h-4 w-4 sm:mr-2 ${bankLoading ? "animate-spin" : ""}`} />
+              <span className="sm:inline">Atualizar</span>
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={handlePdfExport}>
-            <Download className="md:mr-2 h-4 w-4" />
-            <span className="hidden md:inline">Exportar PDF</span>
+          <Button variant="outline" size="sm" onClick={handlePdfExport} className="flex-1 sm:flex-none">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="sm:inline">PDF</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExcelExport}>
-            <Download className="md:mr-2 h-4 w-4" />
-            <span className="hidden md:inline">Exportar Excel</span>
+          <Button variant="outline" size="sm" onClick={handleExcelExport} className="flex-1 sm:flex-none">
+            <Download className="h-4 w-4 sm:mr-2" />
+            <span className="sm:inline">Excel</span>
           </Button>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <Card className="mb-8">
-        <CardContent className="p-4 space-y-4 lg:space-y-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <Card className="mb-4 sm:mb-8">
+        <CardContent className="p-3 sm:p-4 space-y-3 lg:space-y-0">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div className="flex-1">
-              <label className="text-sm font-medium mb-1 block">Período</label>
+              <label className="text-xs sm:text-sm font-medium mb-1 block">Período</label>
               <DateRangePicker date={dateRange} onDateChange={setDateRange} />
             </div>
             <div className="flex-1">
-              <label className="text-sm font-medium mb-1 block">Categoria</label>
+              <label className="text-xs sm:text-sm font-medium mb-1 block">Categoria</label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger>
+                <SelectTrigger className="text-xs sm:text-sm">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (
-                    <SelectItem key={c} value={c}>
+                    <SelectItem key={c} value={c} className="text-xs sm:text-sm">
                       {c === "all" ? "Todas" : c}
                     </SelectItem>
                   ))}
@@ -482,19 +483,19 @@ const ReportsPage = () => {
               </Select>
             </div>
             <div className="flex-1">
-              <label className="text-sm font-medium mb-1 block">Membro</label>
+              <label className="text-xs sm:text-sm font-medium mb-1 block">Membro</label>
               <Select
                 value={member}
                 onValueChange={setMember}
                 disabled={scope === "personal"}
               >
-                <SelectTrigger>
+                <SelectTrigger className="text-xs sm:text-sm">
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="all" className="text-xs sm:text-sm">Todos</SelectItem>
                   {groupMembers.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
+                    <SelectItem key={m.id} value={m.id} className="text-xs sm:text-sm">
                       {m.full_name}
                     </SelectItem>
                   ))}
@@ -507,26 +508,26 @@ const ReportsPage = () => {
 
       {/* Banking Overview - Show when connected */}
       {bankConnected && accounts.length > 0 && (
-        <Card className="mb-8">
-          <CardHeader>
-            <div className="flex items-center justify-between">
+        <Card className="mb-4 sm:mb-8">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-primary" />
-                <CardTitle>Resumo Bancário</CardTitle>
+                <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <CardTitle className="text-base sm:text-lg">Resumo Bancário</CardTitle>
               </div>
-              <Badge variant="default">
-                {accounts.length} conta(s) conectada(s)
+              <Badge variant="default" className="text-xs">
+                {accounts.length} conta(s)
               </Badge>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className="p-4 bg-muted/30 rounded-lg">
+          <CardContent className="px-3 sm:px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="p-3 sm:p-4 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Saldo Selecionado</span>
+                  <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
+                  <span className="text-xs sm:text-sm font-medium">Saldo Selecionado</span>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className="text-lg sm:text-2xl font-bold">
                   {(selectedAccountIds.length > 0
                     ? accounts
                         .filter((acc) => selectedAccountIds.includes(acc.id))
@@ -538,14 +539,14 @@ const ReportsPage = () => {
                   })}
                 </p>
               </div>
-              <div className="p-4 bg-muted/30 rounded-lg">
+              <div className="p-3 sm:p-4 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-sm font-medium">
-                    Entradas (Período)
+                  <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 text-green-600" />
+                  <span className="text-xs sm:text-sm font-medium">
+                    Entradas
                   </span>
                 </div>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-lg sm:text-2xl font-bold text-green-600">
                   {filteredBankTransactions
                     .filter((t) => t.amount > 0)
                     .reduce((sum, t) => sum + t.amount, 0)
@@ -555,12 +556,12 @@ const ReportsPage = () => {
                     })}
                 </p>
               </div>
-              <div className="p-4 bg-muted/30 rounded-lg">
+              <div className="p-3 sm:p-4 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
-                  <TrendingDown className="h-4 w-4 text-red-600" />
-                  <span className="text-sm font-medium">Saídas (Período)</span>
+                  <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 text-red-600" />
+                  <span className="text-xs sm:text-sm font-medium">Saídas</span>
                 </div>
-                <p className="text-2xl font-bold text-red-600">
+                <p className="text-lg sm:text-2xl font-bold text-red-600">
                   {Math.abs(
                     filteredBankTransactions
                       .filter((t) => t.amount < 0)
@@ -577,32 +578,32 @@ const ReportsPage = () => {
       )}
 
       {/* Reports Tabs */}
-      <Tabs defaultValue="manual" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="manual">Transações Manuais</TabsTrigger>
-          <TabsTrigger value="banking" disabled={!bankConnected}>
-            Dados Bancários {!bankConnected && "(Não Conectado)"}
+      <Tabs defaultValue="manual" className="space-y-4 sm:space-y-6">
+        <TabsList className="grid w-full grid-cols-2 h-auto">
+          <TabsTrigger value="manual" className="text-xs sm:text-sm py-2">Transações Manuais</TabsTrigger>
+          <TabsTrigger value="banking" disabled={!bankConnected} className="text-xs sm:text-sm py-2">
+            Dados Bancários {!bankConnected && "(Off)"}
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="manual" className="space-y-8">
+        <TabsContent value="manual" className="space-y-4 sm:space-y-8">
           {/* Manual Transactions Reports */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
             <Card ref={pieChartRef}>
-              <CardHeader>
-                <CardTitle>Despesas por Categoria</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg">Despesas por Categoria</CardTitle>
               </CardHeader>
-              <CardContent className="h-[300px]">
+              <CardContent className="h-[250px] sm:h-[300px]">
                 <Suspense fallback={<ChartLoader />}>
                   <ExpensePieChart data={expenseByCategory} />
                 </Suspense>
               </CardContent>
             </Card>
             <Card ref={barChartRef}>
-              <CardHeader>
-                <CardTitle>Receitas vs. Despesas</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base sm:text-lg">Receitas vs. Despesas</CardTitle>
               </CardHeader>
-              <CardContent className="h-[300px]">
+              <CardContent className="h-[250px] sm:h-[300px]">
                 <Suspense fallback={<ChartLoader />}>
                   <IncomeExpenseBarChart data={incomeVsExpenseData} />
                 </Suspense>
@@ -611,24 +612,24 @@ const ReportsPage = () => {
           </div>
 
           <Card>
-            <CardHeader>
-              <CardTitle>Histórico de Transações Manuais</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base sm:text-lg">Histórico de Transações</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-2 sm:px-6">
               {loading ? (
-                <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                  <Loader2 className="h-8 w-8 animate-spin" />
+                <div className="h-[250px] sm:h-[300px] flex items-center justify-center text-muted-foreground">
+                  <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin" />
                 </div>
               ) : (
-                <ScrollArea className="h-[300px]">
-                  <div className="overflow-x-auto">
+                <ScrollArea className="h-[250px] sm:h-[300px]">
+                  <div className="overflow-x-auto -mx-2 sm:mx-0">
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="min-w-[80px]">Data</TableHead>
-                          <TableHead className="min-w-[100px]">Categoria</TableHead>
-                          {scope !== "personal" && <TableHead className="min-w-[100px]">Membro</TableHead>}
-                          <TableHead className="text-right min-w-[100px]">Valor</TableHead>
+                          <TableHead className="min-w-[70px] text-xs">Data</TableHead>
+                          <TableHead className="min-w-[90px] text-xs">Categoria</TableHead>
+                          {scope !== "personal" && <TableHead className="min-w-[90px] text-xs">Membro</TableHead>}
+                          <TableHead className="text-right min-w-[90px] text-xs">Valor</TableHead>
                         </TableRow>
                       </TableHeader>
                     <TableBody>
@@ -640,18 +641,18 @@ const ReportsPage = () => {
 
                         return (
                           <TableRow key={t.id}>
-                            <TableCell>
+                            <TableCell className="text-xs sm:text-sm">
                               {isValidDate
                                 ? date.toLocaleDateString("pt-BR")
                                 : "Data inválida"}
                             </TableCell>
-                            <TableCell>{t.category || "N/A"}</TableCell>
+                            <TableCell className="text-xs sm:text-sm">{t.category || "N/A"}</TableCell>
                             {scope !== "personal" && (
-                              <TableCell>{t.memberName || "N/A"}</TableCell>
+                              <TableCell className="text-xs sm:text-sm">{t.memberName || "N/A"}</TableCell>
                             )}
                             <TableCell
                               className={cn(
-                                "text-right font-medium",
+                                "text-right font-medium text-xs sm:text-sm",
                                 t.type === "income"
                                   ? "text-green-500"
                                   : "text-red-500",
@@ -677,14 +678,14 @@ const ReportsPage = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="banking" className="space-y-8">
+        <TabsContent value="banking" className="space-y-4 sm:space-y-8">
           {/* Banking Transactions Reports */}
           {bankConnected ? (
             <>
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Contas Bancárias</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                  <h3 className="text-base sm:text-lg font-medium mb-3">Contas Bancárias</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                     {accounts
                       .filter((acc) => acc.type === "BANK")
                       .map((account) => (
@@ -702,18 +703,18 @@ const ReportsPage = () => {
                               : "opacity-100",
                           )}
                         >
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-base">
+                          <CardHeader className="pb-2 sm:pb-3">
+                            <CardTitle className="text-sm sm:text-base line-clamp-2">
                               {account.marketingName || account.name}
                             </CardTitle>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
                               {accountTypeMapping[account.type] ||
                                 account.type}{" "}
                               • {mapAccountSubtype(account.subtype)}
                             </p>
                           </CardHeader>
-                          <CardContent>
-                            <p className="text-2xl font-bold">
+                          <CardContent className="pt-0">
+                            <p className="text-lg sm:text-2xl font-bold">
                               {account.balance.toLocaleString("pt-BR", {
                                 style: "currency",
                                 currency: account.currency || "BRL",
@@ -726,8 +727,8 @@ const ReportsPage = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium mb-3">Cartões de Crédito</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                  <h3 className="text-base sm:text-lg font-medium mb-3">Cartões de Crédito</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                     {accounts
                       .filter((acc) => acc.type === "CREDIT")
                       .map((account) => (
@@ -745,18 +746,18 @@ const ReportsPage = () => {
                               : "opacity-100",
                           )}
                         >
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-base">
+                          <CardHeader className="pb-2 sm:pb-3">
+                            <CardTitle className="text-sm sm:text-base line-clamp-2">
                               {account.marketingName || account.name}
                             </CardTitle>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
                               {accountTypeMapping[account.type] ||
                                 account.type}{" "}
                               • {mapAccountSubtype(account.subtype)}
                             </p>
                           </CardHeader>
-                          <CardContent>
-                            <p className="text-2xl font-bold">
+                          <CardContent className="pt-0">
+                            <p className="text-lg sm:text-2xl font-bold">
                               {account.balance.toLocaleString("pt-BR", {
                                 style: "currency",
                                 currency: account.currency || "BRL",
@@ -770,22 +771,22 @@ const ReportsPage = () => {
               </div>
 
               {/* Bank Data Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Despesas Bancárias por Categoria</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Despesas por Categoria</CardTitle>
                   </CardHeader>
-                  <CardContent className="h-[300px]">
+                  <CardContent className="h-[250px] sm:h-[300px]">
                     <Suspense fallback={<ChartLoader />}>
                       <ExpensePieChart data={bankExpenseByCategory} />
                     </Suspense>
                   </CardContent>
                 </Card>
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Receitas vs. Despesas Bancárias</CardTitle>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base sm:text-lg">Receitas vs. Despesas</CardTitle>
                   </CardHeader>
-                  <CardContent className="h-[300px]">
+                  <CardContent className="h-[250px] sm:h-[300px]">
                     <Suspense fallback={<ChartLoader />}>
                       <IncomeExpenseBarChart data={bankIncomeVsExpenseData} />
                     </Suspense>
@@ -794,44 +795,44 @@ const ReportsPage = () => {
               </div>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Transações Bancárias</CardTitle>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg">Transações Bancárias</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-2 sm:px-6">
                   {bankLoading ? (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                      <Loader2 className="h-8 w-8 animate-spin" />
+                    <div className="h-[250px] sm:h-[300px] flex items-center justify-center text-muted-foreground">
+                      <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin" />
                     </div>
                   ) : (
-                    <ScrollArea className="h-[300px]">
-                      <div className="overflow-x-auto">
+                    <ScrollArea className="h-[250px] sm:h-[300px]">
+                      <div className="overflow-x-auto -mx-2 sm:mx-0">
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="min-w-[80px]">Data</TableHead>
-                              <TableHead className="min-w-[150px]">Descrição</TableHead>
-                              <TableHead className="min-w-[100px]">Categoria</TableHead>
-                              <TableHead className="text-right min-w-[100px]">Valor</TableHead>
+                              <TableHead className="min-w-[70px] text-xs">Data</TableHead>
+                              <TableHead className="min-w-[120px] text-xs">Descrição</TableHead>
+                              <TableHead className="min-w-[80px] text-xs">Categoria</TableHead>
+                              <TableHead className="text-right min-w-[90px] text-xs">Valor</TableHead>
                             </TableRow>
                           </TableHeader>
                         <TableBody>
                           {filteredBankTransactions.length > 0 ? (
                             filteredBankTransactions.map((transaction) => (
                               <TableRow key={transaction.id}>
-                                <TableCell>
+                                <TableCell className="text-xs sm:text-sm">
                                   {new Date(
                                     transaction.date,
                                   ).toLocaleDateString("pt-BR")}
                                 </TableCell>
-                                <TableCell>{transaction.description}</TableCell>
+                                <TableCell className="text-xs sm:text-sm">{transaction.description}</TableCell>
                                 <TableCell>
-                                  <Badge variant="outline">
+                                  <Badge variant="outline" className="text-xs">
                                     {transaction.category}
                                   </Badge>
                                 </TableCell>
                                 <TableCell
                                   className={cn(
-                                    "text-right font-medium",
+                                    "text-right font-medium text-xs sm:text-sm",
                                     transaction.amount >= 0
                                       ? "text-green-500"
                                       : "text-red-500",
@@ -849,10 +850,9 @@ const ReportsPage = () => {
                             <TableRow>
                               <TableCell
                                 colSpan={4}
-                                className="text-center py-8"
+                                className="text-center py-8 text-xs sm:text-sm"
                               >
-                                Nenhuma transação encontrada para os filtros
-                                selecionados.
+                                Nenhuma transação encontrada.
                               </TableCell>
                             </TableRow>
                           )}
@@ -866,15 +866,15 @@ const ReportsPage = () => {
             </>
           ) : (
             <Card>
-              <CardContent className="flex flex-col items-center justify-center h-[300px] text-center">
-                <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">
+              <CardContent className="flex flex-col items-center justify-center h-[250px] sm:h-[300px] text-center px-4">
+                <Building2 className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mb-4" />
+                <h3 className="text-base sm:text-lg font-semibold mb-2">
                   Nenhuma Conta Conectada
                 </h3>
-                <p className="text-muted-foreground mb-4">
-                  Conecte suas contas bancárias para ver relatórios detalhados.
+                <p className="text-xs sm:text-sm text-muted-foreground mb-4">
+                  Conecte suas contas para ver relatórios.
                 </p>
-                <Button onClick={() => navigate("/connect")}>
+                <Button onClick={() => navigate("/connect")} size="sm">
                   Conectar Contas
                 </Button>
               </CardContent>
