@@ -107,7 +107,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
       </header>
-      <main className="pb-20">{children}</main>
+      <main className="pb-20 w-[396px] h-[2362px]">{children}</main>
       <BottomNavBar />
     </div>
   );

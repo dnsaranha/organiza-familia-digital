@@ -22,10 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { useState, useMemo } from "react";
-import {
-  mapInvestmentType,
-  investmentMapping,
-} from "@/lib/investment-mapping";
+import { mapInvestmentType, investmentMapping } from "@/lib/investment-mapping";
 
 interface AssetData {
   symbol: string;
@@ -197,8 +194,10 @@ const AssetAllocationChart = ({
     <div className="space-y-6">
       {/* Allocation Pie Chart */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Composição da Carteira</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between flex-wrap w-[370px] h-[104px]">
+          <CardTitle className="flex justify-center items-start">
+            Composição da Carteira
+          </CardTitle>
           <div className="flex gap-2">
             <Select
               value={viewType}
@@ -260,7 +259,6 @@ const AssetAllocationChart = ({
           </ResponsiveContainer>
         </CardContent>
       </Card>
-
       {/* Asset Breakdown Bar Chart */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -271,9 +269,10 @@ const AssetAllocationChart = ({
           </Button>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={400}>
+          <ResponsiveContainer width="100%" height={400} className="flex">
             <BarChart
-              data={filteredAssets.slice(0, 10)} // Show top 10 assets
+              // Show top 10 assets
+              data={filteredAssets.slice(0, 10)}
               layout="horizontal"
               margin={{ top: 20, right: 30, left: 60, bottom: 5 }}
             >

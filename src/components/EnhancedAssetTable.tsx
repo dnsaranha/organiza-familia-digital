@@ -19,10 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Download, Search, ArrowUpDown } from "lucide-react";
 import { useState, useMemo } from "react";
-import {
-  mapInvestmentType,
-  investmentMapping,
-} from "@/lib/investment-mapping";
+import { mapInvestmentType, investmentMapping } from "@/lib/investment-mapping";
 
 interface AssetData {
   symbol: string;
@@ -266,7 +263,7 @@ const EnhancedAssetTable = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto w-[346px] h-[462px]">
           <Table>
             <TableHeader>
               <TableRow>

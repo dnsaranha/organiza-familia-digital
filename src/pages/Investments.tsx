@@ -213,7 +213,9 @@ const InvestmentsPage = () => {
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Carteira de Investimentos</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
+            Carteira de Investimentos
+          </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Dados B3 e Open Banking -{" "}
             <span className={getConnectionColor()}>{connectionStatus}</span>
@@ -232,7 +234,6 @@ const InvestmentsPage = () => {
           <span className="ml-2 sm:ml-0">Atualizar</span>
         </Button>
       </div>
-
       {/* Alerta de conexão */}
       {!b3Connected && !bankConnected && (
         <Alert>
@@ -243,8 +244,7 @@ const InvestmentsPage = () => {
           </AlertDescription>
         </Alert>
       )}
-
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-[370px] h-[371px]">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm font-medium">
@@ -272,14 +272,16 @@ const InvestmentsPage = () => {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs sm:text-sm font-medium">Valor Atual</CardTitle>
+            <CardTitle className="text-xs sm:text-sm font-medium">
+              Valor Atual
+            </CardTitle>
             {portfolioTotals.currentValue > 0 && (
               <span
                 className={cn(
                   "text-xs sm:text-sm font-semibold",
                   portfolioTotals.currentValue >= portfolioTotals.totalInvested
                     ? "text-green-500"
-                    : "text-red-500"
+                    : "text-red-500",
                 )}
               >
                 {portfolioTotals.currentValue >= portfolioTotals.totalInvested
@@ -337,12 +339,13 @@ const InvestmentsPage = () => {
           </CardContent>
         </Card>
       </div>
-
       {/* Seção Open Banking */}
       {bankConnected && (
-        <div className="space-y-4 sm:space-y-8">
+        <div className="space-y-4 sm:space-y-8 max-h-[863px] overflow-y-auto">
           <div>
-            <h2 className="text-lg sm:text-xl md:text-2xl font-semibold">Open Banking</h2>
+            <h2 className="text-lg sm:text-xl md:text-2xl font-semibold">
+              Open Banking
+            </h2>
             <p className="text-xs sm:text-sm text-muted-foreground">
               Dados dos seus bancos conectados
             </p>
@@ -370,55 +373,74 @@ const InvestmentsPage = () => {
           </div>
 
           {/* Contas Bancárias */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base sm:text-lg">Contas Bancárias</CardTitle>
+          <Card className="max-h-[400px] overflow-y-auto">
+            <CardHeader className="pb-3 sticky top-0 bg-card z-10">
+              <CardTitle className="text-base sm:text-lg">
+                Contas Bancárias
+              </CardTitle>
             </CardHeader>
             <CardContent className="px-2 sm:px-6">
               <div className="overflow-x-auto -mx-2 sm:mx-0">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="min-w-[100px] text-xs">Banco</TableHead>
-                      <TableHead className="min-w-[80px] text-xs">Conta</TableHead>
-                      <TableHead className="min-w-[100px] text-xs">Tipo</TableHead>
-                      <TableHead className="text-right min-w-[100px] text-xs">Saldo</TableHead>
+                      <TableHead className="min-w-[100px] text-xs">
+                        Banco
+                      </TableHead>
+                      <TableHead className="min-w-[80px] text-xs">
+                        Conta
+                      </TableHead>
+                      <TableHead className="min-w-[100px] text-xs">
+                        Tipo
+                      </TableHead>
+                      <TableHead className="text-right min-w-[100px] text-xs">
+                        Saldo
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                  {bankLoading ? (
-                    <TableRow>
-                      <TableCell colSpan={4}>
-                        <Skeleton className="h-4 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ) : accounts.length > 0 ? (
-                    accounts.map((acc) => (
-                      <TableRow
-                        key={acc.id}
-                        onClick={() => setSelectedAccountId(acc.id)}
-                        className={`cursor-pointer ${selectedAccountId === acc.id ? "bg-muted/50" : ""}`}
-                      >
-                        <TableCell className="text-xs sm:text-sm">{acc.marketingName ?? "N/A"}</TableCell>
-                        <TableCell className="text-xs sm:text-sm">{acc.number}</TableCell>
-                        <TableCell className="text-xs sm:text-sm">{mapAccountSubtype(acc.subtype)}</TableCell>
-                        <TableCell className="text-right font-medium text-xs sm:text-sm">
-                          {typeof acc.balance === "number"
-                            ? acc.balance.toLocaleString("pt-BR", {
-                                style: "currency",
-                                currency: acc.currency || "BRL",
-                              })
-                            : "N/A"}
+                    {bankLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={4}>
+                          <Skeleton className="h-4 w-full" />
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center text-xs sm:text-sm">
-                        Nenhuma conta encontrada.
-                      </TableCell>
-                    </TableRow>
-                  )}
+                    ) : accounts.length > 0 ? (
+                      accounts.map((acc) => (
+                        <TableRow
+                          key={acc.id}
+                          onClick={() => setSelectedAccountId(acc.id)}
+                          className={`cursor-pointer ${selectedAccountId === acc.id ? "bg-muted/50" : ""}`}
+                        >
+                          <TableCell className="text-xs sm:text-sm">
+                            {acc.marketingName ?? "N/A"}
+                          </TableCell>
+                          <TableCell className="text-xs sm:text-sm">
+                            {acc.number}
+                          </TableCell>
+                          <TableCell className="text-xs sm:text-sm">
+                            {mapAccountSubtype(acc.subtype)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-xs sm:text-sm">
+                            {typeof acc.balance === "number"
+                              ? acc.balance.toLocaleString("pt-BR", {
+                                  style: "currency",
+                                  currency: acc.currency || "BRL",
+                                })
+                              : "N/A"}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className="text-center text-xs sm:text-sm"
+                        >
+                          Nenhuma conta encontrada.
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
@@ -429,7 +451,9 @@ const InvestmentsPage = () => {
             {/* Transações da Conta Selecionada */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base sm:text-lg">Últimas Transações</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  Últimas Transações
+                </CardTitle>
                 <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                   {selectedAccountId
                     ? `Conta ${accounts.find((a) => a.id === selectedAccountId)?.number}`
@@ -441,57 +465,70 @@ const InvestmentsPage = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[140px] text-xs">Descrição</TableHead>
-                        <TableHead className="min-w-[80px] text-xs">Data</TableHead>
-                        <TableHead className="text-right min-w-[90px] text-xs">Valor</TableHead>
+                        <TableHead className="min-w-[140px] text-xs">
+                          Descrição
+                        </TableHead>
+                        <TableHead className="min-w-[80px] text-xs">
+                          Data
+                        </TableHead>
+                        <TableHead className="text-right min-w-[90px] text-xs">
+                          Valor
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {bankLoading && selectedAccountId ? (
-                      Array.from({ length: 5 }).map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell>
-                            <Skeleton className="h-4 w-20" />
-                          </TableCell>
-                          <TableCell>
-                            <Skeleton className="h-4 w-14" />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Skeleton className="h-4 w-16 inline-block" />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : filteredTransactions.length > 0 ? (
-                      filteredTransactions.slice(0, 10).map((tx) => (
-                        <TableRow key={tx.id}>
-                          <TableCell className="text-xs sm:text-sm">{tx.description}</TableCell>
-                          <TableCell className="text-xs sm:text-sm">
-                            {new Date(tx.date).toLocaleDateString("pt-BR")}
-                          </TableCell>
+                      {bankLoading && selectedAccountId ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                          <TableRow key={i}>
+                            <TableCell>
+                              <Skeleton className="h-4 w-20" />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton className="h-4 w-14" />
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Skeleton className="h-4 w-16 inline-block" />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : filteredTransactions.length > 0 ? (
+                        filteredTransactions.slice(0, 10).map((tx) => (
+                          <TableRow key={tx.id}>
+                            <TableCell className="text-xs sm:text-sm">
+                              {tx.description}
+                            </TableCell>
+                            <TableCell className="text-xs sm:text-sm">
+                              {new Date(tx.date).toLocaleDateString("pt-BR")}
+                            </TableCell>
+                            <TableCell
+                              className={cn(
+                                "text-right font-medium text-xs sm:text-sm",
+                                typeof tx.amount === "number" && tx.amount < 0
+                                  ? "text-red-500"
+                                  : "text-green-500",
+                              )}
+                            >
+                              {typeof tx.amount === "number"
+                                ? tx.amount.toLocaleString("pt-BR", {
+                                    style: "currency",
+                                    currency: "BRL",
+                                  })
+                                : "N/A"}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow>
                           <TableCell
-                            className={cn(
-                              "text-right font-medium text-xs sm:text-sm",
-                              typeof tx.amount === "number" && tx.amount < 0 ? "text-red-500" : "text-green-500"
-                            )}
+                            colSpan={3}
+                            className="text-center h-20 text-xs sm:text-sm"
                           >
-                            {typeof tx.amount === "number"
-                              ? tx.amount.toLocaleString("pt-BR", {
-                                  style: "currency",
-                                  currency: "BRL",
-                                })
-                              : "N/A"}
+                            {selectedAccountId
+                              ? "Nenhuma transação"
+                              : "Selecione uma conta"}
                           </TableCell>
                         </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center h-20 text-xs sm:text-sm">
-                          {selectedAccountId
-                            ? "Nenhuma transação"
-                            : "Selecione uma conta"}
-                        </TableCell>
-                      </TableRow>
-                    )}
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -501,77 +538,92 @@ const InvestmentsPage = () => {
             {/* Investimentos do Open Banking */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base sm:text-lg">Investimentos</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  Investimentos
+                </CardTitle>
               </CardHeader>
               <CardContent className="px-2 sm:px-6">
                 <div className="overflow-x-auto -mx-2 sm:mx-0">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[120px] text-xs">Ativo</TableHead>
-                        <TableHead className="min-w-[80px] text-xs">Tipo</TableHead>
-                        <TableHead className="text-right min-w-[80px] text-xs">Saldo</TableHead>
+                        <TableHead className="min-w-[120px] text-xs">
+                          Ativo
+                        </TableHead>
+                        <TableHead className="min-w-[80px] text-xs">
+                          Tipo
+                        </TableHead>
+                        <TableHead className="text-right min-w-[80px] text-xs">
+                          Saldo
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                    {bankLoading ? (
-                      Array.from({ length: 3 }).map((_, i) => (
-                        <TableRow key={i}>
-                          <TableCell>
-                            <Skeleton className="h-4 w-20" />
-                          </TableCell>
-                          <TableCell>
-                            <Skeleton className="h-4 w-14" />
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Skeleton className="h-4 w-16 inline-block" />
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : investments.length > 0 ? (
-                      investments.map((inv) => {
-                        const mappedType = mapInvestmentType(
-                          inv.type,
-                          inv.subtype,
-                        );
-                        return (
-                          <TableRow key={inv.id}>
-                            <TableCell className="font-medium text-xs sm:text-sm">
-                              {inv.name}
+                      {bankLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                          <TableRow key={i}>
+                            <TableCell>
+                              <Skeleton className="h-4 w-20" />
                             </TableCell>
-                            <TableCell className="text-xs sm:text-sm">
-                              <div className="flex items-center gap-1">
-                                <span className="truncate">{mappedType.label_pt}</span>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <Info className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p className="text-xs">{mappedType.descricao_pt}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </div>
+                            <TableCell>
+                              <Skeleton className="h-4 w-14" />
                             </TableCell>
-                            <TableCell className="text-right font-medium text-xs sm:text-sm">
-                              {typeof inv.balance === "number"
-                                ? inv.balance.toLocaleString("pt-BR", {
-                                    style: "currency",
-                                    currency: inv.currency || "BRL",
-                                  })
-                                : "N/A"}
+                            <TableCell className="text-right">
+                              <Skeleton className="h-4 w-16 inline-block" />
                             </TableCell>
                           </TableRow>
-                        );
-                      })
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center h-20 text-xs sm:text-sm">
-                          Nenhum investimento
-                        </TableCell>
-                      </TableRow>
-                    )}
+                        ))
+                      ) : investments.length > 0 ? (
+                        investments.map((inv) => {
+                          const mappedType = mapInvestmentType(
+                            inv.type,
+                            inv.subtype,
+                          );
+                          return (
+                            <TableRow key={inv.id}>
+                              <TableCell className="font-medium text-xs sm:text-sm">
+                                {inv.name}
+                              </TableCell>
+                              <TableCell className="text-xs sm:text-sm">
+                                <div className="flex items-center gap-1">
+                                  <span className="truncate">
+                                    {mappedType.label_pt}
+                                  </span>
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Info className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p className="text-xs">
+                                          {mappedType.descricao_pt}
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right font-medium text-xs sm:text-sm">
+                                {typeof inv.balance === "number"
+                                  ? inv.balance.toLocaleString("pt-BR", {
+                                      style: "currency",
+                                      currency: inv.currency || "BRL",
+                                    })
+                                  : "N/A"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell
+                            colSpan={3}
+                            className="text-center h-20 text-xs sm:text-sm"
+                          >
+                            Nenhum investimento
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -580,26 +632,37 @@ const InvestmentsPage = () => {
           </div>
         </div>
       )}
-
       {/* Enhanced Dashboards */}
       <Tabs defaultValue="evolution" className="space-y-4 sm:space-y-6">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
-          <TabsTrigger value="evolution" className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3">
+          <TabsTrigger
+            value="evolution"
+            className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3"
+          >
             <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Evolução</span>
             <span className="sm:hidden">Evol.</span>
           </TabsTrigger>
-          <TabsTrigger value="allocation" className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3">
+          <TabsTrigger
+            value="allocation"
+            className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3"
+          >
             <PieChartIcon className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Alocação</span>
             <span className="sm:hidden">Aloc.</span>
           </TabsTrigger>
-          <TabsTrigger value="dividends" className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3">
+          <TabsTrigger
+            value="dividends"
+            className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3"
+          >
             <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">Proventos</span>
             <span className="sm:hidden">Prov.</span>
           </TabsTrigger>
-          <TabsTrigger value="assets" className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3">
+          <TabsTrigger
+            value="assets"
+            className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3"
+          >
             <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>Ativos</span>
           </TabsTrigger>

@@ -13,10 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBudgetScope } from "@/contexts/BudgetScopeContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  accountTypeMapping,
-  mapAccountSubtype,
-} from "@/lib/account-mapping";
+import { accountTypeMapping, mapAccountSubtype } from "@/lib/account-mapping";
 import {
   Wallet,
   TrendingUp,
@@ -187,6 +184,7 @@ const Index = () => {
             value={financialData?.balance ?? 0}
             type="balance"
             icon={Wallet}
+            className=" w-[354px] h-[98px]"
           />
           <FinancialCard
             title="Receitas do Mês"

@@ -20,37 +20,34 @@ import AppShell from "./components/AppShell";
 import { BudgetScopeProvider } from "./contexts/BudgetScopeContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 
-// Configure QueryClient with optimized settings for faster startup
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes
-      retry: 1, // Reduce retries for faster startup
-      refetchOnWindowFocus: false, // Prevent unnecessary refetches during startup
+      staleTime: 5 * 60 * 1000,
+      gcTime: 10 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
     },
   },
 });
 
 const App = () => {
-  console.log("🎯 App component rendering at:", new Date().toISOString());
-
   return (
     <ErrorBoundary
       fallback={
         <div className="min-h-screen flex items-center justify-center bg-gray-50">
           <div className="text-center p-8">
             <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Something went wrong
+              Algo deu errado
             </h1>
             <p className="text-gray-600 mb-4">
-              We're sorry, but something unexpected happened.
+              Desculpe, algo inesperado aconteceu.
             </p>
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              Reload Page
+              Recarregar Página
             </button>
           </div>
         </div>
@@ -140,7 +137,6 @@ const App = () => {
                   }
                 />
 
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
