@@ -76,7 +76,7 @@ const PortfolioEvolutionChart = ({
   return (
     <div className="space-y-6">
       {/* Evolution Chart */}
-      <Card>
+      <Card className="w-[376px] h-[408px]">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Rentabilidade Histórica</CardTitle>
           <Select value={period} onValueChange={setPeriod}>
@@ -141,7 +141,6 @@ const PortfolioEvolutionChart = ({
           </ResponsiveContainer>
         </CardContent>
       </Card>
-
       {/* Operations Chart */}
       <Card>
         <CardHeader>

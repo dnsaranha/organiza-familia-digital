@@ -92,7 +92,7 @@ const DividendHistoryChart = ({
     <div className="space-y-6">
       {/* Dividend Yield Chart */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between flex-wrap">
           <CardTitle>Histórico de Proventos</CardTitle>
           <div className="flex gap-2">
             <Select value={period} onValueChange={setPeriod}>
@@ -155,7 +155,6 @@ const DividendHistoryChart = ({
           </ResponsiveContainer>
         </CardContent>
       </Card>
-
       {/* Top Dividend Assets */}
       <Card>
         <CardHeader>
