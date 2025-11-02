@@ -194,15 +194,25 @@ export const useB3Data = () => {
     async (period: string = "12m") => {
       setLoading(true);
       try {
-        // First try to get real investment data from Pluggy
+        const months = period === "12m" ? 12 : 6;
+        let evolutionData: any[] = [];
+
         if (user) {
+          // Get manual investments
+          const { data: manualInvestments } = await supabase
+            .from("manual_investments")
+            .select("*")
+            .eq("user_id", user.id)
+            .order("transaction_date", { ascending: true });
+
+          // Get Pluggy investments
           const { data: pluggyItems } = await supabase
             .from("pluggy_items")
             .select("item_id")
             .eq("user_id", user.id);
 
+          let pluggyInvestments: any[] = [];
           if (pluggyItems && pluggyItems.length > 0) {
-            // Get investment data from Pluggy for each connected item
             const investmentPromises = pluggyItems.map((item) =>
               supabase.functions.invoke("pluggy-investments", {
                 body: { itemId: item.item_id },
@@ -210,26 +220,76 @@ export const useB3Data = () => {
             );
 
             const investmentResults = await Promise.all(investmentPromises);
-            const allInvestments = investmentResults.flatMap(
+            pluggyInvestments = investmentResults.flatMap(
               (result) => result.data?.investments || [],
             );
+          }
 
-            if (allInvestments.length > 0) {
-              // Process real investment data into evolution format
-              const evolutionData = processInvestmentEvolution(
-                allInvestments,
-                period,
-              );
-              setPortfolioEvolution(evolutionData);
-              return evolutionData;
+          // Calculate portfolio value for each month
+          const now = new Date();
+          for (let i = months - 1; i >= 0; i--) {
+            const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+            const monthName = monthDate.toLocaleDateString("pt-BR", {
+              month: "short",
+              year: "2-digit",
+            });
+
+            let portfolioValue = 0;
+
+            // Calculate manual investments value for this month
+            if (manualInvestments) {
+              const positionMap = new Map<string, { quantity: number; avgPrice: number }>();
+              
+              manualInvestments
+                .filter((inv) => new Date(inv.transaction_date) <= monthEnd)
+                .forEach((inv) => {
+                  const existing = positionMap.get(inv.ticker) || { quantity: 0, avgPrice: 0 };
+                  const quantity = inv.transaction_type === "buy" ? inv.quantity : -inv.quantity;
+                  
+                  if (inv.transaction_type === "buy") {
+                    const totalQuantity = existing.quantity + quantity;
+                    existing.avgPrice = totalQuantity > 0
+                      ? ((existing.avgPrice * existing.quantity) + (inv.price * quantity)) / totalQuantity
+                      : inv.price;
+                  }
+                  
+                  existing.quantity += quantity;
+                  positionMap.set(inv.ticker, existing);
+                });
+
+              positionMap.forEach((position) => {
+                if (position.quantity > 0) {
+                  portfolioValue += position.quantity * position.avgPrice;
+                }
+              });
             }
+
+            // Add Pluggy investments value (simplified - using current balance)
+            if (pluggyInvestments.length > 0) {
+              portfolioValue += pluggyInvestments.reduce(
+                (sum, inv) => sum + (inv.balance || 0),
+                0,
+              );
+            }
+
+            evolutionData.push({
+              month: monthName,
+              portfolio: portfolioValue,
+              benchmark: portfolioValue * 0.95, // Simplified benchmark
+            });
+          }
+
+          if (evolutionData.length > 0) {
+            setPortfolioEvolution(evolutionData);
+            return evolutionData;
           }
         }
 
         // Fallback to mock data if no real data available
-        const evolutionData = await b3Client.getPortfolioEvolution(period);
-        setPortfolioEvolution(evolutionData);
-        return evolutionData;
+        const fallbackData = await b3Client.getPortfolioEvolution(period);
+        setPortfolioEvolution(fallbackData);
+        return fallbackData;
       } catch (error) {
         console.error("Erro ao carregar evolução patrimonial:", error);
         toast({
@@ -238,7 +298,6 @@ export const useB3Data = () => {
             "Não foi possível carregar dados de evolução patrimonial.",
           variant: "destructive",
         });
-        // Return mock data as fallback
         const fallbackData = await b3Client.getPortfolioEvolution(period);
         setPortfolioEvolution(fallbackData);
         return fallbackData;
@@ -249,43 +308,100 @@ export const useB3Data = () => {
     [toast, user],
   );
 
-  // Helper function to process investment data into evolution format
-  const processInvestmentEvolution = (investments: any[], period: string) => {
-    const months = period === "12m" ? 12 : 6;
-    const evolutionData = [];
-    const now = new Date();
-
-    for (let i = months - 1; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthName = date.toLocaleDateString("pt-BR", {
-        month: "short",
-        year: "2-digit",
-      });
-
-      // Calculate portfolio value for this month (simplified)
-      const totalValue = investments.reduce(
-        (sum, inv) => sum + (inv.balance || 0),
-        0,
-      );
-      const variation = (Math.random() - 0.5) * 0.1; // Random variation for demo
-      const adjustedValue = totalValue * (1 + variation * (i / months));
-
-      evolutionData.push({
-        month: monthName,
-        portfolio: Math.max(adjustedValue, 0),
-        benchmark: adjustedValue * 0.95, // Benchmark slightly lower
-      });
-    }
-
-    return evolutionData;
-  };
-
   // Buscar ativos detalhados com integração Yahoo Finance
   const getEnhancedAssetsData = useCallback(async () => {
     setLoading(true);
     try {
-      // First try to get real investment data from Pluggy
+      let allEnhancedAssets: any[] = [];
+
+      // First, get manual investments from database
       if (user) {
+        const { data: manualInvestments, error: manualError } = await supabase
+          .from("manual_investments")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("transaction_date", { ascending: false });
+
+        if (!manualError && manualInvestments) {
+          // Group by ticker and calculate positions
+          const positionMap = new Map<string, any>();
+
+          manualInvestments.forEach((inv) => {
+            const existing = positionMap.get(inv.ticker) || {
+              ticker: inv.ticker,
+              name: inv.name || inv.ticker,
+              type: inv.type,
+              subtype: inv.subtype,
+              quantity: 0,
+              totalCost: 0,
+              transactions: [],
+            };
+
+            const quantity = inv.transaction_type === "buy" ? inv.quantity : -inv.quantity;
+            existing.quantity += quantity;
+            existing.totalCost += inv.transaction_type === "buy" ? inv.total_value : -inv.total_value;
+            existing.transactions.push(inv);
+
+            positionMap.set(inv.ticker, existing);
+          });
+
+          // Get current prices for manual investments
+          const tickers = Array.from(positionMap.keys()).map(t => `${t}.SA`);
+          let priceData: any[] = [];
+
+          if (tickers.length > 0) {
+            try {
+              const { data: yfinanceResponse, error: yfinanceError } =
+                await supabase.functions.invoke("yfinance-data", {
+                  body: { tickers },
+                });
+
+              if (!yfinanceError && yfinanceResponse?.assets) {
+                priceData = yfinanceResponse.assets;
+              }
+            } catch (err) {
+              console.warn("Erro ao buscar preços:", err);
+            }
+          }
+
+          // Transform manual investments to enhanced assets format
+          positionMap.forEach((position, ticker) => {
+            if (position.quantity > 0) {
+              const tickerWithSA = `${ticker}.SA`;
+              const priceInfo = priceData.find(p => p.ticker === tickerWithSA);
+              
+              const currentPrice = priceInfo?.preco_atual || (position.totalCost / position.quantity);
+              const marketValue = currentPrice * position.quantity;
+              const cost = position.totalCost;
+              const averagePrice = cost / position.quantity;
+              const profitLoss = marketValue - cost;
+              const profitability = cost > 0 ? (profitLoss / cost) * 100 : 0;
+              const accumulatedDividends = priceInfo?.dividendos_12m || 0;
+              const yieldOnCost = cost > 0 && accumulatedDividends > 0 
+                ? (accumulatedDividends / cost) * 100 
+                : 0;
+
+              allEnhancedAssets.push({
+                symbol: ticker,
+                name: priceInfo?.nome || position.name,
+                type: position.type,
+                subtype: position.subtype,
+                currentPrice,
+                quantity: position.quantity,
+                marketValue,
+                cost,
+                averagePrice,
+                yieldOnCost,
+                accumulatedDividends,
+                profitLoss,
+                profitability,
+                isManual: true,
+              });
+            }
+          });
+        }
+
+        // Then try to get real investment data from Pluggy
         const { data: pluggyItems } = await supabase
           .from("pluggy_items")
           .select("item_id")
@@ -338,13 +454,11 @@ export const useB3Data = () => {
               }
             }
 
-            // Transform Pluggy investment data to enhanced assets format with Yahoo Finance data
-            const enhancedData = allInvestments.map((inv) => {
+            const pluggyEnhancedData = allInvestments.map((inv) => {
               const name = inv.name || inv.code || "N/A";
               const tickerMatch = name.match(/([A-Z]{4}\d{1,2})/g);
               const ticker = tickerMatch ? `${tickerMatch[0]}.SA` : null;
 
-              // Find corresponding Yahoo Finance data
               const yfinanceAsset = ticker
                 ? yfinanceData.find((asset) => asset.ticker === ticker)
                 : null;
@@ -353,7 +467,7 @@ export const useB3Data = () => {
                 yfinanceAsset?.preco_atual || inv.balance / (inv.quantity || 1);
               const quantity = inv.quantity || 1;
               const marketValue = currentPrice * quantity;
-              const cost = inv.balance || marketValue; // Use balance as cost if no better data
+              const cost = inv.balance || marketValue;
               const profitLoss = marketValue - cost;
               const profitability = cost > 0 ? (profitLoss / cost) * 100 : 0;
               const accumulatedDividends = yfinanceAsset?.dividendos_12m || 0;
@@ -376,13 +490,19 @@ export const useB3Data = () => {
                 accumulatedDividends,
                 profitLoss,
                 profitability,
+                isManual: false,
               };
             });
 
-            setEnhancedAssets(enhancedData);
-            return enhancedData;
+            allEnhancedAssets = [...allEnhancedAssets, ...pluggyEnhancedData];
           }
         }
+      }
+
+      // If we have data, use it; otherwise fallback to mock
+      if (allEnhancedAssets.length > 0) {
+        setEnhancedAssets(allEnhancedAssets);
+        return allEnhancedAssets;
       }
 
       // Fallback to mock data if no real data available
@@ -409,9 +529,77 @@ export const useB3Data = () => {
   const getDividendHistoryData = useCallback(async () => {
     setLoading(true);
     try {
-      // For now, use mock data as Pluggy doesn't provide dividend history directly
-      // In a real implementation, you would need to track dividends separately
-      // or use a different data provider that includes dividend information
+      let dividendData: any[] = [];
+
+      if (user) {
+        // Get manual investments to calculate potential dividends
+        const { data: manualInvestments } = await supabase
+          .from("manual_investments")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("transaction_date", { ascending: true });
+
+        if (manualInvestments && manualInvestments.length > 0) {
+          // Calculate current positions
+          const positionMap = new Map<string, { quantity: number; ticker: string }>();
+          
+          manualInvestments.forEach((inv) => {
+            const existing = positionMap.get(inv.ticker) || { quantity: 0, ticker: inv.ticker };
+            const quantity = inv.transaction_type === "buy" ? inv.quantity : -inv.quantity;
+            existing.quantity += quantity;
+            positionMap.set(inv.ticker, existing);
+          });
+
+          // Get dividend data from Yahoo Finance for active positions
+          const activeTickers = Array.from(positionMap.values())
+            .filter(p => p.quantity > 0)
+            .map(p => `${p.ticker}.SA`);
+
+          if (activeTickers.length > 0) {
+            try {
+              const { data: yfinanceResponse } = await supabase.functions.invoke("yfinance-data", {
+                body: { tickers: activeTickers },
+              });
+
+              if (yfinanceResponse?.assets) {
+                // Generate monthly dividend history for the last 12 months
+                const now = new Date();
+                for (let i = 11; i >= 0; i--) {
+                  const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                  const monthName = monthDate.toLocaleDateString("pt-BR", {
+                    month: "short",
+                    year: "2-digit",
+                  });
+
+                  let totalDividends = 0;
+                  yfinanceResponse.assets.forEach((asset: any) => {
+                    const ticker = asset.ticker.replace(".SA", "");
+                    const position = positionMap.get(ticker);
+                    if (position && position.quantity > 0 && asset.dividendos_12m) {
+                      // Distribute annual dividends across 12 months (simplified)
+                      totalDividends += (asset.dividendos_12m / 12);
+                    }
+                  });
+
+                  dividendData.push({
+                    month: monthName,
+                    dividends: totalDividends,
+                  });
+                }
+              }
+            } catch (err) {
+              console.warn("Erro ao buscar dados de dividendos:", err);
+            }
+          }
+        }
+
+        if (dividendData.length > 0) {
+          setDividendHistory(dividendData);
+          return dividendData;
+        }
+      }
+
+      // Fallback to mock data
       const historyData = await b3Client.getDividendHistoryData();
       setDividendHistory(historyData);
       return historyData;
@@ -422,14 +610,13 @@ export const useB3Data = () => {
         description: "Não foi possível carregar histórico de dividendos.",
         variant: "destructive",
       });
-      // Return mock data as fallback
       const fallbackData = await b3Client.getDividendHistoryData();
       setDividendHistory(fallbackData);
       return fallbackData;
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, user]);
 
   // Buscar dados de benchmark
   const getBenchmarkData = useCallback(

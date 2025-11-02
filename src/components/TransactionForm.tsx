@@ -123,7 +123,6 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
       }
     }
 
-    setLoading(true);
     try {
       const d = new Date();
       const localDateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -213,7 +212,7 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
