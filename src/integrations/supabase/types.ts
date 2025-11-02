@@ -100,6 +100,69 @@ export type Database = {
           },
         ]
       }
+      investment_transactions: {
+        Row: {
+          asset_name: string
+          created_at: string
+          fees: number | null
+          group_id: string | null
+          id: string
+          notes: string | null
+          price: number
+          quantity: number
+          ticker: string
+          transaction_date: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_name: string
+          created_at?: string
+          fees?: number | null
+          group_id?: string | null
+          id?: string
+          notes?: string | null
+          price: number
+          quantity: number
+          ticker: string
+          transaction_date: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_name?: string
+          created_at?: string
+          fees?: number | null
+          group_id?: string | null
+          id?: string
+          notes?: string | null
+          price?: number
+          quantity?: number
+          ticker?: string
+          transaction_date?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investment_transactions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investment_transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pluggy_items: {
         Row: {
           created_at: string
