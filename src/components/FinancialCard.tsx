@@ -52,12 +52,12 @@ export const FinancialCard = ({
       className={cn(
         "relative overflow-hidden transition-smooth hover:scale-105",
         type !== "balance" ? "bg-gradient-card" : getCardStyles(),
-        "shadow-card border w-[310px] h-[92px]",
+        "shadow-card border h-[96px] w-[360px]",
         className,
       )}
     >
-      <CardContent className="p-6 w-[324px]">
-        <div className="flex items-center justify-between h-[52px]">
+      <CardContent className="p-6 w-[350px] h-[102px]">
+        <div className="flex items-center justify-between h-[54px] w-[316px]">
           <div className="space-y-2">
             <p
               className={cn(
