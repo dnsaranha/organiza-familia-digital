@@ -177,9 +177,14 @@ export type Database = {
           group_id: string | null
           id: string
           is_completed: boolean | null
+          is_recurring: boolean | null
           notification_email: boolean | null
           notification_push: boolean | null
           notified_at: string | null
+          parent_task_id: string | null
+          recurrence_end_date: string | null
+          recurrence_interval: number | null
+          recurrence_pattern: string | null
           schedule_date: string
           task_type: string
           title: string
@@ -194,9 +199,14 @@ export type Database = {
           group_id?: string | null
           id?: string
           is_completed?: boolean | null
+          is_recurring?: boolean | null
           notification_email?: boolean | null
           notification_push?: boolean | null
           notified_at?: string | null
+          parent_task_id?: string | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           schedule_date: string
           task_type: string
           title: string
@@ -211,9 +221,14 @@ export type Database = {
           group_id?: string | null
           id?: string
           is_completed?: boolean | null
+          is_recurring?: boolean | null
           notification_email?: boolean | null
           notification_push?: boolean | null
           notified_at?: string | null
+          parent_task_id?: string | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_pattern?: string | null
           schedule_date?: string
           task_type?: string
           title?: string
@@ -227,6 +242,13 @@ export type Database = {
             columns: ["group_id"]
             isOneToOne: false
             referencedRelation: "family_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_tasks"
             referencedColumns: ["id"]
           },
         ]
