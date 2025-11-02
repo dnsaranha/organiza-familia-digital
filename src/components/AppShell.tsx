@@ -114,7 +114,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
 
   const desktopView = (
     <>
-      <Sidebar collapsible="icon">
+      <Sidebar collapsible="icon" className="w-[262px] h-[2391px]">
         <div className="flex h-full flex-col">
           <SidebarHeader className="flex p-4">
             <NavLink to="/" className="flex items-center gap-3 justify-center">
@@ -128,7 +128,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
                 </p>
               </div>
             </NavLink>
-            <SidebarTrigger className="items-center content-center justify-center">
+            <SidebarTrigger className="items-center content-center justify-start">
               <PanelLeft className="size-5" />
               <div className="w-[80px] h-[80px] bg-white"></div>
             </SidebarTrigger>
@@ -243,7 +243,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </SidebarFooter>
         </div>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="h-[2389px] w-[1186px]">
         <header className="border-b p-4">
           <div className="flex items-center justify-end gap-4">
             <Button

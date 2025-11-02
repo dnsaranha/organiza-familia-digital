@@ -154,7 +154,7 @@ const InvestmentsPage = () => {
         title: "Dados Atualizados",
         description: "Todos os dados foram atualizados com sucesso.",
       });
-      setTransactionRefresh(prev => prev + 1);
+      setTransactionRefresh((prev) => prev + 1);
     } catch (error) {
       toast({
         title: "Erro na Atualização",
@@ -214,7 +214,7 @@ const InvestmentsPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-8">
+    <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-8 w-[1168px] h-[1865px]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
@@ -226,11 +226,11 @@ const InvestmentsPage = () => {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <InvestmentTransactionForm 
+          <InvestmentTransactionForm
             onSuccess={() => {
               handleRefresh();
-              setTransactionRefresh(prev => prev + 1);
-            }} 
+              setTransactionRefresh((prev) => prev + 1);
+            }}
           />
           <Button
             onClick={handleRefresh}
@@ -256,7 +256,7 @@ const InvestmentsPage = () => {
           </AlertDescription>
         </Alert>
       )}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-[370px] h-[371px]">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-[592px] h-[135px] relative">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm font-medium">
@@ -353,7 +353,7 @@ const InvestmentsPage = () => {
       </div>
       {/* Seção Open Banking */}
       {bankConnected && (
-        <div className="space-y-4 sm:space-y-8 max-h-[863px] overflow-y-auto">
+        <div className="space-y-4 sm:space-y-8 max-h-[863px] overflow-y-auto relative">
           <div>
             <h2 className="text-lg sm:text-xl md:text-2xl font-semibold">
               Open Banking

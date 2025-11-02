@@ -100,7 +100,7 @@ const App = () => {
                   path="/investments"
                   element={
                     <AppShell>
-                      <InvestmentsPage />
+                      <InvestmentsPage className="w-[1142px]" />
                     </AppShell>
                   }
                 />

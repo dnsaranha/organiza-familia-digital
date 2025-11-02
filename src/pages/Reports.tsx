@@ -39,10 +39,7 @@ import { cn } from "@/lib/utils";
 import { useRef } from "react";
 import { DateRange } from "react-day-picker";
 import { useBudgetScope } from "@/contexts/BudgetScopeContext";
-import {
-  accountTypeMapping,
-  mapAccountSubtype,
-} from "@/lib/account-mapping";
+import { accountTypeMapping, mapAccountSubtype } from "@/lib/account-mapping";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -394,7 +391,11 @@ const ReportsPage = () => {
       {} as Record<string, { name: string; income: number; expense: number }>,
     );
 
-    return Object.values(monthlyData) as { name: string; income: number; expense: number; }[];
+    return Object.values(monthlyData) as {
+      name: string;
+      income: number;
+      expense: number;
+    }[];
   }, [filteredBankTransactions]);
 
   const incomeVsExpenseData = useMemo(() => {
@@ -430,52 +431,73 @@ const ReportsPage = () => {
     <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-8 gap-3 sm:gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Relatórios Avançados</h1>
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">
+            Relatórios Avançados
+          </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Analise suas finanças com gráficos e filtros
           </p>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {bankConnected && (
-            <Button 
-              variant="outline" 
-              size="sm" 
+            <Button
+              variant="outline"
+              size="sm"
               onClick={refreshAllData}
               disabled={bankLoading}
               className="flex-1 sm:flex-none"
             >
-              <RefreshCw className={`h-4 w-4 sm:mr-2 ${bankLoading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-4 w-4 sm:mr-2 ${bankLoading ? "animate-spin" : ""}`}
+              />
               <span className="sm:inline">Atualizar</span>
             </Button>
           )}
-          <Button variant="outline" size="sm" onClick={handlePdfExport} className="flex-1 sm:flex-none">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePdfExport}
+            className="flex-1 sm:flex-none"
+          >
             <Download className="h-4 w-4 sm:mr-2" />
             <span className="sm:inline">PDF</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExcelExport} className="flex-1 sm:flex-none">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExcelExport}
+            className="flex-1 sm:flex-none"
+          >
             <Download className="h-4 w-4 sm:mr-2" />
             <span className="sm:inline">Excel</span>
           </Button>
         </div>
       </div>
-
       {/* Filter Bar */}
       <Card className="mb-4 sm:mb-8">
         <CardContent className="p-3 sm:p-4 space-y-3 lg:space-y-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             <div className="flex-1">
-              <label className="text-xs sm:text-sm font-medium mb-1 block">Período</label>
+              <label className="text-xs sm:text-sm font-medium mb-1 block">
+                Período
+              </label>
               <DateRangePicker date={dateRange} onDateChange={setDateRange} />
             </div>
             <div className="flex-1">
-              <label className="text-xs sm:text-sm font-medium mb-1 block">Categoria</label>
+              <label className="text-xs sm:text-sm font-medium mb-1 block">
+                Categoria
+              </label>
               <Select value={category} onValueChange={setCategory}>
                 <SelectTrigger className="text-xs sm:text-sm">
                   <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (
-                    <SelectItem key={c} value={c} className="text-xs sm:text-sm">
+                    <SelectItem
+                      key={c}
+                      value={c}
+                      className="text-xs sm:text-sm"
+                    >
                       {c === "all" ? "Todas" : c}
                     </SelectItem>
                   ))}
@@ -483,7 +505,9 @@ const ReportsPage = () => {
               </Select>
             </div>
             <div className="flex-1">
-              <label className="text-xs sm:text-sm font-medium mb-1 block">Membro</label>
+              <label className="text-xs sm:text-sm font-medium mb-1 block">
+                Membro
+              </label>
               <Select
                 value={member}
                 onValueChange={setMember}
@@ -493,9 +517,15 @@ const ReportsPage = () => {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all" className="text-xs sm:text-sm">Todos</SelectItem>
+                  <SelectItem value="all" className="text-xs sm:text-sm">
+                    Todos
+                  </SelectItem>
                   {groupMembers.map((m) => (
-                    <SelectItem key={m.id} value={m.id} className="text-xs sm:text-sm">
+                    <SelectItem
+                      key={m.id}
+                      value={m.id}
+                      className="text-xs sm:text-sm"
+                    >
                       {m.full_name}
                     </SelectItem>
                   ))}
@@ -505,27 +535,30 @@ const ReportsPage = () => {
           </div>
         </CardContent>
       </Card>
-
       {/* Banking Overview - Show when connected */}
       {bankConnected && accounts.length > 0 && (
-        <Card className="mb-4 sm:mb-8">
-          <CardHeader className="pb-3">
+        <Card className="mb-4 sm:mb-8 h-[147px] w-[1160px]">
+          <CardHeader className="pb-3 w-[1157px] h-[48px]">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                <CardTitle className="text-base sm:text-lg">Resumo Bancário</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  Resumo Bancário
+                </CardTitle>
               </div>
               <Badge variant="default" className="text-xs">
                 {accounts.length} conta(s)
               </Badge>
             </div>
           </CardHeader>
-          <CardContent className="px-3 sm:px-6">
+          <CardContent className="px-3 sm:px-6 w-[1151px] h-[96px]">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="p-3 sm:p-4 bg-muted/30 rounded-lg">
                 <div className="flex items-center gap-2 mb-2">
                   <CreditCard className="h-3 w-3 sm:h-4 sm:w-4 text-primary" />
-                  <span className="text-xs sm:text-sm font-medium">Saldo Selecionado</span>
+                  <span className="text-xs sm:text-sm font-medium">
+                    Saldo Selecionado
+                  </span>
                 </div>
                 <p className="text-lg sm:text-2xl font-bold">
                   {(selectedAccountIds.length > 0
@@ -576,12 +609,17 @@ const ReportsPage = () => {
           </CardContent>
         </Card>
       )}
-
       {/* Reports Tabs */}
       <Tabs defaultValue="manual" className="space-y-4 sm:space-y-6">
         <TabsList className="grid w-full grid-cols-2 h-auto">
-          <TabsTrigger value="manual" className="text-xs sm:text-sm py-2">Transações Manuais</TabsTrigger>
-          <TabsTrigger value="banking" disabled={!bankConnected} className="text-xs sm:text-sm py-2">
+          <TabsTrigger value="manual" className="text-xs sm:text-sm py-2">
+            Transações Manuais
+          </TabsTrigger>
+          <TabsTrigger
+            value="banking"
+            disabled={!bankConnected}
+            className="text-xs sm:text-sm py-2"
+          >
             Dados Bancários {!bankConnected && "(Off)"}
           </TabsTrigger>
         </TabsList>
@@ -591,7 +629,9 @@ const ReportsPage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
             <Card ref={pieChartRef}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base sm:text-lg">Despesas por Categoria</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  Despesas por Categoria
+                </CardTitle>
               </CardHeader>
               <CardContent className="h-[250px] sm:h-[300px]">
                 <Suspense fallback={<ChartLoader />}>
@@ -601,7 +641,9 @@ const ReportsPage = () => {
             </Card>
             <Card ref={barChartRef}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base sm:text-lg">Receitas vs. Despesas</CardTitle>
+                <CardTitle className="text-base sm:text-lg">
+                  Receitas vs. Despesas
+                </CardTitle>
               </CardHeader>
               <CardContent className="h-[250px] sm:h-[300px]">
                 <Suspense fallback={<ChartLoader />}>
@@ -613,7 +655,9 @@ const ReportsPage = () => {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base sm:text-lg">Histórico de Transações</CardTitle>
+              <CardTitle className="text-base sm:text-lg">
+                Histórico de Transações
+              </CardTitle>
             </CardHeader>
             <CardContent className="px-2 sm:px-6">
               {loading ? (
@@ -626,50 +670,64 @@ const ReportsPage = () => {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead className="min-w-[70px] text-xs">Data</TableHead>
-                          <TableHead className="min-w-[90px] text-xs">Categoria</TableHead>
-                          {scope !== "personal" && <TableHead className="min-w-[90px] text-xs">Membro</TableHead>}
-                          <TableHead className="text-right min-w-[90px] text-xs">Valor</TableHead>
+                          <TableHead className="min-w-[70px] text-xs">
+                            Data
+                          </TableHead>
+                          <TableHead className="min-w-[90px] text-xs">
+                            Categoria
+                          </TableHead>
+                          {scope !== "personal" && (
+                            <TableHead className="min-w-[90px] text-xs">
+                              Membro
+                            </TableHead>
+                          )}
+                          <TableHead className="text-right min-w-[90px] text-xs">
+                            Valor
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
-                    <TableBody>
-                      {filteredTransactions.map((t) => {
-                        const date = t.date
-                          ? new Date(t.date.replace(/-/g, "/"))
-                          : null;
-                        const isValidDate = date && !isNaN(date.getTime());
+                      <TableBody>
+                        {filteredTransactions.map((t) => {
+                          const date = t.date
+                            ? new Date(t.date.replace(/-/g, "/"))
+                            : null;
+                          const isValidDate = date && !isNaN(date.getTime());
 
-                        return (
-                          <TableRow key={t.id}>
-                            <TableCell className="text-xs sm:text-sm">
-                              {isValidDate
-                                ? date.toLocaleDateString("pt-BR")
-                                : "Data inválida"}
-                            </TableCell>
-                            <TableCell className="text-xs sm:text-sm">{t.category || "N/A"}</TableCell>
-                            {scope !== "personal" && (
-                              <TableCell className="text-xs sm:text-sm">{t.memberName || "N/A"}</TableCell>
-                            )}
-                            <TableCell
-                              className={cn(
-                                "text-right font-medium text-xs sm:text-sm",
-                                t.type === "income"
-                                  ? "text-green-500"
-                                  : "text-red-500",
+                          return (
+                            <TableRow key={t.id}>
+                              <TableCell className="text-xs sm:text-sm">
+                                {isValidDate
+                                  ? date.toLocaleDateString("pt-BR")
+                                  : "Data inválida"}
+                              </TableCell>
+                              <TableCell className="text-xs sm:text-sm">
+                                {t.category || "N/A"}
+                              </TableCell>
+                              {scope !== "personal" && (
+                                <TableCell className="text-xs sm:text-sm">
+                                  {t.memberName || "N/A"}
+                                </TableCell>
                               )}
-                            >
-                              {t.type === "income" ? "+" : "-"}{" "}
-                              {typeof t.amount === "number"
-                                ? new Intl.NumberFormat("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL",
-                                  }).format(t.amount)
-                                : "N/A"}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
+                              <TableCell
+                                className={cn(
+                                  "text-right font-medium text-xs sm:text-sm",
+                                  t.type === "income"
+                                    ? "text-green-500"
+                                    : "text-red-500",
+                                )}
+                              >
+                                {t.type === "income" ? "+" : "-"}{" "}
+                                {typeof t.amount === "number"
+                                  ? new Intl.NumberFormat("pt-BR", {
+                                      style: "currency",
+                                      currency: "BRL",
+                                    }).format(t.amount)
+                                  : "N/A"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
                     </Table>
                   </div>
                 </ScrollArea>
@@ -684,7 +742,9 @@ const ReportsPage = () => {
             <>
               <div className="space-y-4 sm:space-y-6">
                 <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-3">Contas Bancárias</h3>
+                  <h3 className="text-base sm:text-lg font-medium mb-3">
+                    Contas Bancárias
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                     {accounts
                       .filter((acc) => acc.type === "BANK")
@@ -708,8 +768,7 @@ const ReportsPage = () => {
                               {account.marketingName || account.name}
                             </CardTitle>
                             <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
-                              {accountTypeMapping[account.type] ||
-                                account.type}{" "}
+                              {accountTypeMapping[account.type] || account.type}{" "}
                               • {mapAccountSubtype(account.subtype)}
                             </p>
                           </CardHeader>
@@ -727,7 +786,9 @@ const ReportsPage = () => {
                 </div>
 
                 <div>
-                  <h3 className="text-base sm:text-lg font-medium mb-3">Cartões de Crédito</h3>
+                  <h3 className="text-base sm:text-lg font-medium mb-3">
+                    Cartões de Crédito
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
                     {accounts
                       .filter((acc) => acc.type === "CREDIT")
@@ -751,8 +812,7 @@ const ReportsPage = () => {
                               {account.marketingName || account.name}
                             </CardTitle>
                             <p className="text-xs sm:text-sm text-muted-foreground line-clamp-1">
-                              {accountTypeMapping[account.type] ||
-                                account.type}{" "}
+                              {accountTypeMapping[account.type] || account.type}{" "}
                               • {mapAccountSubtype(account.subtype)}
                             </p>
                           </CardHeader>
@@ -774,7 +834,9 @@ const ReportsPage = () => {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">Despesas por Categoria</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">
+                      Despesas por Categoria
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="h-[250px] sm:h-[300px]">
                     <Suspense fallback={<ChartLoader />}>
@@ -784,7 +846,9 @@ const ReportsPage = () => {
                 </Card>
                 <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base sm:text-lg">Receitas vs. Despesas</CardTitle>
+                    <CardTitle className="text-base sm:text-lg">
+                      Receitas vs. Despesas
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="h-[250px] sm:h-[300px]">
                     <Suspense fallback={<ChartLoader />}>
@@ -796,7 +860,9 @@ const ReportsPage = () => {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-base sm:text-lg">Transações Bancárias</CardTitle>
+                  <CardTitle className="text-base sm:text-lg">
+                    Transações Bancárias
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="px-2 sm:px-6">
                   {bankLoading ? (
@@ -809,53 +875,69 @@ const ReportsPage = () => {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="min-w-[70px] text-xs">Data</TableHead>
-                              <TableHead className="min-w-[120px] text-xs">Descrição</TableHead>
-                              <TableHead className="min-w-[80px] text-xs">Categoria</TableHead>
-                              <TableHead className="text-right min-w-[90px] text-xs">Valor</TableHead>
+                              <TableHead className="min-w-[70px] text-xs">
+                                Data
+                              </TableHead>
+                              <TableHead className="min-w-[120px] text-xs">
+                                Descrição
+                              </TableHead>
+                              <TableHead className="min-w-[80px] text-xs">
+                                Categoria
+                              </TableHead>
+                              <TableHead className="text-right min-w-[90px] text-xs">
+                                Valor
+                              </TableHead>
                             </TableRow>
                           </TableHeader>
-                        <TableBody>
-                          {filteredBankTransactions.length > 0 ? (
-                            filteredBankTransactions.map((transaction) => (
-                              <TableRow key={transaction.id}>
-                                <TableCell className="text-xs sm:text-sm">
-                                  {new Date(
-                                    transaction.date,
-                                  ).toLocaleDateString("pt-BR")}
-                                </TableCell>
-                                <TableCell className="text-xs sm:text-sm">{transaction.description}</TableCell>
-                                <TableCell>
-                                  <Badge variant="outline" className="text-xs">
-                                    {transaction.category}
-                                  </Badge>
-                                </TableCell>
+                          <TableBody>
+                            {filteredBankTransactions.length > 0 ? (
+                              filteredBankTransactions.map((transaction) => (
+                                <TableRow key={transaction.id}>
+                                  <TableCell className="text-xs sm:text-sm">
+                                    {new Date(
+                                      transaction.date,
+                                    ).toLocaleDateString("pt-BR")}
+                                  </TableCell>
+                                  <TableCell className="text-xs sm:text-sm">
+                                    {transaction.description}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      variant="outline"
+                                      className="text-xs"
+                                    >
+                                      {transaction.category}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell
+                                    className={cn(
+                                      "text-right font-medium text-xs sm:text-sm",
+                                      transaction.amount >= 0
+                                        ? "text-green-500"
+                                        : "text-red-500",
+                                    )}
+                                  >
+                                    {transaction.amount >= 0 ? "+" : ""}
+                                    {transaction.amount.toLocaleString(
+                                      "pt-BR",
+                                      {
+                                        style: "currency",
+                                        currency: "BRL",
+                                      },
+                                    )}
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
                                 <TableCell
-                                  className={cn(
-                                    "text-right font-medium text-xs sm:text-sm",
-                                    transaction.amount >= 0
-                                      ? "text-green-500"
-                                      : "text-red-500",
-                                  )}
+                                  colSpan={4}
+                                  className="text-center py-8 text-xs sm:text-sm"
                                 >
-                                  {transaction.amount >= 0 ? "+" : ""}
-                                  {transaction.amount.toLocaleString("pt-BR", {
-                                    style: "currency",
-                                    currency: "BRL",
-                                  })}
+                                  Nenhuma transação encontrada.
                                 </TableCell>
                               </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell
-                                colSpan={4}
-                                className="text-center py-8 text-xs sm:text-sm"
-                              >
-                                Nenhuma transação encontrada.
-                              </TableCell>
-                            </TableRow>
-                          )}
+                            )}
                           </TableBody>
                         </Table>
                       </div>

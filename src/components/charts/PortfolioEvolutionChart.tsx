@@ -76,7 +76,7 @@ const PortfolioEvolutionChart = ({
   return (
     <div className="space-y-6">
       {/* Evolution Chart */}
-      <Card className="w-[376px] h-[408px]">
+      <Card className="relative w-full">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Rentabilidade Histórica</CardTitle>
           <Select value={period} onValueChange={setPeriod}>
@@ -91,7 +91,7 @@ const PortfolioEvolutionChart = ({
             </SelectContent>
           </Select>
         </CardHeader>
-        <CardContent>
+        <CardContent className="w-full">
           <ResponsiveContainer width="100%" height={300}>
             <ComposedChart data={filteredData.length > 0 ? filteredData : []}>
               <CartesianGrid strokeDasharray="3 3" />

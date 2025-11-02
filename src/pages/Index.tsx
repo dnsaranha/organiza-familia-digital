@@ -205,12 +205,12 @@ const Index = () => {
           <div className="mb-8">
             <div className="space-y-6">
               {/* Contas Bancárias Section */}
-              <div>
+              <div className="h-[146px]">
                 <div className="flex items-center gap-2 mb-4">
                   <Building2 className="h-5 w-5 text-primary" />
                   <h3 className="text-xl font-semibold">Contas Bancárias</h3>
                 </div>
-                <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3">
+                <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 w-[1154px] h-[102px]">
                   {accounts
                     .filter((acc) => acc.type === "BANK")
                     .map((account) => (
