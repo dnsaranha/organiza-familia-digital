@@ -31,6 +31,11 @@ interface ScheduledTask {
   group_id?: string;
   value?: number;
   category?: string;
+  is_recurring?: boolean;
+  recurrence_pattern?: 'daily' | 'weekly' | 'monthly' | 'yearly';
+  recurrence_interval?: number;
+  recurrence_end_date?: string;
+  parent_task_id?: string;
 }
 
 interface FamilyGroup {
@@ -65,6 +70,10 @@ const TasksPage = () => {
     group_id: 'personal',
     value: 0,
     category: '',
+    is_recurring: false,
+    recurrence_pattern: 'monthly' as 'daily' | 'weekly' | 'monthly' | 'yearly',
+    recurrence_interval: 1,
+    recurrence_end_date: '',
   });
 
   const { toast } = useToast();
@@ -95,6 +104,10 @@ const TasksPage = () => {
         group_id: selectedTask.group_id || 'personal',
         value: selectedTask.value ? Math.abs(selectedTask.value) : 0,
         category: selectedTask.category || '',
+        is_recurring: selectedTask.is_recurring || false,
+        recurrence_pattern: selectedTask.recurrence_pattern || 'monthly',
+        recurrence_interval: selectedTask.recurrence_interval || 1,
+        recurrence_end_date: selectedTask.recurrence_end_date ? new Date(selectedTask.recurrence_end_date).toISOString().split('T')[0] : '',
       });
     } else {
       resetForm();
@@ -113,6 +126,10 @@ const TasksPage = () => {
         group_id: 'personal',
         value: 0,
         category: '',
+        is_recurring: false,
+        recurrence_pattern: 'monthly' as 'daily' | 'weekly' | 'monthly' | 'yearly',
+        recurrence_interval: 1,
+        recurrence_end_date: '',
     });
     setTransactionType('expense');
   }
@@ -234,6 +251,10 @@ const TasksPage = () => {
           value: valueWithSign,
           category: formData.category,
           created_at: selectedTask ? selectedTask.created_at : localCreatedAt,
+          is_recurring: formData.is_recurring,
+          recurrence_pattern: formData.is_recurring ? formData.recurrence_pattern : null,
+          recurrence_interval: formData.is_recurring ? formData.recurrence_interval : null,
+          recurrence_end_date: formData.is_recurring && formData.recurrence_end_date ? new Date(formData.recurrence_end_date).toISOString() : null,
       };
 
       let error;
@@ -593,6 +614,63 @@ const TasksPage = () => {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-3 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="is_recurring" className="text-sm font-medium">Tarefa Recorrente</Label>
+                  <Switch
+                    id="is_recurring"
+                    checked={formData.is_recurring}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
+                  />
+                </div>
+                
+                {formData.is_recurring && (
+                  <div className="space-y-3 pl-4 border-l-2 border-primary/20">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="recurrence_pattern">Repetir a cada</Label>
+                        <Select 
+                          value={formData.recurrence_pattern} 
+                          onValueChange={(value: any) => setFormData({ ...formData, recurrence_pattern: value })}
+                        >
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="daily">Dia(s)</SelectItem>
+                            <SelectItem value="weekly">Semana(s)</SelectItem>
+                            <SelectItem value="monthly">Mês(es)</SelectItem>
+                            <SelectItem value="yearly">Ano(s)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="recurrence_interval">Intervalo</Label>
+                        <Input
+                          id="recurrence_interval"
+                          type="number"
+                          min="1"
+                          value={formData.recurrence_interval}
+                          onChange={(e) => setFormData({ ...formData, recurrence_interval: parseInt(e.target.value) || 1 })}
+                          placeholder="1"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="recurrence_end_date">Repetir até (opcional)</Label>
+                      <Input
+                        id="recurrence_end_date"
+                        type="date"
+                        value={formData.recurrence_end_date}
+                        onChange={(e) => setFormData({ ...formData, recurrence_end_date: e.target.value })}
+                        min={formData.schedule_date}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Deixe em branco para repetir indefinidamente
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-3">

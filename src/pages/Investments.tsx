@@ -33,6 +33,8 @@ import PortfolioEvolutionChart from "@/components/charts/PortfolioEvolutionChart
 import AssetAllocationChart from "@/components/charts/AssetAllocationChart";
 import DividendHistoryChart from "@/components/charts/DividendHistoryChart";
 import EnhancedAssetTable from "@/components/EnhancedAssetTable";
+import { InvestmentTransactionForm } from "@/components/InvestmentTransactionForm";
+import { ManualInvestmentTransactions } from "@/components/ManualInvestmentTransactions";
 import { mapInvestmentType } from "@/lib/investment-mapping";
 import { mapAccountSubtype } from "@/lib/account-mapping";
 import { cn } from "@/lib/utils";
@@ -68,6 +70,7 @@ const InvestmentsPage = () => {
   } = useOpenBanking();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [transactionRefresh, setTransactionRefresh] = useState(0);
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(
     null,
   );
@@ -151,6 +154,7 @@ const InvestmentsPage = () => {
         title: "Dados Atualizados",
         description: "Todos os dados foram atualizados com sucesso.",
       });
+      setTransactionRefresh(prev => prev + 1);
     } catch (error) {
       toast({
         title: "Erro na Atualização",
@@ -221,18 +225,26 @@ const InvestmentsPage = () => {
             <span className={getConnectionColor()}>{connectionStatus}</span>
           </p>
         </div>
-        <Button
-          onClick={handleRefresh}
-          disabled={isLoading}
-          variant="outline"
-          size="sm"
-          className="w-full sm:w-auto"
-        >
-          <RefreshCw
-            className={`h-4 w-4 sm:mr-2 ${refreshing ? "animate-spin" : ""}`}
+        <div className="flex gap-2 w-full sm:w-auto">
+          <InvestmentTransactionForm 
+            onSuccess={() => {
+              handleRefresh();
+              setTransactionRefresh(prev => prev + 1);
+            }} 
           />
-          <span className="ml-2 sm:ml-0">Atualizar</span>
-        </Button>
+          <Button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            variant="outline"
+            size="sm"
+            className="flex-1 sm:flex-none"
+          >
+            <RefreshCw
+              className={`h-4 w-4 sm:mr-2 ${refreshing ? "animate-spin" : ""}`}
+            />
+            <span className="ml-2 sm:ml-0">Atualizar</span>
+          </Button>
+        </div>
       </div>
       {/* Alerta de conexão */}
       {!b3Connected && !bankConnected && (
@@ -634,7 +646,7 @@ const InvestmentsPage = () => {
       )}
       {/* Enhanced Dashboards */}
       <Tabs defaultValue="evolution" className="space-y-4 sm:space-y-6">
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
           <TabsTrigger
             value="evolution"
             className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3"
@@ -666,6 +678,12 @@ const InvestmentsPage = () => {
             <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
             <span>Ativos</span>
           </TabsTrigger>
+          <TabsTrigger
+            value="manual"
+            className="flex items-center gap-1 text-[10px] sm:text-xs lg:text-sm py-2 px-1 sm:px-3"
+          >
+            <span>Manual</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="evolution" className="space-y-3 sm:space-y-6">
@@ -685,6 +703,10 @@ const InvestmentsPage = () => {
 
         <TabsContent value="assets" className="space-y-3 sm:space-y-6">
           <EnhancedAssetTable assets={enhancedAssets} loading={isLoading} />
+        </TabsContent>
+
+        <TabsContent value="manual" className="space-y-3 sm:space-y-6">
+          <ManualInvestmentTransactions refresh={transactionRefresh} />
         </TabsContent>
       </Tabs>
     </div>
