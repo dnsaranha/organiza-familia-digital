@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Minus, Loader2, Users, AlertTriangle, Pencil, Switch } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Plus, Minus, Loader2, Users, AlertTriangle, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -47,13 +48,9 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
     quantity: "",
     price: "",
   });
-  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
-  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Efeito para buscar os grupos do usuário
   useEffect(() => {
     const fetchGroups = async () => {
       if (!user) return;
@@ -67,7 +64,6 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
     fetchGroups();
   }, [user]);
 
-  // Efeito para popular o formulário ao editar uma transação
   useEffect(() => {
     if (isEditMode && transactionToEdit) {
       setType(transactionToEdit.type);
@@ -76,7 +72,6 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
       setDescription(transactionToEdit.description || '');
       setGroupId(transactionToEdit.group_id);
     } else {
-      // Reseta o formulário se não estiver em modo de edição (ex: ao criar uma nova transação)
       setType('expense');
       setAmount('');
       setCategory('');
@@ -107,16 +102,37 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    
+    if (isInvestment) {
+      if (!investmentData.ticker || !investmentData.quantity || !investmentData.price || !investmentData.type) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Por favor, preencha todos os campos obrigatórios.",
+          variant: "destructive"
+        });
+        return;
+      }
+    } else {
+      if (!amount || !category || !user) {
+        toast({
+          title: "Campos obrigatórios",
+          description: "Por favor, preencha o valor e a categoria.",
+          variant: "destructive"
+        });
+        return;
+      }
+    }
 
     try {
+      const d = new Date();
+      const localDateString = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
       if (isInvestment) {
-        // Handle investment transaction
         const totalValue = parseFloat(investmentData.quantity) * parseFloat(investmentData.price);
         
         const { error } = await supabase.from("manual_investments").insert({
           user_id: user?.id,
-          group_id: selectedGroupId,
+          group_id: groupId,
           ticker: investmentData.ticker.toUpperCase(),
           name: investmentData.name,
           type: investmentData.type,
@@ -125,7 +141,7 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
           quantity: parseFloat(investmentData.quantity),
           price: parseFloat(investmentData.price),
           total_value: totalValue,
-          transaction_date: date,
+          transaction_date: localDateString,
           notes: description,
         });
 
@@ -135,49 +151,65 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
           title: "Investimento Registrado",
           description: `${investmentData.transactionType === 'buy' ? 'Compra' : 'Venda'} de ${investmentData.ticker} registrada com sucesso.`,
         });
-      } else {
-        const { error } = await supabase.from("transactions").insert({
-          user_id: user?.id,
-          type,
-          category,
-          amount: parseFloat(amount),
-          description,
-          date,
-          group_id: selectedGroupId,
+
+        setInvestmentData({
+          ticker: "",
+          name: "",
+          type: "",
+          subtype: "",
+          transactionType: "buy",
+          quantity: "",
+          price: "",
         });
+      } else {
+        const transactionData = {
+          user_id: user.id,
+          group_id: groupId,
+          type,
+          amount: parseFloat(amount),
+          category,
+          description: description || null,
+          date: isEditMode ? transactionToEdit.date : localDateString,
+          updated_at: new Date().toISOString(),
+        };
+
+        let error;
+        if (isEditMode) {
+          const { error: updateError } = await (supabase as any)
+            .from('transactions')
+            .update(transactionData)
+            .eq('id', transactionToEdit.id);
+          error = updateError;
+        } else {
+          const { error: insertError } = await (supabase as any)
+            .from('transactions')
+            .insert(transactionData);
+          error = insertError;
+        }
 
         if (error) throw error;
 
         toast({
-          title: "Transação Adicionada",
-          description: "Sua transação foi registrada com sucesso.",
+          title: `Transação ${isEditMode ? 'atualizada' : 'adicionada'}! 🎉`,
+          description: `Sua transação foi ${isEditMode ? 'salva' : 'registrada'} com sucesso.`,
         });
+
+        if (!isEditMode) {
+          setAmount('');
+          setCategory('');
+        }
       }
 
-      // Reset form
-      setType("expense");
-      setCategory("");
-      setAmount("");
-      setDescription("");
-      setDate(new Date().toISOString().split("T")[0]);
-      setIsInvestment(false);
-      setInvestmentData({
-        ticker: "",
-        name: "",
-        type: "",
-        subtype: "",
-        transactionType: "buy",
-        quantity: "",
-        price: "",
-      });
+      setDescription('');
+      setGroupId(null);
+      onSave();
 
-      if (onSuccess) onSuccess();
-    } catch (error) {
-      console.error("Erro ao adicionar:", error);
+    } catch (err: any) {
+      console.error(`Erro ao ${isEditMode ? 'atualizar' : 'adicionar'}:`, err);
       toast({
-        title: "Erro",
-        description: "Não foi possível registrar. Tente novamente.",
-        variant: "destructive",
+        title: `Erro ao ${isEditMode ? 'atualizar' : 'adicionar'}`,
+        description: `Não foi possível ${isEditMode ? 'salvar as alterações' : 'registrar'}. Tente novamente.`,
+        variant: "destructive"
       });
     } finally {
       setIsSubmitting(false);
@@ -198,13 +230,21 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
     <ErrorBoundary fallback={fallbackUI}>
       <Card className="bg-gradient-card shadow-card border">
         <CardHeader>
-          <CardTitle>
-            {isInvestment ? "Registrar Compra/Venda" : "Nova Transação"}
+          <CardTitle className="flex items-center gap-2">
+            {isEditMode ? (
+              <Pencil className="h-5 w-5 text-primary" />
+            ) : isInvestment ? (
+              <Plus className="h-5 w-5 text-primary" />
+            ) : type === 'income' ? (
+              <Plus className="h-5 w-5 text-success" />
+            ) : (
+              <Minus className="h-5 w-5 text-expense" />
+            )}
+            {isEditMode ? 'Editar Transação' : isInvestment ? 'Registrar Compra/Venda' : 'Nova Transação'}
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Toggle between regular transaction and investment */}
+        <CardContent className="space-y-6">
+          {!isEditMode && (
             <div className="flex items-center space-x-2">
               <Switch
                 id="investment-mode"
@@ -215,180 +255,204 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
                 Transação de Investimento
               </Label>
             </div>
+          )}
 
-            {isInvestment ? (
-              <>
-                {/* Investment Form Fields */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="transactionType">Tipo de Operação</Label>
-                    <Select
-                      value={investmentData.transactionType}
-                      onValueChange={(value) =>
-                        setInvestmentData({ ...investmentData, transactionType: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="buy">Compra</SelectItem>
-                        <SelectItem value="sell">Venda</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="ticker">Ticker/Código</Label>
-                    <Input
-                      id="ticker"
-                      value={investmentData.ticker}
-                      onChange={(e) =>
-                        setInvestmentData({ ...investmentData, ticker: e.target.value.toUpperCase() })
-                      }
-                      placeholder="Ex: PETR4, MXRF11"
-                      required
-                    />
-                  </div>
+          {isInvestment && !isEditMode ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="transactionType">Tipo de Operação</Label>
+                  <Select
+                    value={investmentData.transactionType}
+                    onValueChange={(value) =>
+                      setInvestmentData({ ...investmentData, transactionType: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="buy">Compra</SelectItem>
+                      <SelectItem value="sell">Venda</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome do Ativo</Label>
+                  <Label htmlFor="ticker">Ticker/Código *</Label>
                   <Input
-                    id="name"
-                    value={investmentData.name}
+                    id="ticker"
+                    value={investmentData.ticker}
                     onChange={(e) =>
-                      setInvestmentData({ ...investmentData, name: e.target.value })
+                      setInvestmentData({ ...investmentData, ticker: e.target.value.toUpperCase() })
                     }
-                    placeholder="Ex: Petrobras PN"
+                    placeholder="Ex: PETR4, MXRF11"
+                    required
                   />
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Categoria</Label>
-                    <Select
-                      value={investmentData.type}
-                      onValueChange={(value) => {
-                        setInvestmentData({ ...investmentData, type: value, subtype: "" });
-                      }}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {investmentMapping.map((item) => (
-                          <SelectItem key={item.type} value={item.type}>
-                            {item.label_pt}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome do Ativo</Label>
+                <Input
+                  id="name"
+                  value={investmentData.name}
+                  onChange={(e) =>
+                    setInvestmentData({ ...investmentData, name: e.target.value })
+                  }
+                  placeholder="Ex: Petrobras PN"
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="subtype">Subcategoria</Label>
-                    <Select
-                      value={investmentData.subtype}
-                      onValueChange={(value) =>
-                        setInvestmentData({ ...investmentData, subtype: value })
-                      }
-                      disabled={!investmentData.type}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {investmentMapping
-                          .find((item) => item.type === investmentData.type)
-                          ?.subtypes.map((sub) => (
-                            <SelectItem key={sub.subtype} value={sub.subtype}>
-                              {sub.label_pt}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="type">Categoria *</Label>
+                  <Select
+                    value={investmentData.type}
+                    onValueChange={(value) => {
+                      setInvestmentData({ ...investmentData, type: value, subtype: "" });
+                    }}
+                    required
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {investmentMapping.map((item) => (
+                        <SelectItem key={item.type} value={item.type}>
+                          {item.label_pt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="quantity">Quantidade</Label>
-                    <Input
-                      id="quantity"
-                      type="number"
-                      step="0.000001"
-                      value={investmentData.quantity}
-                      onChange={(e) =>
-                        setInvestmentData({ ...investmentData, quantity: e.target.value })
-                      }
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Preço Unitário (R$)</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      value={investmentData.price}
-                      onChange={(e) =>
-                        setInvestmentData({ ...investmentData, price: e.target.value })
-                      }
-                      placeholder="0.00"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {investmentData.quantity && investmentData.price && (
-                  <div className="p-3 bg-muted rounded-md">
-                    <p className="text-sm font-medium">
-                      Valor Total: R${" "}
-                      {(parseFloat(investmentData.quantity) * parseFloat(investmentData.price)).toFixed(2)}
-                    </p>
-                  </div>
-                )}
 
                 <div className="space-y-2">
-                  <Label htmlFor="date">Data da Operação</Label>
+                  <Label htmlFor="subtype">Subcategoria</Label>
+                  <Select
+                    value={investmentData.subtype}
+                    onValueChange={(value) =>
+                      setInvestmentData({ ...investmentData, subtype: value })
+                    }
+                    disabled={!investmentData.type}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {investmentMapping
+                        .find((item) => item.type === investmentData.type)
+                        ?.subtypes.map((sub) => (
+                          <SelectItem key={sub.subtype} value={sub.subtype}>
+                            {sub.label_pt}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="quantity">Quantidade *</Label>
                   <Input
-                    id="date"
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    id="quantity"
+                    type="number"
+                    step="0.000001"
+                    value={investmentData.quantity}
+                    onChange={(e) =>
+                      setInvestmentData({ ...investmentData, quantity: e.target.value })
+                    }
+                    placeholder="0.00"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="notes">Observações</Label>
-                  <Textarea
-                    id="notes"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Notas adicionais sobre a operação..."
+                  <Label htmlFor="price">Preço Unitário (R$) *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={investmentData.price}
+                    onChange={(e) =>
+                      setInvestmentData({ ...investmentData, price: e.target.value })
+                    }
+                    placeholder="0.00"
+                    required
                   />
                 </div>
-              </>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="type">Tipo</Label>
-                  <Select value={type} onValueChange={(value: any) => setType(value)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="income">Receita</SelectItem>
-                      <SelectItem value="expense">Despesa</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              </div>
 
+              {investmentData.quantity && investmentData.price && (
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm font-medium">
+                    Valor Total: R${" "}
+                    {(parseFloat(investmentData.quantity) * parseFloat(investmentData.price)).toFixed(2)}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="notes">Observações</Label>
+                <Textarea
+                  id="notes"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Notas adicionais sobre a operação..."
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  type="submit"
+                  className="w-full bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Registrar Operação'
+                  )}
+                </Button>
+                {onCancel && (
+                  <Button type="button" variant="ghost" onClick={onCancel} className="w-full sm:w-auto" disabled={loading}>
+                    Cancelar
+                  </Button>
+                )}
+              </div>
+            </form>
+          ) : (
+            <>
+              {!isEditMode && (
+                <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg">
+                  <Button
+                    type="button"
+                    variant={type === 'expense' ? 'default' : 'ghost'}
+                    onClick={() => setType('expense')}
+                    disabled={loading}
+                    className={type === 'expense' ? 'bg-gradient-expense text-expense-foreground shadow-expense' : ''}
+                  >
+                    <Minus className="h-4 w-4 mr-2" />
+                    Despesa
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={type === 'income' ? 'default' : 'ghost'}
+                    onClick={() => setType('income')}
+                    disabled={loading}
+                    className={type === 'income' ? 'bg-gradient-success text-success-foreground shadow-success' : ''}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Receita
+                  </Button>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="amount">Valor *</Label>
                   <div className="relative">
@@ -453,31 +517,31 @@ export const TransactionForm = ({ onSave, onCancel, transactionToEdit }: Transac
                     disabled={loading}
                   />
                 </div>
-              </>
-            )}
 
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Button
-                type="submit"
-                className="w-full bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isInvestment ? 'Salvando...' : 'Adicionando...'}
-                  </>
-                ) : (
-                  isInvestment ? 'Registrar Operação' : 'Adicionar Transação'
-                )}
-              </Button>
-              {onCancel && (
-                <Button type="button" variant="ghost" onClick={onCancel} className="w-full sm:w-auto" disabled={loading}>
-                  Cancelar
-                </Button>
-              )}
-            </div>
-          </form>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-primary text-primary-foreground shadow-button hover:scale-105 transition-smooth"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {isEditMode ? 'Salvando...' : 'Adicionando...'}
+                      </>
+                    ) : (
+                      isEditMode ? 'Salvar Alterações' : 'Adicionar Transação'
+                    )}
+                  </Button>
+                  {onCancel && (
+                    <Button type="button" variant="ghost" onClick={onCancel} className="w-full sm:w-auto" disabled={loading}>
+                      Cancelar
+                    </Button>
+                  )}
+                </div>
+              </form>
+            </>
+          )}
         </CardContent>
       </Card>
     </ErrorBoundary>
