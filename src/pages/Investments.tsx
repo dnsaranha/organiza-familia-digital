@@ -96,14 +96,18 @@ const InvestmentsPage = () => {
     "BBDC4",
   ];
 
+  const hasRealData = useMemo(() => {
+    return manualPositions.length > 0 || investments.length > 0;
+  }, [manualPositions, investments]);
+
   useEffect(() => {
     // Carregar dados iniciais
     const loadInitialData = async () => {
       await Promise.all([
         getAssetQuotes(defaultSymbols),
-        getPortfolioEvolutionData(),
-        getEnhancedAssetsData(),
-        getDividendHistoryData(),
+        getPortfolioEvolutionData("12m", hasRealData),
+        getEnhancedAssetsData(hasRealData),
+        getDividendHistoryData(hasRealData),
         getBenchmarkData(),
       ]);
     };
@@ -115,6 +119,7 @@ const InvestmentsPage = () => {
     getEnhancedAssetsData,
     getDividendHistoryData,
     getBenchmarkData,
+    hasRealData,
   ]);
 
   const filteredTransactions = useMemo(() => {
@@ -132,9 +137,9 @@ const InvestmentsPage = () => {
       // Atualizar todos os dados
       await Promise.all([
         getAssetQuotes(defaultSymbols, false),
-        getPortfolioEvolutionData(),
-        getEnhancedAssetsData(),
-        getDividendHistoryData(),
+        getPortfolioEvolutionData("12m", hasRealData),
+        getEnhancedAssetsData(hasRealData),
+        getDividendHistoryData(hasRealData),
         getBenchmarkData(),
       ]);
 
@@ -182,6 +187,8 @@ const InvestmentsPage = () => {
 
   const portfolioTotals = useMemo(() => {
     const manualInvested = manualPositions.reduce((sum, pos) => sum + pos.totalCost, 0);
+    const manualCurrentValue = manualPositions.reduce((sum, pos) => sum + (pos.marketValue || pos.totalCost), 0);
+    const manualDividends = manualPositions.reduce((sum, pos) => sum + (pos.accumulatedDividends || 0), 0);
     
     if (enhancedAssets.length > 0) {
       return {
@@ -192,17 +199,17 @@ const InvestmentsPage = () => {
         currentValue: enhancedAssets.reduce(
           (sum, asset) => sum + asset.marketValue,
           0,
-        ) + manualInvested, // Use cost as value for manual assets until we get real-time prices
+        ) + manualCurrentValue,
         totalDividends: enhancedAssets.reduce(
           (sum, asset) => sum + asset.accumulatedDividends,
           0,
-        ),
+        ) + manualDividends,
       };
     }
     return {
       totalInvested: (portfolio?.totalCost || 0) + manualInvested,
-      currentValue: (portfolio?.totalValue || 0) + manualInvested,
-      totalDividends: totalDividends,
+      currentValue: (portfolio?.totalValue || 0) + manualCurrentValue,
+      totalDividends: totalDividends + manualDividends,
     };
   }, [enhancedAssets, portfolio, totalDividends, manualPositions]);
 

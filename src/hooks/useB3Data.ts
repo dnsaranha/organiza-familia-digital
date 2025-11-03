@@ -191,7 +191,7 @@ export const useB3Data = () => {
 
   // Buscar dados de evolução patrimonial
   const getPortfolioEvolutionData = useCallback(
-    async (period: string = "12m") => {
+    async (period: string = "12m", hasManualData: boolean = false) => {
       setLoading(true);
       try {
         // First try to get real investment data from Pluggy
@@ -224,6 +224,12 @@ export const useB3Data = () => {
               return evolutionData;
             }
           }
+        }
+
+        // Only return empty array if has manual data, otherwise return mock
+        if (hasManualData) {
+          setPortfolioEvolution([]);
+          return [];
         }
 
         // Fallback to mock data if no real data available
@@ -281,7 +287,7 @@ export const useB3Data = () => {
   };
 
   // Buscar ativos detalhados com integração Yahoo Finance
-  const getEnhancedAssetsData = useCallback(async () => {
+  const getEnhancedAssetsData = useCallback(async (hasManualData: boolean = false) => {
     setLoading(true);
     try {
       // First try to get real investment data from Pluggy
@@ -385,6 +391,12 @@ export const useB3Data = () => {
         }
       }
 
+      // Only return empty array if has manual data, otherwise return mock
+      if (hasManualData) {
+        setEnhancedAssets([]);
+        return [];
+      }
+
       // Fallback to mock data if no real data available
       const assetsData = await b3Client.getEnhancedAssets();
       setEnhancedAssets(assetsData);
@@ -406,9 +418,15 @@ export const useB3Data = () => {
   }, [toast, user]);
 
   // Buscar histórico de dividendos
-  const getDividendHistoryData = useCallback(async () => {
+  const getDividendHistoryData = useCallback(async (hasManualData: boolean = false) => {
     setLoading(true);
     try {
+      // Only return empty array if has manual data, otherwise return mock
+      if (hasManualData) {
+        setDividendHistory([]);
+        return [];
+      }
+
       // For now, use mock data as Pluggy doesn't provide dividend history directly
       // In a real implementation, you would need to track dividends separately
       // or use a different data provider that includes dividend information
