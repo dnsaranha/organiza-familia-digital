@@ -63,6 +63,19 @@ export const investmentMapping = [
     subtypes: [
       { subtype: "STRUCTURED_NOTE", label_pt: "COE", descricao_pt: "Certificado de Operações Estruturadas" }
     ]
+  },
+  {
+    type: "manual",
+    label_pt: "Manual",
+    subtypes: [
+      { subtype: "ACAO", label_pt: "Ação", descricao_pt: "Ação adicionada manualmente" },
+      { subtype: "FII", label_pt: "FII", descricao_pt: "Fundo Imobiliário adicionado manualmente" },
+      { subtype: "ETF", label_pt: "ETF", descricao_pt: "ETF adicionado manualmente" },
+      { subtype: "RENDA_FIXA", label_pt: "Renda Fixa", descricao_pt: "Renda Fixa adicionada manualmente" },
+      { subtype: "FUNDO", label_pt: "Fundo", descricao_pt: "Fundo adicionado manualmente" },
+      { subtype: "CRIPTO", label_pt: "Cripto", descricao_pt: "Criptomoeda adicionada manualmente" },
+      { subtype: "OUTRO", label_pt: "Outro", descricao_pt: "Investimento manual" }
+    ]
   }
 ];
 

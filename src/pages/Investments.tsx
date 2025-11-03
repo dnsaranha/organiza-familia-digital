@@ -35,6 +35,7 @@ import DividendHistoryChart from "@/components/charts/DividendHistoryChart";
 import EnhancedAssetTable from "@/components/EnhancedAssetTable";
 import { InvestmentTransactionForm } from "@/components/InvestmentTransactionForm";
 import { ManualInvestmentTransactions } from "@/components/ManualInvestmentTransactions";
+import { useManualInvestments } from "@/hooks/useManualInvestments";
 import { mapInvestmentType } from "@/lib/investment-mapping";
 import { mapAccountSubtype } from "@/lib/account-mapping";
 import { cn } from "@/lib/utils";
@@ -75,6 +76,8 @@ const InvestmentsPage = () => {
     null,
   );
   const { toast } = useToast();
+
+  const { positions: manualPositions, refresh: refreshManualInvestments } = useManualInvestments();
 
   const bankTotalBalance = useMemo(() => {
     return accounts.reduce(
@@ -150,6 +153,9 @@ const InvestmentsPage = () => {
         await refreshAllData();
       }
 
+      // Atualizar investimentos manuais
+      await refreshManualInvestments();
+
       toast({
         title: "Dados Atualizados",
         description: "Todos os dados foram atualizados com sucesso.",
@@ -175,16 +181,18 @@ const InvestmentsPage = () => {
   }, [dividends, dividendHistory]);
 
   const portfolioTotals = useMemo(() => {
+    const manualInvested = manualPositions.reduce((sum, pos) => sum + pos.totalCost, 0);
+    
     if (enhancedAssets.length > 0) {
       return {
         totalInvested: enhancedAssets.reduce(
           (sum, asset) => sum + asset.cost,
           0,
-        ),
+        ) + manualInvested,
         currentValue: enhancedAssets.reduce(
           (sum, asset) => sum + asset.marketValue,
           0,
-        ),
+        ) + manualInvested, // Use cost as value for manual assets until we get real-time prices
         totalDividends: enhancedAssets.reduce(
           (sum, asset) => sum + asset.accumulatedDividends,
           0,
@@ -192,11 +200,11 @@ const InvestmentsPage = () => {
       };
     }
     return {
-      totalInvested: portfolio?.totalCost || 0,
-      currentValue: portfolio?.totalValue || 0,
+      totalInvested: (portfolio?.totalCost || 0) + manualInvested,
+      currentValue: (portfolio?.totalValue || 0) + manualInvested,
       totalDividends: totalDividends,
     };
-  }, [enhancedAssets, portfolio, totalDividends]);
+  }, [enhancedAssets, portfolio, totalDividends, manualPositions]);
 
   const isLoading = b3Loading || bankLoading || refreshing;
 
@@ -227,8 +235,9 @@ const InvestmentsPage = () => {
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <InvestmentTransactionForm 
-            onSuccess={() => {
-              handleRefresh();
+            onSuccess={async () => {
+              await refreshManualInvestments();
+              await handleRefresh();
               setTransactionRefresh(prev => prev + 1);
             }} 
           />
@@ -694,7 +703,28 @@ const InvestmentsPage = () => {
         </TabsContent>
 
         <TabsContent value="allocation" className="space-y-3 sm:space-y-6">
-          <AssetAllocationChart assets={enhancedAssets} loading={isLoading} />
+          <AssetAllocationChart 
+            assets={[
+              ...enhancedAssets,
+              ...manualPositions.map(pos => ({
+                symbol: pos.ticker,
+                name: pos.name,
+                type: "manual",
+                subtype: pos.category,
+                currentPrice: pos.averagePrice,
+                quantity: pos.quantity,
+                marketValue: pos.totalCost,
+                cost: pos.totalCost,
+                averagePrice: pos.averagePrice,
+                yieldOnCost: 0,
+                profitLoss: 0,
+                profitability: 0,
+                dividends: 0,
+                operations: 0,
+              }))
+            ]} 
+            loading={isLoading} 
+          />
         </TabsContent>
 
         <TabsContent value="dividends" className="space-y-3 sm:space-y-6">
@@ -702,7 +732,27 @@ const InvestmentsPage = () => {
         </TabsContent>
 
         <TabsContent value="assets" className="space-y-3 sm:space-y-6">
-          <EnhancedAssetTable assets={enhancedAssets} loading={isLoading} />
+          <EnhancedAssetTable 
+            assets={[
+              ...enhancedAssets,
+              ...manualPositions.map(pos => ({
+                symbol: pos.ticker,
+                name: pos.name,
+                type: "manual",
+                subtype: pos.category,
+                currentPrice: pos.averagePrice,
+                quantity: pos.quantity,
+                marketValue: pos.totalCost,
+                cost: pos.totalCost,
+                averagePrice: pos.averagePrice,
+                yieldOnCost: 0,
+                accumulatedDividends: 0,
+                profitLoss: 0,
+                profitability: 0,
+              }))
+            ]} 
+            loading={isLoading} 
+          />
         </TabsContent>
 
         <TabsContent value="manual" className="space-y-3 sm:space-y-6">

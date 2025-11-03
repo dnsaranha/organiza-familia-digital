@@ -263,7 +263,7 @@ const EnhancedAssetTable = ({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto w-[346px] h-[462px]">
+        <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
