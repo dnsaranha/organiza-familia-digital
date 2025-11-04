@@ -50,6 +50,35 @@ export function useManualInvestments() {
     }
   };
 
+  const fetchFromFinancialAssets = async (tickers: string[]): Promise<{ prices: Map<string, number>, dividends: Map<string, number> }> => {
+    const prices = new Map<string, number>();
+    const dividends = new Map<string, number>();
+
+    if (tickers.length === 0) return { prices, dividends };
+
+    const { data, error } = await supabase
+      .from("financial_assets")
+      .select("ticker, current_price, dividends_12m")
+      .in("ticker", tickers.map(t => `${t}.SA`));
+
+    if (error) {
+      console.error("Erro ao buscar da tabela financial_assets:", error);
+      return { prices, dividends };
+    }
+
+    data?.forEach(asset => {
+      const ticker = asset.ticker.replace('.SA', '');
+      if (asset.current_price !== null) {
+        prices.set(ticker, asset.current_price);
+      }
+      if (asset.dividends_12m !== null) {
+        dividends.set(ticker, asset.dividends_12m);
+      }
+    });
+
+    return { prices, dividends };
+  };
+
   const fetchRealTimeData = async (tickers: string[]) => {
     if (tickers.length === 0) return { prices: new Map(), dividends: new Map() };
 
@@ -124,11 +153,11 @@ export function useManualInvestments() {
     txs.forEach((tx) => {
       const existing = positionMap.get(tx.ticker);
       const txFees = tx.fees || 0;
-      
+
       if (tx.transaction_type === "buy") {
         if (existing) {
           const newQuantity = existing.quantity + tx.quantity;
-          const newCost = existing.totalCost + (tx.quantity * tx.price) + txFees;
+          const newCost = existing.totalCost + tx.quantity * tx.price + txFees;
           positionMap.set(tx.ticker, {
             ...existing,
             quantity: newQuantity,
@@ -137,7 +166,7 @@ export function useManualInvestments() {
             averagePrice: newCost / newQuantity,
           });
         } else {
-          const cost = (tx.quantity * tx.price) + txFees;
+          const cost = tx.quantity * tx.price + txFees;
           positionMap.set(tx.ticker, {
             ticker: tx.ticker,
             name: tx.asset_name,
@@ -152,13 +181,14 @@ export function useManualInvestments() {
         const newQuantity = existing.quantity - tx.quantity;
         const proportionSold = tx.quantity / existing.quantity;
         const costReduction = existing.totalCost * proportionSold;
-        
+
         if (newQuantity > 0) {
           positionMap.set(tx.ticker, {
             ...existing,
             quantity: newQuantity,
             totalCost: existing.totalCost - costReduction,
-            averagePrice: (existing.totalCost - costReduction) / newQuantity,
+            averagePrice:
+              (existing.totalCost - costReduction) / newQuantity,
           });
         } else {
           positionMap.delete(tx.ticker);
@@ -166,34 +196,50 @@ export function useManualInvestments() {
       }
     });
 
-    // Fetch real-time data for all positions
     const tickers = Array.from(positionMap.keys());
-    const { prices, dividends } = await fetchRealTimeData(tickers);
 
-    // Enhance positions with real-time data
-    const enhancedPositions = Array.from(positionMap.values()).map(position => {
-      const priceData = prices.get(position.ticker);
-      const dividendData = dividends.get(position.ticker);
-      
-      const currentPrice = priceData?.price || position.averagePrice;
-      const marketValue = currentPrice * position.quantity;
-      const profitLoss = marketValue - position.totalCost;
-      const profitability = position.totalCost > 0 ? (profitLoss / position.totalCost) * 100 : 0;
-      const accumulatedDividends = (dividendData?.total || 0) * position.quantity;
-      const yieldOnCost = position.totalCost > 0 && accumulatedDividends > 0 
-        ? (accumulatedDividends / position.totalCost) * 100 
-        : 0;
+    // 1. Tentar buscar dados em tempo real
+    const { prices: realTimePrices, dividends: realTimeDividends } = await fetchRealTimeData(tickers);
 
-      return {
-        ...position,
-        currentPrice,
-        marketValue,
-        profitLoss,
-        profitability,
-        accumulatedDividends,
-        yieldOnCost,
-      };
-    });
+    // 2. Para tickers sem dados, buscar na tabela de fallback
+    const tickersWithoutData = tickers.filter(t => !realTimePrices.has(t) || !realTimeDividends.has(t));
+    const { prices: fallbackPrices, dividends: fallbackDividends } = await fetchFromFinancialAssets(tickersWithoutData);
+
+    // 3. Juntar os dados
+    const finalPrices = new Map(fallbackPrices);
+    realTimePrices.forEach((value, key) => finalPrices.set(key, value.price)); // Sobrescreve com dados em tempo real
+
+    const finalDividends = new Map(fallbackDividends);
+    realTimeDividends.forEach((value, key) => finalDividends.set(key, value.total));
+
+    // Enhance positions
+    const enhancedPositions = Array.from(positionMap.values()).map(
+      (position) => {
+        const currentPrice = finalPrices.get(position.ticker) || position.averagePrice;
+        const accumulatedDividends = finalDividends.get(position.ticker) || 0;
+
+        const marketValue = currentPrice * position.quantity;
+        const profitLoss = marketValue - position.totalCost;
+        const profitability =
+          position.totalCost > 0
+            ? (profitLoss / position.totalCost) * 100
+            : 0;
+        const yieldOnCost =
+          position.totalCost > 0 && accumulatedDividends > 0
+            ? (accumulatedDividends / position.totalCost) * 100
+            : 0;
+
+        return {
+          ...position,
+          currentPrice,
+          marketValue,
+          profitLoss,
+          profitability,
+          accumulatedDividends: accumulatedDividends * position.quantity, // Multiplica pelo número de ativos
+          yieldOnCost,
+        };
+      },
+    );
 
     setPositions(enhancedPositions);
   };
