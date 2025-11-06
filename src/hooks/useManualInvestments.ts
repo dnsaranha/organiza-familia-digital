@@ -77,33 +77,48 @@ export function useManualInvestments() {
       return { prices, dividends };
     }
 
+    console.log("Fetching real-time data for tickers:", tickersToFetch);
+
     try {
       // Fetch prices from B3
       const symbols = tickersToFetch.map(t => t.includes('.SA') ? t : `${t}.SA`);
+      console.log("Calling b3-quotes with symbols:", symbols);
+      
       const { data: quotesData, error: quotesError } = await supabase.functions.invoke("b3-quotes", {
         body: { symbols },
       });
 
-      if (!quotesError && quotesData?.quotes) {
+      if (quotesError) {
+        console.error("Error fetching quotes:", quotesError);
+      } else if (quotesData?.quotes) {
+        console.log("Received quotes data:", quotesData.quotes);
         quotesData.quotes.forEach((quote: any) => {
           const ticker = quote.symbol.replace('.SA', '');
+          const price = quote.regularMarketPrice || 0;
+          console.log(`Setting price for ${ticker}: ${price}`);
           prices.set(ticker, {
-            price: quote.regularMarketPrice || 0,
+            price,
             timestamp: now,
           });
         });
       }
 
       // Fetch dividends from Yahoo Finance
+      console.log("Calling get-dividends with symbols:", symbols);
       const { data: dividendsData, error: dividendsError } = await supabase.functions.invoke("get-dividends", {
         body: { tickers: symbols, months: 12 },
       });
 
-      if (!dividendsError && dividendsData?.dividends) {
+      if (dividendsError) {
+        console.error("Error fetching dividends:", dividendsError);
+      } else if (dividendsData?.dividends) {
+        console.log("Received dividends data:", dividendsData.dividends);
         dividendsData.dividends.forEach((div: any) => {
           const ticker = div.ticker.replace('.SA', '');
+          const total = div.totalDividends || 0;
+          console.log(`Setting dividends for ${ticker}: ${total}`);
           dividends.set(ticker, {
-            total: div.totalDividends || 0,
+            total,
             timestamp: now,
           });
         });
@@ -175,6 +190,14 @@ export function useManualInvestments() {
       const priceData = prices.get(position.ticker);
       const dividendData = dividends.get(position.ticker);
       
+      console.log(`Processing position for ${position.ticker}:`, {
+        priceData,
+        dividendData,
+        averagePrice: position.averagePrice,
+        quantity: position.quantity,
+        totalCost: position.totalCost
+      });
+      
       const currentPrice = priceData?.price || position.averagePrice;
       const marketValue = currentPrice * position.quantity;
       const profitLoss = marketValue - position.totalCost;
@@ -183,6 +206,15 @@ export function useManualInvestments() {
       const yieldOnCost = position.totalCost > 0 && accumulatedDividends > 0 
         ? (accumulatedDividends / position.totalCost) * 100 
         : 0;
+
+      console.log(`Enhanced position for ${position.ticker}:`, {
+        currentPrice,
+        marketValue,
+        profitLoss,
+        profitability,
+        accumulatedDividends,
+        yieldOnCost
+      });
 
       return {
         ...position,
@@ -195,6 +227,7 @@ export function useManualInvestments() {
       };
     });
 
+    console.log("Final enhanced positions:", enhancedPositions);
     setPositions(enhancedPositions);
   };
 
