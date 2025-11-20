@@ -4,6 +4,7 @@ import { B3Asset, B3Portfolio, B3Dividend } from "@/lib/open-banking/types";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { calculateManualPositions, Transaction } from "@/lib/finance-utils";
 
 export const useB3Data = () => {
   const [assets, setAssets] = useState<B3Asset[]>([]);
@@ -284,15 +285,15 @@ export const useB3Data = () => {
   const getEnhancedAssetsData = useCallback(async () => {
     setLoading(true);
     try {
-      // First try to get real investment data from Pluggy
       if (user) {
+        // 1. Fetch Pluggy Investments
+        let pluggyInvestments: any[] = [];
         const { data: pluggyItems } = await supabase
           .from("pluggy_items")
           .select("item_id")
           .eq("user_id", user.id);
 
         if (pluggyItems && pluggyItems.length > 0) {
-          // Get investment data from Pluggy for each connected item
           const investmentPromises = pluggyItems.map((item) =>
             supabase.functions.invoke("pluggy-investments", {
               body: { itemId: item.item_id },
@@ -300,88 +301,154 @@ export const useB3Data = () => {
           );
 
           const investmentResults = await Promise.all(investmentPromises);
-          const allInvestments = investmentResults.flatMap(
+          pluggyInvestments = investmentResults.flatMap(
             (result) => result.data?.investments || [],
           );
+        }
 
-          if (allInvestments.length > 0) {
-            // Extract tickers from investment names/codes and format for Yahoo Finance
-            const tickers = allInvestments
-              .map((inv) => {
-                const name = inv.name || inv.code || "";
-                // Try to extract ticker from name (e.g., "PETR4", "VALE3", "MXRF11")
-                const tickerMatch = name.match(/([A-Z]{4}\d{1,2})/g);
-                if (tickerMatch && tickerMatch[0]) {
-                  return `${tickerMatch[0]}.SA`; // Add .SA for Brazilian stocks
-                }
-                return null;
-              })
-              .filter(Boolean) as string[];
+        // 2. Fetch Manual Transactions
+        let manualPositions: any[] = [];
+        const { data: manualTransactions } = await supabase
+          .from("investment_transactions")
+          .select("*")
+          .eq("user_id", user.id);
 
-            let yfinanceData: any[] = [];
-            if (tickers.length > 0) {
-              try {
-                // Get enhanced data from Yahoo Finance
-                const { data: yfinanceResponse, error: yfinanceError } =
-                  await supabase.functions.invoke("yfinance-data", {
-                    body: { tickers },
-                  });
+        if (manualTransactions && manualTransactions.length > 0) {
+          manualPositions = calculateManualPositions(manualTransactions as Transaction[]);
+        }
 
-                if (!yfinanceError && yfinanceResponse?.assets) {
-                  yfinanceData = yfinanceResponse.assets;
-                }
-              } catch (yfinanceErr) {
-                console.warn(
-                  "Erro ao buscar dados do Yahoo Finance:",
-                  yfinanceErr,
-                );
-              }
-            }
-
-            // Transform Pluggy investment data to enhanced assets format with Yahoo Finance data
-            const enhancedData = allInvestments.map((inv) => {
-              const name = inv.name || inv.code || "N/A";
+        if (pluggyInvestments.length > 0 || manualPositions.length > 0) {
+          // 3. Collect all tickers (Pluggy + Manual)
+          const pluggyTickers = pluggyInvestments
+            .map((inv) => {
+              const name = inv.name || inv.code || "";
               const tickerMatch = name.match(/([A-Z]{4}\d{1,2})/g);
-              const ticker = tickerMatch ? `${tickerMatch[0]}.SA` : null;
+              return tickerMatch && tickerMatch[0] ? `${tickerMatch[0]}.SA` : null;
+            })
+            .filter(Boolean) as string[];
 
-              // Find corresponding Yahoo Finance data
-              const yfinanceAsset = ticker
-                ? yfinanceData.find((asset) => asset.ticker === ticker)
-                : null;
+          const manualTickers = manualPositions.map(p => {
+             // Assuming manual tickers might need .SA suffix if they look like stocks and don't have it
+             // But usually Yahoo needs .SA for Brazilian stocks.
+             // Let's add .SA if it's 4 letters + number(s) and doesn't end in .SA
+             if (p.ticker.match(/^[A-Z]{4}\d{1,2}$/)) {
+                return `${p.ticker}.SA`;
+             }
+             return p.ticker.endsWith(".SA") ? p.ticker : `${p.ticker}.SA`; // Defaulting to try adding .SA for manual
+          });
 
-              const currentPrice =
-                yfinanceAsset?.preco_atual || inv.balance / (inv.quantity || 1);
-              const quantity = inv.quantity || 1;
-              const marketValue = currentPrice * quantity;
-              const cost = inv.balance || marketValue; // Use balance as cost if no better data
-              const profitLoss = marketValue - cost;
-              const profitability = cost > 0 ? (profitLoss / cost) * 100 : 0;
-              const accumulatedDividends = yfinanceAsset?.dividendos_12m || 0;
-              const yieldOnCost =
-                cost > 0 && accumulatedDividends > 0
-                  ? (accumulatedDividends / cost) * 100
-                  : 0;
+          // Combine and deduplicate
+          const allTickers = [...new Set([...pluggyTickers, ...manualTickers])];
 
-              return {
-                symbol: tickerMatch ? tickerMatch[0] : name,
-                name: yfinanceAsset?.nome || inv.name || "Investimento",
-                type: inv.type,
-                subtype: inv.subtype,
-                currentPrice,
-                quantity,
-                marketValue,
-                cost,
-                averagePrice: cost / quantity,
-                yieldOnCost,
-                accumulatedDividends,
-                profitLoss,
-                profitability,
-              };
-            });
+          let yfinanceData: any[] = [];
+          if (allTickers.length > 0) {
+            try {
+              const { data: yfinanceResponse, error: yfinanceError } =
+                await supabase.functions.invoke("yfinance-data", {
+                  body: { tickers: allTickers },
+                });
 
-            setEnhancedAssets(enhancedData);
-            return enhancedData;
+              if (!yfinanceError && yfinanceResponse?.assets) {
+                yfinanceData = yfinanceResponse.assets;
+              }
+            } catch (yfinanceErr) {
+              console.warn("Erro ao buscar dados do Yahoo Finance:", yfinanceErr);
+            }
           }
+
+          // 4. Merge Data
+          const enhancedPluggy = pluggyInvestments.map((inv) => {
+            const name = inv.name || inv.code || "N/A";
+            const tickerMatch = name.match(/([A-Z]{4}\d{1,2})/g);
+            const ticker = tickerMatch ? `${tickerMatch[0]}.SA` : null;
+
+            const yfinanceAsset = ticker
+              ? yfinanceData.find((asset) => asset.ticker === ticker)
+              : null;
+
+            const currentPrice =
+              yfinanceAsset?.preco_atual || inv.balance / (inv.quantity || 1);
+            const quantity = inv.quantity || 1;
+            const marketValue = currentPrice * quantity;
+            const cost = inv.balance || marketValue;
+            const profitLoss = marketValue - cost;
+            const profitability = cost > 0 ? (profitLoss / cost) * 100 : 0;
+            const accumulatedDividends = yfinanceAsset?.dividendos_12m || 0;
+            const yieldOnCost =
+              cost > 0 && accumulatedDividends > 0
+                ? (accumulatedDividends / cost) * 100
+                : 0;
+
+            return {
+              symbol: tickerMatch ? tickerMatch[0] : name,
+              name: yfinanceAsset?.nome || inv.name || "Investimento",
+              type: inv.type,
+              subtype: inv.subtype,
+              currentPrice,
+              quantity,
+              marketValue,
+              cost,
+              averagePrice: cost / quantity,
+              yieldOnCost,
+              accumulatedDividends,
+              profitLoss,
+              profitability,
+            };
+          });
+
+          const enhancedManual = manualPositions.map((pos) => {
+             // Determine correct ticker for lookup
+             const lookupTicker = pos.ticker.match(/^[A-Z]{4}\d{1,2}$/) ? `${pos.ticker}.SA` : (pos.ticker.endsWith(".SA") ? pos.ticker : `${pos.ticker}.SA`);
+
+             const yfinanceAsset = yfinanceData.find((asset) => asset.ticker === lookupTicker);
+
+             const currentPrice = yfinanceAsset?.preco_atual || pos.averagePrice; // Fallback to avg price if no quote
+             const marketValue = currentPrice * pos.quantity;
+             const cost = pos.totalCost;
+             const profitLoss = marketValue - cost;
+             const profitability = cost > 0 ? (profitLoss / cost) * 100 : 0;
+
+             // Calculate dividends and Yield on Cost
+             // `dividendos_12m` from yfinance is dividends per share over last 12 months.
+             const dividendPerShare = yfinanceAsset?.dividendos_12m || 0;
+             const totalDividendsReceived = dividendPerShare * pos.quantity;
+             const yieldOnCostCalc = pos.averagePrice > 0 ? (dividendPerShare / pos.averagePrice) * 100 : 0;
+
+             return {
+               symbol: pos.ticker,
+               name: yfinanceAsset?.nome || pos.asset_name,
+               type: "MANUAL", // Marker for manual
+               subtype: null,
+               currentPrice,
+               quantity: pos.quantity,
+               marketValue,
+               cost: pos.totalCost,
+               averagePrice: pos.averagePrice,
+               yieldOnCost: yieldOnCostCalc,
+               accumulatedDividends: totalDividendsReceived,
+               profitLoss,
+               profitability,
+             };
+          });
+
+          // Fix potential dividend calculation issues in Pluggy data
+          const enhancedPluggyFixed = enhancedPluggy.map(p => {
+             // Ensure dividends are calculated as Total Dividends (per share * quantity)
+             // Pluggy data was initially assigned per-share dividends to `accumulatedDividends`.
+             const divPerShare = p.accumulatedDividends;
+             const totalDivs = divPerShare * p.quantity;
+             const yoc = p.averagePrice > 0 ? (divPerShare / p.averagePrice) * 100 : 0;
+
+             return {
+                ...p,
+                accumulatedDividends: totalDivs,
+                yieldOnCost: yoc
+             };
+          });
+
+          // Merge and set
+          setEnhancedAssets([...enhancedPluggyFixed, ...enhancedManual]);
+          return [...enhancedPluggyFixed, ...enhancedManual];
         }
       }
 
