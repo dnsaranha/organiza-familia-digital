@@ -14,18 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
-
-interface Transaction {
-  id: string;
-  ticker: string;
-  asset_name: string;
-  transaction_type: "buy" | "sell";
-  quantity: number;
-  price: number;
-  transaction_date: string;
-  fees: number;
-  notes: string | null;
-}
+import { calculateManualPositions, Transaction } from "@/lib/finance-utils";
 
 interface ManualInvestmentTransactionsProps {
   refresh?: number;
@@ -91,31 +80,6 @@ export function ManualInvestmentTransactions({ refresh }: ManualInvestmentTransa
     }
   };
 
-  const getPositionSummary = () => {
-    const positions = transactions.reduce((acc, t) => {
-      if (!acc[t.ticker]) {
-        acc[t.ticker] = { 
-          ticker: t.ticker, 
-          asset_name: t.asset_name, 
-          quantity: 0, 
-          totalCost: 0 
-        };
-      }
-      
-      if (t.transaction_type === "buy") {
-        acc[t.ticker].quantity += t.quantity;
-        acc[t.ticker].totalCost += (t.quantity * t.price) + t.fees;
-      } else {
-        acc[t.ticker].quantity -= t.quantity;
-        acc[t.ticker].totalCost -= (t.quantity * t.price) - t.fees;
-      }
-      
-      return acc;
-    }, {} as Record<string, { ticker: string; asset_name: string; quantity: number; totalCost: number }>);
-
-    return Object.values(positions).filter(p => p.quantity > 0);
-  };
-
   if (loading) {
     return (
       <Card>
@@ -129,7 +93,7 @@ export function ManualInvestmentTransactions({ refresh }: ManualInvestmentTransa
     );
   }
 
-  const positionSummary = getPositionSummary();
+  const positionSummary = calculateManualPositions(transactions);
 
   return (
     <div className="space-y-4">
