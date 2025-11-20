@@ -5,12 +5,24 @@ interface YFinanceRequest {
   tickers: string[];
 }
 
+interface DividendEvent {
+  date: string;
+  amount: number;
+}
+
+interface HistoricalPrice {
+  date: string;
+  close: number;
+}
+
 interface AssetData {
   ticker: string;
   nome: string;
   setor: string;
   preco_atual: number;
   dividendos_12m: number;
+  historico_dividendos: DividendEvent[];
+  historico_precos: HistoricalPrice[];
 }
 
 // Função para buscar dados de um ticker específico
@@ -39,10 +51,11 @@ async function fetchTickerData(ticker: string): Promise<AssetData | null> {
       throw new Error(`Dados não encontrados para ${ticker}`);
     }
 
-    // Buscar histórico de dividendos (últimos 12 meses)
+    // Buscar histórico (últimos 12 meses)
     const oneYearAgo = Math.floor(Date.now() / 1000) - 365 * 24 * 60 * 60;
     const now = Math.floor(Date.now() / 1000);
 
+    // 1. Buscar Dividendos
     const dividendsResponse = await fetch(
       `https://query1.finance.yahoo.com/v7/finance/download/${ticker}?period1=${oneYearAgo}&period2=${now}&interval=1d&events=div&includeAdjustedClose=true`,
       {
@@ -54,6 +67,8 @@ async function fetchTickerData(ticker: string): Promise<AssetData | null> {
     );
 
     let dividendos12m = 0;
+    const historico_dividendos: DividendEvent[] = [];
+
     if (dividendsResponse.ok) {
       const dividendsText = await dividendsResponse.text();
       const lines = dividendsText.split("\n");
@@ -64,9 +79,45 @@ async function fetchTickerData(ticker: string): Promise<AssetData | null> {
         if (line) {
           const columns = line.split(",");
           if (columns.length >= 2) {
+            const date = columns[0];
             const dividendValue = parseFloat(columns[1]);
             if (!isNaN(dividendValue)) {
               dividendos12m += dividendValue;
+              historico_dividendos.push({ date, amount: dividendValue });
+            }
+          }
+        }
+      }
+    }
+
+    // 2. Buscar Preços Históricos (Mensal)
+    const historyResponse = await fetch(
+      `https://query1.finance.yahoo.com/v7/finance/download/${ticker}?period1=${oneYearAgo}&period2=${now}&interval=1mo&events=history&includeAdjustedClose=true`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        },
+      },
+    );
+
+    const historico_precos: HistoricalPrice[] = [];
+
+    if (historyResponse.ok) {
+      const historyText = await historyResponse.text();
+      const lines = historyText.split("\n");
+
+      // Processar CSV de histórico
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line) {
+          const columns = line.split(",");
+          // Date, Open, High, Low, Close, Adj Close, Volume
+          if (columns.length >= 6) {
+            const date = columns[0];
+            const closeValue = parseFloat(columns[4]); // Using regular close or adj close? Using Close (4)
+            if (!isNaN(closeValue)) {
+              historico_precos.push({ date, close: closeValue });
             }
           }
         }
@@ -79,6 +130,8 @@ async function fetchTickerData(ticker: string): Promise<AssetData | null> {
       setor: quote.sector || "N/A",
       preco_atual: quote.regularMarketPrice || 0,
       dividendos_12m: dividendos12m,
+      historico_dividendos,
+      historico_precos
     };
   } catch (error) {
     console.error(`Erro ao processar ${ticker}:`, error);
