@@ -44,24 +44,30 @@ export type Database = {
       financial_assets: {
         Row: {
           current_price: number | null
+          dividend_history: Json | null
           dividends_12m: number | null
           name: string | null
+          price_history: Json | null
           sector: string | null
           ticker: string
           updated_at: string
         }
         Insert: {
           current_price?: number | null
+          dividend_history?: Json | null
           dividends_12m?: number | null
           name?: string | null
+          price_history?: Json | null
           sector?: string | null
           ticker: string
           updated_at?: string
         }
         Update: {
           current_price?: number | null
+          dividend_history?: Json | null
           dividends_12m?: number | null
           name?: string | null
+          price_history?: Json | null
           sector?: string | null
           ticker?: string
           updated_at?: string
@@ -645,6 +651,12 @@ export type Database = {
           full_name: string
           id: string
           role: string
+        }[]
+      }
+      get_unique_tickers: {
+        Args: never
+        Returns: {
+          ticker: string
         }[]
       }
       get_user_groups: {
