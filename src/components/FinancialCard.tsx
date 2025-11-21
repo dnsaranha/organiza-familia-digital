@@ -52,16 +52,16 @@ export const FinancialCard = ({
       className={cn(
         "relative overflow-hidden transition-smooth hover:scale-105",
         type !== "balance" ? "bg-gradient-card" : getCardStyles(),
-        "shadow-card border h-[96px] w-[360px]",
+        "shadow-card border w-full",
         className,
       )}
     >
-      <CardContent className="p-6 w-[350px] h-[102px]">
-        <div className="flex items-center justify-between h-[54px] w-[316px]">
-          <div className="space-y-2">
+      <CardContent className="p-4 sm:p-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1 sm:space-y-2 flex-1 min-w-0">
             <p
               className={cn(
-                "text-sm font-medium",
+                "text-xs sm:text-sm font-medium truncate",
                 type === "balance"
                   ? "text-primary-foreground/80"
                   : "text-muted-foreground",
@@ -71,7 +71,7 @@ export const FinancialCard = ({
             </p>
             <p
               className={cn(
-                "text-2xl font-bold",
+                "text-lg sm:text-xl md:text-2xl font-bold truncate",
                 type === "balance"
                   ? "text-primary-foreground"
                   : getValueColor(),
@@ -82,13 +82,13 @@ export const FinancialCard = ({
           </div>
           <div
             className={cn(
-              "rounded-full p-3",
+              "rounded-full p-2 sm:p-3 ml-2 sm:ml-4 flex-shrink-0",
               type === "balance" ? "bg-primary-foreground/10" : "bg-muted/50",
             )}
           >
             <Icon
               className={cn(
-                "h-6 w-6",
+                "h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6",
                 type === "balance"
                   ? "text-primary-foreground"
                   : "text-muted-foreground",
