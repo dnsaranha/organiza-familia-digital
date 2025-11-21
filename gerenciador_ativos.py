@@ -3,6 +3,12 @@ import pandas as pd
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 import json
+import os
+
+# Configurações / Credenciais
+# Tenta obter do ambiente (para GitHub Actions), senão usa fallback (para teste local simples)
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "https://deipytqxqkmyadabtjnd.supabase.co")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaXB5dHF4cWtteWFkYWJ0am5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3MzY0NzcsImV4cCI6MjA3MTMxMjQ3N30.p4j6kY61Giu3YIE0huyPjxh59JV6lYnOTsenbcyuAUM")
 
 def salvar_no_supabase(dados_ativos: list):
     """
@@ -15,13 +21,9 @@ def salvar_no_supabase(dados_ativos: list):
         print("Lista vazia. Nenhum dado para salvar no Supabase.")
         return
 
-    # Credenciais do Supabase (encontradas em src/integrations/supabase/client.ts)
-    supabase_url = "https://deipytqxqkmyadabtjnd.supabase.co"
-    supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaXB5dHF4cWtteWFkYWJ0am5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3MzY0NzcsImV4cCI6MjA3MTMxMjQ3N30.p4j6kY61Giu3YIE0huyPjxh59JV6lYnOTsenbcyuAUM"
-
     try:
         print("Conectando ao Supabase...")
-        supabase: Client = create_client(supabase_url, supabase_key)
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
         print(f"Enviando {len(dados_ativos)} registros via RPC 'bulk_upsert_assets'...")
         # Chamar a função de banco de dados (RPC) para fazer o upsert
@@ -123,11 +125,8 @@ def obter_tickers_do_supabase() -> list:
     """
     Busca a lista de tickers únicos do Supabase.
     """
-    supabase_url = "https://deipytqxqkmyadabtjnd.supabase.co"
-    supabase_key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRlaXB5dHF4cWtteWFkYWJ0am5kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU3MzY0NzcsImV4cCI6MjA3MTMxMjQ3N30.p4j6kY61Giu3YIE0huyPjxh59JV6lYnOTsenbcyuAUM"
-
     try:
-        supabase: Client = create_client(supabase_url, supabase_key)
+        supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
         print("Buscando tickers únicos no Supabase...")
 
         # Tentar usar a RPC get_unique_tickers (pode não existir se a migration não foi rodada)
@@ -159,7 +158,11 @@ def obter_tickers_do_supabase() -> list:
         return []
 
 if __name__ == "__main__":
-    print("--- Iniciando Gerenciador de Ativos ---")
+    print("--- Iniciando Gerenciador de Ativos (Python) ---")
+
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        print("ERRO: Variáveis de ambiente SUPABASE_URL e SUPABASE_KEY não encontradas (e fallback falhou).")
+        exit(1)
 
     # 1. Obter tickers do banco de dados
     meus_ativos = obter_tickers_do_supabase()
