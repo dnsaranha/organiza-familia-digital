@@ -163,13 +163,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 sm:px-6 py-4 sm:py-6 md:py-8 max-w-7xl">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-foreground mb-2">
+        <div className="mb-4 sm:mb-6 md:mb-8">
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
             Olá, bem-vindo de volta! 👋
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Aqui está um resumo das suas finanças
           </p>
         </div>
@@ -178,13 +178,12 @@ const Index = () => {
         <PWAInstallPrompt />
 
         {/* Financial Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <FinancialCard
             title="Saldo Atual"
             value={financialData?.balance ?? 0}
             type="balance"
             icon={Wallet}
-            className=" w-[354px] h-[98px]"
           />
           <FinancialCard
             title="Receitas do Mês"
@@ -202,32 +201,32 @@ const Index = () => {
 
         {/* Banking Overview - Show when connected */}
         {bankConnected && accounts.length > 0 && (
-          <div className="mb-8">
-            <div className="space-y-6">
+          <div className="mb-6 sm:mb-8">
+            <div className="space-y-4 sm:space-y-6">
               {/* Contas Bancárias Section */}
               <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <Building2 className="h-5 w-5 text-primary" />
-                  <h3 className="text-xl font-semibold">Contas Bancárias</h3>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                  <h3 className="text-lg sm:text-xl font-semibold">Contas Bancárias</h3>
                 </div>
-                <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3">
+                <div className="flex overflow-x-auto gap-3 sm:gap-4 pb-4 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 scrollbar-hide">
                   {accounts
                     .filter((acc) => acc.type === "BANK")
                     .map((account) => (
                       <div
                         key={account.id}
-                        className="p-4 bg-muted/30 rounded-lg snap-center min-w-[80%] md:min-w-0"
+                        className="p-3 sm:p-4 bg-muted/30 rounded-lg snap-center min-w-[75%] xs:min-w-[60%] sm:min-w-[45%] md:min-w-0 flex-shrink-0"
                       >
                         <div className="flex items-center gap-2 mb-2">
-                          <Wallet className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">
+                          <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-xs sm:text-sm font-medium truncate">
                             {account.marketingName || account.name}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground mb-1">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 truncate">
                           {mapAccountSubtype(account.subtype)}
                         </p>
-                        <p className="text-lg font-bold">
+                        <p className="text-base sm:text-lg font-bold truncate">
                           {account.balance.toLocaleString("pt-BR", {
                             style: "currency",
                             currency: account.currency || "BRL",
@@ -240,30 +239,30 @@ const Index = () => {
 
               {/* Cartões de Crédito Section */}
               <div>
-                <div className="flex items-center gap-2 mb-4">
-                  <CreditCard className="h-5 w-5 text-primary" />
-                  <h3 className="text-xl font-semibold">Cartões de Crédito</h3>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <CreditCard className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                  <h3 className="text-lg sm:text-xl font-semibold">Cartões de Crédito</h3>
                 </div>
-                <div className="flex overflow-x-auto gap-4 pb-4 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3">
+                <div className="flex overflow-x-auto gap-3 sm:gap-4 pb-4 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 scrollbar-hide">
                   {accounts
                     .filter((acc) => acc.type === "CREDIT")
                     .map((account) => (
                       <div
                         key={account.id}
-                        className="p-4 bg-muted/30 rounded-lg snap-center min-w-[80%] md:min-w-0"
+                        className="p-3 sm:p-4 bg-muted/30 rounded-lg snap-center min-w-[75%] xs:min-w-[60%] sm:min-w-[45%] md:min-w-0 flex-shrink-0"
                       >
                         <div className="flex items-center gap-2 mb-2">
-                          <CreditCard className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">
+                          <CreditCard className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-xs sm:text-sm font-medium truncate">
                             {account.marketingName || account.name}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground mb-1">
+                        <p className="text-[10px] sm:text-xs text-muted-foreground mb-1 truncate">
                           {account.brand
                             ? `${account.brand} - ${mapAccountSubtype(account.subtype)}`
                             : mapAccountSubtype(account.subtype)}
                         </p>
-                        <p className="text-lg font-bold">
+                        <p className="text-base sm:text-lg font-bold truncate">
                           {account.balance.toLocaleString("pt-BR", {
                             style: "currency",
                             currency: account.currency || "BRL",
@@ -277,9 +276,9 @@ const Index = () => {
 
             {/* Recent Transactions */}
             {bankTransactions.length > 0 && (
-              <Card className="mt-6">
-                <CardHeader>
-                  <CardTitle className="text-lg">
+              <Card className="mt-4 sm:mt-6">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base sm:text-lg">
                     Últimas Transações Bancárias
                   </CardTitle>
                 </CardHeader>
@@ -288,20 +287,20 @@ const Index = () => {
                     {bankTransactions.slice(0, 10).map((transaction) => (
                       <div
                         key={transaction.id}
-                        className="flex justify-between items-center p-2 bg-muted/20 rounded"
+                        className="flex flex-col xs:flex-row xs:justify-between xs:items-center gap-1 xs:gap-2 p-2 sm:p-3 bg-muted/20 rounded"
                       >
-                        <div>
-                          <p className="text-sm font-medium">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs sm:text-sm font-medium truncate">
                             {transaction.description}
                           </p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-[10px] sm:text-xs text-muted-foreground">
                             {new Date(transaction.date).toLocaleDateString(
                               "pt-BR",
                             )}
                           </p>
                         </div>
                         <span
-                          className={`text-sm font-medium ${
+                          className={`text-xs sm:text-sm font-medium whitespace-nowrap ${
                             transaction.amount >= 0
                               ? "text-green-600"
                               : "text-red-600"
@@ -323,14 +322,14 @@ const Index = () => {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mb-6 sm:mb-8">
           {/* Transaction Form */}
-          <div>
+          <div className="w-full">
             <TransactionForm onSave={handleDataRefresh} />
           </div>
 
           {/* Recent Transactions */}
-          <div>
+          <div className="w-full">
             <TransactionList
               key={refreshKey}
               onDataChange={handleDataRefresh}
@@ -339,35 +338,35 @@ const Index = () => {
         </div>
 
         {/* Family Groups and Scheduled Tasks */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mb-6 sm:mb-8">
+          <div className="w-full">
             <FamilyGroups />
           </div>
-          <div>
+          <div className="w-full">
             <ScheduledTasks />
           </div>
         </div>
 
         {/* Subscription Status */}
-        <div className="mb-8">
+        <div className="mb-6 sm:mb-8">
           <SubscriptionStatus />
         </div>
 
         {/* Success Notice */}
-        <div className="mt-12 p-6 bg-success/10 border border-success/20 rounded-lg">
-          <div className="flex items-start gap-3">
-            <DollarSign className="h-6 w-6 text-success mt-1" />
-            <div>
-              <h3 className="font-semibold text-success mb-2">
+        <div className="mt-8 sm:mt-12 p-4 sm:p-6 bg-success/10 border border-success/20 rounded-lg">
+          <div className="flex items-start gap-2 sm:gap-3">
+            <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-success mt-0.5 sm:mt-1 flex-shrink-0" />
+            <div className="min-w-0 flex-1">
+              <h3 className="font-semibold text-sm sm:text-base text-success mb-1 sm:mb-2">
                 Sistema de Autenticação e Grupos Ativo! 🎉
               </h3>
-              <p className="text-muted-foreground text-sm mb-3">
+              <p className="text-muted-foreground text-xs sm:text-sm mb-2 sm:mb-3">
                 Agora você pode criar grupos, compartilhar tarefas agendadas
                 entre membros da família e receber notificações por email e
                 push. Seus dados estão protegidos e sincronizados com o
                 Supabase.
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
                 Use os "Grupos" para compartilhar tarefas com sua família usando
                 o código de convite.
               </p>
