@@ -213,8 +213,58 @@ const InvestmentsPage = () => {
     };
   }, [enhancedAssets, portfolio, totalDividends, manualPositions]);
 
-  const isLoading = b3Loading || bankLoading || refreshing;
+  const allocationAssets = useMemo(() => {
+    const manualTickers = new Set(manualPositions.map((pos) => pos.ticker));
+    const filteredEnhanced = enhancedAssets.filter(
+      (asset) => !manualTickers.has(asset.symbol),
+    );
 
+    const manualMapped = manualPositions.map((pos) => ({
+      symbol: pos.ticker,
+      name: pos.name,
+      type: pos.category || "ACAO",
+      subtype: null,
+      currentPrice: pos.currentPrice || pos.averagePrice,
+      quantity: pos.quantity,
+      marketValue: pos.marketValue || pos.totalCost,
+      cost: pos.totalCost,
+      averagePrice: pos.averagePrice,
+      yieldOnCost: pos.yieldOnCost || 0,
+      profitLoss: pos.profitLoss || 0,
+      profitability: pos.profitability || 0,
+      dividends: pos.accumulatedDividends || 0,
+      operations: 0,
+    }));
+
+    return [...filteredEnhanced, ...manualMapped];
+  }, [enhancedAssets, manualPositions]);
+
+  const tableAssets = useMemo(() => {
+    const manualTickers = new Set(manualPositions.map((pos) => pos.ticker));
+    const filteredEnhanced = enhancedAssets.filter(
+      (asset) => !manualTickers.has(asset.symbol),
+    );
+
+    const manualMapped = manualPositions.map((pos) => ({
+      symbol: pos.ticker,
+      name: pos.name,
+      type: pos.category || "ACAO",
+      subtype: null,
+      currentPrice: pos.currentPrice || pos.averagePrice,
+      quantity: pos.quantity,
+      marketValue: pos.marketValue || pos.totalCost,
+      cost: pos.totalCost,
+      averagePrice: pos.averagePrice,
+      yieldOnCost: pos.yieldOnCost || 0,
+      accumulatedDividends: pos.accumulatedDividends || 0,
+      profitLoss: pos.profitLoss || 0,
+      profitability: pos.profitability || 0,
+    }));
+
+    return [...filteredEnhanced, ...manualMapped];
+  }, [enhancedAssets, manualPositions]);
+
+  const isLoading = b3Loading || bankLoading || refreshing;
   // Status de conexão
   const connectionStatus = useMemo(() => {
     if (b3Connected && bankConnected) return "Totalmente Conectado";
@@ -711,53 +761,18 @@ const InvestmentsPage = () => {
 
         <TabsContent value="allocation" className="space-y-3 sm:space-y-6">
           <AssetAllocationChart 
-            assets={[
-              ...enhancedAssets,
-              ...manualPositions.map(pos => ({
-                symbol: pos.ticker,
-                name: pos.name,
-                type: pos.category || "ACAO",
-                subtype: null,
-                currentPrice: pos.currentPrice || pos.averagePrice,
-                quantity: pos.quantity,
-                marketValue: pos.marketValue || pos.totalCost,
-                cost: pos.totalCost,
-                averagePrice: pos.averagePrice,
-                yieldOnCost: pos.yieldOnCost || 0,
-                profitLoss: pos.profitLoss || 0,
-                profitability: pos.profitability || 0,
-                dividends: pos.accumulatedDividends || 0,
-                operations: 0,
-              }))
-            ]} 
+            assets={allocationAssets}
             loading={isLoading} 
           />
         </TabsContent>
-
+ 
         <TabsContent value="dividends" className="space-y-3 sm:space-y-6">
           <DividendHistoryChart data={dividendHistory} loading={isLoading} />
         </TabsContent>
-
+ 
         <TabsContent value="assets" className="space-y-3 sm:space-y-6">
           <EnhancedAssetTable 
-            assets={[
-              ...enhancedAssets,
-              ...manualPositions.map(pos => ({
-                symbol: pos.ticker,
-                name: pos.name,
-                type: pos.category || "ACAO",
-                subtype: null,
-                currentPrice: pos.currentPrice || pos.averagePrice,
-                quantity: pos.quantity,
-                marketValue: pos.marketValue || pos.totalCost,
-                cost: pos.totalCost,
-                averagePrice: pos.averagePrice,
-                yieldOnCost: pos.yieldOnCost || 0,
-                accumulatedDividends: pos.accumulatedDividends || 0,
-                profitLoss: pos.profitLoss || 0,
-                profitability: pos.profitability || 0,
-              }))
-            ]} 
+            assets={tableAssets}
             loading={isLoading} 
           />
         </TabsContent>

@@ -26,9 +26,20 @@ export default function Profile() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [monthStartDay, setMonthStartDay] = useState(1);
   const [carryOverBalance, setCarryOverBalance] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
+
+  const applyTheme = (mode: "light" | "dark") => {
+    const root = document.documentElement;
+    if (mode === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("organiza-theme", mode);
+  };
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
@@ -82,7 +93,7 @@ export default function Profile() {
         const { data: preferencesData, error: preferencesError } =
           await supabase
             .from("user_preferences")
-            .select("month_start_day, carry_over_balance")
+            .select("month_start_day, carry_over_balance, theme")
             .eq("user_id", user.id)
             .maybeSingle();
 
@@ -94,6 +105,14 @@ export default function Profile() {
         if (preferencesData) {
           setMonthStartDay(preferencesData.month_start_day);
           setCarryOverBalance(preferencesData.carry_over_balance);
+          const theme = preferencesData.theme || "system";
+          const prefersDark =
+            theme === "dark" ||
+            (theme === "system" &&
+              window.matchMedia &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          setDarkMode(prefersDark);
+          applyTheme(prefersDark ? "dark" : "light");
         }
       } catch (error) {
         toast({
@@ -155,6 +174,7 @@ export default function Profile() {
         user_id: user.id,
         month_start_day: monthStartDay,
         carry_over_balance: carryOverBalance,
+        theme: darkMode ? "dark" : "light",
         updated_at: new Date().toISOString(),
       };
 
@@ -162,6 +182,8 @@ export default function Profile() {
         .from("user_preferences")
         .upsert(preferencesUpdates);
       if (preferencesError) throw preferencesError;
+
+      applyTheme(darkMode ? "dark" : "light");
 
       toast({
         title: "Perfil atualizado!",
@@ -268,6 +290,21 @@ export default function Profile() {
                   <Switch
                     checked={carryOverBalance}
                     onCheckedChange={setCarryOverBalance}
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <Label>Modo escuro</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Ative para usar o aplicativo com fundo escuro.
+                    </p>
+                  </div>
+                  <Switch
+                    checked={darkMode}
+                    onCheckedChange={(checked) => {
+                      setDarkMode(checked);
+                      applyTheme(checked ? "dark" : "light");
+                    }}
                   />
                 </div>
               </div>
