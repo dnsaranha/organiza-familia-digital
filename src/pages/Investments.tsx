@@ -77,7 +77,8 @@ const InvestmentsPage = () => {
   );
   const { toast } = useToast();
 
-  const { positions: manualPositions, refresh: refreshManualInvestments } = useManualInvestments();
+  const { positions: manualPositions, refresh: refreshManualInvestments } =
+    useManualInvestments();
 
   const bankTotalBalance = useMemo(() => {
     return accounts.reduce(
@@ -165,7 +166,7 @@ const InvestmentsPage = () => {
         title: "Dados Atualizados",
         description: "Todos os dados foram atualizados com sucesso.",
       });
-      setTransactionRefresh(prev => prev + 1);
+      setTransactionRefresh((prev) => prev + 1);
     } catch (error) {
       toast({
         title: "Erro na Atualização",
@@ -186,24 +187,32 @@ const InvestmentsPage = () => {
   }, [dividends, dividendHistory]);
 
   const portfolioTotals = useMemo(() => {
-    const manualInvested = manualPositions.reduce((sum, pos) => sum + pos.totalCost, 0);
-    const manualCurrentValue = manualPositions.reduce((sum, pos) => sum + (pos.marketValue || pos.totalCost), 0);
-    const manualDividends = manualPositions.reduce((sum, pos) => sum + (pos.accumulatedDividends || 0), 0);
-    
+    const manualInvested = manualPositions.reduce(
+      (sum, pos) => sum + pos.totalCost,
+      0,
+    );
+    const manualCurrentValue = manualPositions.reduce(
+      (sum, pos) => sum + (pos.marketValue || pos.totalCost),
+      0,
+    );
+    const manualDividends = manualPositions.reduce(
+      (sum, pos) => sum + (pos.accumulatedDividends || 0),
+      0,
+    );
+
     if (enhancedAssets.length > 0) {
       return {
-        totalInvested: enhancedAssets.reduce(
-          (sum, asset) => sum + asset.cost,
-          0,
-        ) + manualInvested,
-        currentValue: enhancedAssets.reduce(
-          (sum, asset) => sum + asset.marketValue,
-          0,
-        ) + manualCurrentValue,
-        totalDividends: enhancedAssets.reduce(
-          (sum, asset) => sum + asset.accumulatedDividends,
-          0,
-        ) + manualDividends,
+        totalInvested:
+          enhancedAssets.reduce((sum, asset) => sum + asset.cost, 0) +
+          manualInvested,
+        currentValue:
+          enhancedAssets.reduce((sum, asset) => sum + asset.marketValue, 0) +
+          manualCurrentValue,
+        totalDividends:
+          enhancedAssets.reduce(
+            (sum, asset) => sum + asset.accumulatedDividends,
+            0,
+          ) + manualDividends,
       };
     }
     return {
@@ -291,12 +300,12 @@ const InvestmentsPage = () => {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <InvestmentTransactionForm 
+          <InvestmentTransactionForm
             onSuccess={async () => {
               await refreshManualInvestments();
               await handleRefresh();
-              setTransactionRefresh(prev => prev + 1);
-            }} 
+              setTransactionRefresh((prev) => prev + 1);
+            }}
           />
           <Button
             onClick={handleRefresh}
@@ -760,21 +769,15 @@ const InvestmentsPage = () => {
         </TabsContent>
 
         <TabsContent value="allocation" className="space-y-3 sm:space-y-6">
-          <AssetAllocationChart 
-            assets={allocationAssets}
-            loading={isLoading} 
-          />
+          <AssetAllocationChart assets={allocationAssets} loading={isLoading} />
         </TabsContent>
- 
+
         <TabsContent value="dividends" className="space-y-3 sm:space-y-6">
           <DividendHistoryChart data={dividendHistory} loading={isLoading} />
         </TabsContent>
- 
-        <TabsContent value="assets" className="space-y-3 sm:space-y-6">
-          <EnhancedAssetTable 
-            assets={tableAssets}
-            loading={isLoading} 
-          />
+
+        <TabsContent value="assets" className="space-y-3 sm:space-y-6 w-auto">
+          <EnhancedAssetTable assets={tableAssets} loading={isLoading} />
         </TabsContent>
 
         <TabsContent value="manual" className="space-y-3 sm:space-y-6">

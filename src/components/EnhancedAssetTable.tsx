@@ -262,9 +262,9 @@ const EnhancedAssetTable = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto overflow-y-auto max-h-[600px] md:max-h-[700px] lg:max-h-[800px]">
+          <Table className="min-w-[1000px]">
             <TableHeader>
               <TableRow>
                 <SortableHeader field="symbol">Ativo</SortableHeader>

@@ -135,7 +135,10 @@ const Index = () => {
         monthlyExpenses,
       });
     } catch (err) {
-      console.error("Erro ao buscar dados financeiros:", err);
+      // Only log non-network errors
+      if (err instanceof Error && !err.message.includes("Failed to fetch") && !err.message.includes("aborted")) {
+        console.error("Erro ao buscar dados financeiros:", err);
+      }
       // Handle error state in UI if necessary
     } finally {
       setLoadingData(false);

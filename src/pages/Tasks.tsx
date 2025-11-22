@@ -84,9 +84,15 @@ const TasksPage = () => {
 
   useEffect(() => {
     if (user) {
+      const abortController = new AbortController();
+      
       loadTasks();
       loadGroups();
       loadCategories();
+      
+      return () => {
+        abortController.abort();
+      };
     }
   }, [user]);
 
@@ -146,12 +152,15 @@ const TasksPage = () => {
       if (error) throw error;
       setTasks((data || []) as ScheduledTask[]);
     } catch (error) {
-      console.error('Erro ao carregar tarefas:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível carregar as tarefas agendadas.",
-        variant: "destructive",
-      });
+      // Only log non-network errors
+      if (error instanceof Error && !error.message.includes("Failed to fetch") && !error.message.includes("aborted")) {
+        console.error('Erro ao carregar tarefas:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as tarefas agendadas.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -164,7 +173,10 @@ const TasksPage = () => {
       if (error) throw error;
       setGroups((data || []) as FamilyGroup[]);
     } catch (error) {
-      console.error('Erro ao carregar grupos:', error);
+      // Only log non-network errors
+      if (error instanceof Error && !error.message.includes("Failed to fetch") && !error.message.includes("aborted")) {
+        console.error('Erro ao carregar grupos:', error);
+      }
     }
   };
 
@@ -183,7 +195,10 @@ const TasksPage = () => {
       setCategories(distinctCategories.map(c => ({ label: c, value: c })));
 
     } catch (error) {
-      console.error('Erro ao carregar categorias:', error);
+      // Only log non-network errors
+      if (error instanceof Error && !error.message.includes("Failed to fetch") && !error.message.includes("aborted")) {
+        console.error('Erro ao carregar categorias:', error);
+      }
     }
   };
 
