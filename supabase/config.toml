@@ -30,3 +30,15 @@ verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = false
+
+[functions.b3-quotes]
+verify_jwt = false
+
+[functions.get-dividends]
+verify_jwt = false
+
+[functions.get-asset-prices]
+verify_jwt = false
+
+[functions.yfinance-data]
+verify_jwt = false

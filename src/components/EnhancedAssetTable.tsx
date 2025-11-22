@@ -133,19 +133,19 @@ const EnhancedAssetTable = ({
 
     switch (mainType) {
       case "Renda Fixa":
-        return "bg-orange-100 text-orange-800";
+        return "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300";
       case "Renda Variável":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300";
       case "Fundos de Investimento":
-        return "bg-green-100 text-green-800";
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300";
       case "Previdência":
-        return "bg-purple-100 text-purple-800";
+        return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300";
       case "ETF":
-        return "bg-indigo-100 text-indigo-800";
+        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-300";
       case "COE":
-        return "bg-pink-100 text-pink-800";
+        return "bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-300";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-300";
     }
   };
 
@@ -262,9 +262,9 @@ const EnhancedAssetTable = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto w-[346px] h-[462px]">
-          <Table>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto overflow-y-auto max-h-[600px] md:max-h-[700px] lg:max-h-[800px]">
+          <Table className="min-w-[1000px]">
             <TableHeader>
               <TableRow>
                 <SortableHeader field="symbol">Ativo</SortableHeader>
@@ -341,17 +341,17 @@ const EnhancedAssetTable = ({
                       <TableCell>
                         {formatCurrency(asset.averagePrice)}
                       </TableCell>
-                      <TableCell className="text-green-600 font-medium">
+                      <TableCell className="text-success dark:text-success-light font-medium">
                         {formatPercent(asset.yieldOnCost)}
                       </TableCell>
-                      <TableCell className="text-blue-600 font-medium">
+                      <TableCell className="text-primary dark:text-primary-light font-medium">
                         {formatCurrency(asset.accumulatedDividends)}
                       </TableCell>
                       <TableCell
                         className={`font-medium ${
                           asset.profitLoss >= 0
-                            ? "text-green-600"
-                            : "text-red-600"
+                            ? "text-success dark:text-success-light"
+                            : "text-expense dark:text-expense-light"
                         }`}
                       >
                         {formatCurrency(asset.profitLoss)}
@@ -359,8 +359,8 @@ const EnhancedAssetTable = ({
                       <TableCell
                         className={`font-medium ${
                           asset.profitability >= 0
-                            ? "text-green-600"
-                            : "text-red-600"
+                            ? "text-success dark:text-success-light"
+                            : "text-expense dark:text-expense-light"
                         }`}
                       >
                         {asset.profitability >= 0 ? "+" : ""}

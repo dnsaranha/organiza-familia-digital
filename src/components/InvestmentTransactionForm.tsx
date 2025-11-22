@@ -33,6 +33,7 @@ export function InvestmentTransactionForm({ onSuccess }: InvestmentTransactionFo
   const [formData, setFormData] = useState({
     ticker: "",
     asset_name: "",
+    category: "ACAO",
     transaction_type: "buy",
     quantity: "",
     price: "",
@@ -56,6 +57,7 @@ export function InvestmentTransactionForm({ onSuccess }: InvestmentTransactionFo
           group_id: null,
           ticker: formData.ticker.toUpperCase(),
           asset_name: formData.asset_name,
+          category: formData.category,
           transaction_type: formData.transaction_type,
           quantity: parseFloat(formData.quantity),
           price: parseFloat(formData.price),
@@ -74,6 +76,7 @@ export function InvestmentTransactionForm({ onSuccess }: InvestmentTransactionFo
       setFormData({
         ticker: "",
         asset_name: "",
+        category: "ACAO",
         transaction_type: "buy",
         quantity: "",
         price: "",
@@ -154,6 +157,29 @@ export function InvestmentTransactionForm({ onSuccess }: InvestmentTransactionFo
               placeholder="Ex: Petrobras PN"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="category">Categoria *</Label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) =>
+                setFormData({ ...formData, category: value })
+              }
+            >
+              <SelectTrigger id="category">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACAO">Ação</SelectItem>
+                <SelectItem value="FII">Fundo Imobiliário</SelectItem>
+                <SelectItem value="ETF">ETF</SelectItem>
+                <SelectItem value="RENDA_FIXA">Renda Fixa</SelectItem>
+                <SelectItem value="FUNDO">Fundo de Investimento</SelectItem>
+                <SelectItem value="CRIPTO">Criptomoeda</SelectItem>
+                <SelectItem value="OUTRO">Outro</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

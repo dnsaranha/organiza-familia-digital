@@ -35,6 +35,7 @@ import DividendHistoryChart from "@/components/charts/DividendHistoryChart";
 import EnhancedAssetTable from "@/components/EnhancedAssetTable";
 import { InvestmentTransactionForm } from "@/components/InvestmentTransactionForm";
 import { ManualInvestmentTransactions } from "@/components/ManualInvestmentTransactions";
+import { useManualInvestments } from "@/hooks/useManualInvestments";
 import { mapInvestmentType } from "@/lib/investment-mapping";
 import { mapAccountSubtype } from "@/lib/account-mapping";
 import { cn } from "@/lib/utils";
@@ -76,6 +77,9 @@ const InvestmentsPage = () => {
   );
   const { toast } = useToast();
 
+  const { positions: manualPositions, refresh: refreshManualInvestments } =
+    useManualInvestments();
+
   const bankTotalBalance = useMemo(() => {
     return accounts.reduce(
       (sum, acc) => sum + (typeof acc.balance === "number" ? acc.balance : 0),
@@ -93,14 +97,18 @@ const InvestmentsPage = () => {
     "BBDC4",
   ];
 
+  const hasRealData = useMemo(() => {
+    return manualPositions.length > 0 || investments.length > 0;
+  }, [manualPositions, investments]);
+
   useEffect(() => {
     // Carregar dados iniciais
     const loadInitialData = async () => {
       await Promise.all([
         getAssetQuotes(defaultSymbols),
-        getPortfolioEvolutionData(),
-        getEnhancedAssetsData(),
-        getDividendHistoryData(),
+        getPortfolioEvolutionData("12m", hasRealData),
+        getEnhancedAssetsData(hasRealData),
+        getDividendHistoryData(hasRealData),
         getBenchmarkData(),
       ]);
     };
@@ -112,6 +120,7 @@ const InvestmentsPage = () => {
     getEnhancedAssetsData,
     getDividendHistoryData,
     getBenchmarkData,
+    hasRealData,
   ]);
 
   const filteredTransactions = useMemo(() => {
@@ -129,9 +138,9 @@ const InvestmentsPage = () => {
       // Atualizar todos os dados
       await Promise.all([
         getAssetQuotes(defaultSymbols, false),
-        getPortfolioEvolutionData(),
-        getEnhancedAssetsData(),
-        getDividendHistoryData(),
+        getPortfolioEvolutionData("12m", hasRealData),
+        getEnhancedAssetsData(hasRealData),
+        getDividendHistoryData(hasRealData),
         getBenchmarkData(),
       ]);
 
@@ -150,11 +159,14 @@ const InvestmentsPage = () => {
         await refreshAllData();
       }
 
+      // Atualizar investimentos manuais
+      await refreshManualInvestments();
+
       toast({
         title: "Dados Atualizados",
         description: "Todos os dados foram atualizados com sucesso.",
       });
-      setTransactionRefresh(prev => prev + 1);
+      setTransactionRefresh((prev) => prev + 1);
     } catch (error) {
       toast({
         title: "Erro na Atualização",
@@ -175,31 +187,93 @@ const InvestmentsPage = () => {
   }, [dividends, dividendHistory]);
 
   const portfolioTotals = useMemo(() => {
+    const manualInvested = manualPositions.reduce(
+      (sum, pos) => sum + pos.totalCost,
+      0,
+    );
+    const manualCurrentValue = manualPositions.reduce(
+      (sum, pos) => sum + (pos.marketValue || pos.totalCost),
+      0,
+    );
+    const manualDividends = manualPositions.reduce(
+      (sum, pos) => sum + (pos.accumulatedDividends || 0),
+      0,
+    );
+
     if (enhancedAssets.length > 0) {
       return {
-        totalInvested: enhancedAssets.reduce(
-          (sum, asset) => sum + asset.cost,
-          0,
-        ),
-        currentValue: enhancedAssets.reduce(
-          (sum, asset) => sum + asset.marketValue,
-          0,
-        ),
-        totalDividends: enhancedAssets.reduce(
-          (sum, asset) => sum + asset.accumulatedDividends,
-          0,
-        ),
+        totalInvested:
+          enhancedAssets.reduce((sum, asset) => sum + asset.cost, 0) +
+          manualInvested,
+        currentValue:
+          enhancedAssets.reduce((sum, asset) => sum + asset.marketValue, 0) +
+          manualCurrentValue,
+        totalDividends:
+          enhancedAssets.reduce(
+            (sum, asset) => sum + asset.accumulatedDividends,
+            0,
+          ) + manualDividends,
       };
     }
     return {
-      totalInvested: portfolio?.totalCost || 0,
-      currentValue: portfolio?.totalValue || 0,
-      totalDividends: totalDividends,
+      totalInvested: (portfolio?.totalCost || 0) + manualInvested,
+      currentValue: (portfolio?.totalValue || 0) + manualCurrentValue,
+      totalDividends: totalDividends + manualDividends,
     };
-  }, [enhancedAssets, portfolio, totalDividends]);
+  }, [enhancedAssets, portfolio, totalDividends, manualPositions]);
+
+  const allocationAssets = useMemo(() => {
+    const manualTickers = new Set(manualPositions.map((pos) => pos.ticker));
+    const filteredEnhanced = enhancedAssets.filter(
+      (asset) => !manualTickers.has(asset.symbol),
+    );
+
+    const manualMapped = manualPositions.map((pos) => ({
+      symbol: pos.ticker,
+      name: pos.name,
+      type: pos.category || "ACAO",
+      subtype: null,
+      currentPrice: pos.currentPrice || pos.averagePrice,
+      quantity: pos.quantity,
+      marketValue: pos.marketValue || pos.totalCost,
+      cost: pos.totalCost,
+      averagePrice: pos.averagePrice,
+      yieldOnCost: pos.yieldOnCost || 0,
+      profitLoss: pos.profitLoss || 0,
+      profitability: pos.profitability || 0,
+      dividends: pos.accumulatedDividends || 0,
+      operations: 0,
+    }));
+
+    return [...filteredEnhanced, ...manualMapped];
+  }, [enhancedAssets, manualPositions]);
+
+  const tableAssets = useMemo(() => {
+    const manualTickers = new Set(manualPositions.map((pos) => pos.ticker));
+    const filteredEnhanced = enhancedAssets.filter(
+      (asset) => !manualTickers.has(asset.symbol),
+    );
+
+    const manualMapped = manualPositions.map((pos) => ({
+      symbol: pos.ticker,
+      name: pos.name,
+      type: pos.category || "ACAO",
+      subtype: null,
+      currentPrice: pos.currentPrice || pos.averagePrice,
+      quantity: pos.quantity,
+      marketValue: pos.marketValue || pos.totalCost,
+      cost: pos.totalCost,
+      averagePrice: pos.averagePrice,
+      yieldOnCost: pos.yieldOnCost || 0,
+      accumulatedDividends: pos.accumulatedDividends || 0,
+      profitLoss: pos.profitLoss || 0,
+      profitability: pos.profitability || 0,
+    }));
+
+    return [...filteredEnhanced, ...manualMapped];
+  }, [enhancedAssets, manualPositions]);
 
   const isLoading = b3Loading || bankLoading || refreshing;
-
   // Status de conexão
   const connectionStatus = useMemo(() => {
     if (b3Connected && bankConnected) return "Totalmente Conectado";
@@ -226,11 +300,12 @@ const InvestmentsPage = () => {
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <InvestmentTransactionForm 
-            onSuccess={() => {
-              handleRefresh();
-              setTransactionRefresh(prev => prev + 1);
-            }} 
+          <InvestmentTransactionForm
+            onSuccess={async () => {
+              await refreshManualInvestments();
+              await handleRefresh();
+              setTransactionRefresh((prev) => prev + 1);
+            }}
           />
           <Button
             onClick={handleRefresh}
@@ -256,7 +331,7 @@ const InvestmentsPage = () => {
           </AlertDescription>
         </Alert>
       )}
-      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 w-[370px] h-[371px]">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-xs sm:text-sm font-medium">
@@ -694,15 +769,15 @@ const InvestmentsPage = () => {
         </TabsContent>
 
         <TabsContent value="allocation" className="space-y-3 sm:space-y-6">
-          <AssetAllocationChart assets={enhancedAssets} loading={isLoading} />
+          <AssetAllocationChart assets={allocationAssets} loading={isLoading} />
         </TabsContent>
 
         <TabsContent value="dividends" className="space-y-3 sm:space-y-6">
           <DividendHistoryChart data={dividendHistory} loading={isLoading} />
         </TabsContent>
 
-        <TabsContent value="assets" className="space-y-3 sm:space-y-6">
-          <EnhancedAssetTable assets={enhancedAssets} loading={isLoading} />
+        <TabsContent value="assets" className="space-y-3 sm:space-y-6 w-auto">
+          <EnhancedAssetTable assets={tableAssets} loading={isLoading} />
         </TabsContent>
 
         <TabsContent value="manual" className="space-y-3 sm:space-y-6">

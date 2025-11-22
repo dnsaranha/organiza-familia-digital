@@ -44,24 +44,30 @@ export type Database = {
       financial_assets: {
         Row: {
           current_price: number | null
+          dividend_history: Json | null
           dividends_12m: number | null
           name: string | null
+          price_history: Json | null
           sector: string | null
           ticker: string
           updated_at: string
         }
         Insert: {
           current_price?: number | null
+          dividend_history?: Json | null
           dividends_12m?: number | null
           name?: string | null
+          price_history?: Json | null
           sector?: string | null
           ticker: string
           updated_at?: string
         }
         Update: {
           current_price?: number | null
+          dividend_history?: Json | null
           dividends_12m?: number | null
           name?: string | null
+          price_history?: Json | null
           sector?: string | null
           ticker?: string
           updated_at?: string
@@ -103,6 +109,7 @@ export type Database = {
       investment_transactions: {
         Row: {
           asset_name: string
+          category: string | null
           created_at: string
           fees: number | null
           group_id: string | null
@@ -118,6 +125,7 @@ export type Database = {
         }
         Insert: {
           asset_name: string
+          category?: string | null
           created_at?: string
           fees?: number | null
           group_id?: string | null
@@ -133,6 +141,7 @@ export type Database = {
         }
         Update: {
           asset_name?: string
+          category?: string | null
           created_at?: string
           fees?: number | null
           group_id?: string | null
@@ -159,6 +168,68 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      manual_investments: {
+        Row: {
+          created_at: string | null
+          group_id: string | null
+          id: string
+          name: string | null
+          notes: string | null
+          price: number
+          quantity: number
+          subtype: string | null
+          ticker: string
+          total_value: number
+          transaction_date: string
+          transaction_type: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          name?: string | null
+          notes?: string | null
+          price: number
+          quantity: number
+          subtype?: string | null
+          ticker: string
+          total_value: number
+          transaction_date: string
+          transaction_type: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          group_id?: string | null
+          id?: string
+          name?: string | null
+          notes?: string | null
+          price?: number
+          quantity?: number
+          subtype?: string | null
+          ticker?: string
+          total_value?: number
+          transaction_date?: string
+          transaction_type?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_manual_investments_group"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "family_groups"
             referencedColumns: ["id"]
           },
         ]
@@ -580,6 +651,12 @@ export type Database = {
           full_name: string
           id: string
           role: string
+        }[]
+      }
+      get_unique_tickers: {
+        Args: never
+        Returns: {
+          ticker: string
         }[]
       }
       get_user_groups: {

@@ -52,29 +52,29 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
   };
 
   const mobileView = (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background w-full">
       <header className="sticky top-0 z-40 w-full border-b bg-background">
-        <div className="container flex h-16 items-center justify-between">
-          <NavLink to="/" className="flex items-center gap-3">
-            <div className="rounded-full p-2 bg-gradient-primary shadow-glow">
-              <PiggyBank className="h-6 w-6 text-primary-foreground" />
+        <div className="container flex h-14 sm:h-16 items-center justify-between px-4">
+          <NavLink to="/" className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink">
+            <div className="rounded-full p-1.5 sm:p-2 bg-gradient-primary shadow-glow flex-shrink-0">
+              <PiggyBank className="h-5 w-5 sm:h-6 sm:w-6 text-primary-foreground" />
             </div>
-            <div>
-              <div className="font-bold text-primary">Organiza</div>
-              <p className="text-xs text-muted-foreground">
+            <div className="min-w-0 hidden xs:block">
+              <div className="font-bold text-sm sm:text-base text-primary truncate">Organiza</div>
+              <p className="text-[10px] sm:text-xs text-muted-foreground truncate">
                 Gestão Financeira Familiar
               </p>
             </div>
           </NavLink>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <BudgetScopeSwitcher />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10">
+                  <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-56">
                 {user ? (
                   <>
                     <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
@@ -107,7 +107,7 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
       </header>
-      <main className="pb-20 w-[396px] h-[2362px]">{children}</main>
+      <main className="pb-20 w-full min-h-[calc(100vh-8rem)]">{children}</main>
       <BottomNavBar />
     </div>
   );
@@ -243,14 +243,14 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
           </SidebarFooter>
         </div>
       </Sidebar>
-      <SidebarInset>
-        <header className="border-b p-4">
-          <div className="flex items-center justify-end gap-4">
+      <SidebarInset className="w-full">
+        <header className="border-b p-3 sm:p-4">
+          <div className="flex items-center justify-end gap-2 sm:gap-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigate("/pricing")}
-              className="text-muted-foreground hover:text-primary"
+              className="text-xs sm:text-sm text-muted-foreground hover:text-primary"
             >
               Planos
             </Button>
@@ -258,13 +258,13 @@ const AppShell = ({ children }: { children: React.ReactNode }) => {
               variant="ghost"
               size="icon"
               onClick={() => navigate("/profile")}
-              className="text-muted-foreground hover:text-primary"
+              className="text-muted-foreground hover:text-primary h-8 w-8 sm:h-9 sm:w-9"
             >
-              <Settings className="h-4 w-4" />
+              <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           </div>
         </header>
-        {children}
+        <div className="w-full">{children}</div>
       </SidebarInset>
     </>
   );

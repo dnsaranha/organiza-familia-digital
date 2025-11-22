@@ -202,11 +202,20 @@ const ReportsPage = () => {
           query = query.eq("group_id", scope);
         }
 
-        const { data, error } = await query;
-        if (error) throw error;
+        const { data, error } = await query.abortSignal(AbortSignal.timeout(10000));
+        if (error) {
+          // Silently handle abort/network errors
+          if (error.message?.includes("Failed to fetch") || error.message?.includes("aborted")) {
+            return;
+          }
+          throw error;
+        }
         setTransactions(data || []);
       } catch (err) {
-        console.error("Caught error in fetchTransactions:", err);
+        // Only log non-network errors
+        if (err instanceof Error && !err.message.includes("Failed to fetch") && !err.message.includes("aborted")) {
+          console.error("Caught error in fetchTransactions:", err);
+        }
       } finally {
         setLoading(false);
       }
@@ -220,10 +229,19 @@ const ReportsPage = () => {
         const { data, error } = await supabase
           .from("profiles")
           .select("id, full_name");
-        if (error) throw error;
+        if (error) {
+          // Silently handle network errors
+          if (error.message?.includes("Failed to fetch") || error.message?.includes("aborted")) {
+            return;
+          }
+          throw error;
+        }
         setProfiles(data || []);
       } catch (error) {
-        console.error("Error fetching profiles:", error);
+        // Only log non-network errors
+        if (error instanceof Error && !error.message.includes("Failed to fetch") && !error.message.includes("aborted")) {
+          console.error("Error fetching profiles:", error);
+        }
       }
     };
     fetchProfiles();
@@ -244,7 +262,10 @@ const ReportsPage = () => {
         if (error) throw error;
         setGroupMembers((data as GroupMember[]) || []);
       } catch (err) {
-        console.error("Caught error in fetchGroupMembers:", err);
+        // Only log non-network errors
+        if (err instanceof Error && !err.message.includes("Failed to fetch") && !err.message.includes("aborted")) {
+          console.error("Caught error in fetchGroupMembers:", err);
+        }
       }
     };
     fetchGroupMembers();

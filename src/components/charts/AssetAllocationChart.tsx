@@ -194,7 +194,7 @@ const AssetAllocationChart = ({
     <div className="space-y-6">
       {/* Allocation Pie Chart */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between flex-wrap w-[370px] h-[104px]">
+        <CardHeader className="flex flex-row items-center justify-between flex-wrap">
           <CardTitle className="flex justify-center items-start">
             Composição da Carteira
           </CardTitle>

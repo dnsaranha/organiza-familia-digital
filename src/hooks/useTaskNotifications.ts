@@ -57,9 +57,14 @@ export const useTaskNotifications = () => {
         .select("*")
         .eq("is_completed", false)  
         .gte("schedule_date", now.toISOString())
-        .lte("schedule_date", oneMinutesFromNow.toISOString());
+        .lte("schedule_date", oneMinutesFromNow.toISOString())
+        .abortSignal(AbortSignal.timeout(5000));
 
       if (error) {
+        // Silently handle network errors
+        if (error.message?.includes("Failed to fetch") || error.message?.includes("aborted")) {
+          return;
+        }
         console.error("Erro ao buscar tarefas próximas:", error);
         return;
       }
