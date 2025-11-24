@@ -275,7 +275,7 @@ export const useB3Data = () => {
                          const ticker = pos.ticker.match(/^[A-Z]{4}\d{1,2}$/) ? `${pos.ticker}.SA` : (pos.ticker.endsWith(".SA") ? pos.ticker : `${pos.ticker}.SA`);
                          const assetData = assetsMap.find((a: any) => a.ticker === ticker);
 
-                         if (assetData && assetData.historico_precos) {
+                         if (assetData && assetData.historico_precos && Array.isArray(assetData.historico_precos)) {
                             // Find price closest to this month
                             // yfinance monthly data usually gives data for start of month or end.
                             // We'll look for a date in the same month/year.
@@ -284,19 +284,24 @@ export const useB3Data = () => {
                                return hDate.getMonth() === date.getMonth() && hDate.getFullYear() === date.getFullYear();
                             });
 
-                            const price = priceEntry ? priceEntry.close : (i === 0 ? assetData.preco_atual : pos.averagePrice); // Fallback
+                            const price = priceEntry && typeof priceEntry === 'object' && 'close' in priceEntry && typeof priceEntry.close === 'number' 
+                              ? priceEntry.close 
+                              : (i === 0 && typeof assetData.preco_atual === 'number' ? assetData.preco_atual : pos.averagePrice);
                             totalMarketValue += price * pos.quantity;
                             totalCost += pos.totalCost; // Simplifying: assume constant cost basis for history
                          }
 
                          // Add dividends for this month
-                         if (assetData && assetData.historico_dividendos) {
+                         if (assetData && assetData.historico_dividendos && Array.isArray(assetData.historico_dividendos)) {
                             const monthDividends = assetData.historico_dividendos
                                .filter((d: any) => {
                                   const dDate = new Date(d.date);
                                   return dDate.getMonth() === date.getMonth() && dDate.getFullYear() === date.getFullYear();
                                })
-                               .reduce((sum: number, d: any) => sum + (d.amount * pos.quantity), 0);
+                               .reduce((sum: number, d: any) => {
+                                 const amount = typeof d.amount === 'number' ? d.amount : 0;
+                                 return sum + (amount * pos.quantity);
+                               }, 0) as number;
                              totalDividends += monthDividends;
                          }
                       });

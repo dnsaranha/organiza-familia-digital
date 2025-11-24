@@ -58,6 +58,7 @@ const TasksPage = () => {
   const [selectedTask, setSelectedTask] = useState<ScheduledTask | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
+  const [periodFilter, setPeriodFilter] = useState<'all' | 'current_month' | 'next_month' | 'custom'>('all');
   const [transactionType, setTransactionType] = useState<'income' | 'expense'>('expense');
   const [formData, setFormData] = useState({
     title: '',
@@ -81,6 +82,39 @@ const TasksPage = () => {
   const { user } = useAuth();
 
   useTaskNotifications();
+
+  // Load saved period filter from localStorage
+  useEffect(() => {
+    const savedPeriodFilter = localStorage.getItem('tasksPeriodFilter');
+    const savedDateRange = localStorage.getItem('tasksDateRange');
+    
+    if (savedPeriodFilter) {
+      setPeriodFilter(savedPeriodFilter as 'all' | 'current_month' | 'next_month' | 'custom');
+    }
+    
+    if (savedDateRange) {
+      try {
+        const parsed = JSON.parse(savedDateRange);
+        if (parsed.from) parsed.from = new Date(parsed.from);
+        if (parsed.to) parsed.to = new Date(parsed.to);
+        setDateRange(parsed);
+      } catch (e) {
+        console.error('Error parsing saved date range:', e);
+      }
+    }
+  }, []);
+
+  // Save period filter to localStorage
+  useEffect(() => {
+    localStorage.setItem('tasksPeriodFilter', periodFilter);
+  }, [periodFilter]);
+
+  // Save date range to localStorage
+  useEffect(() => {
+    if (periodFilter === 'custom') {
+      localStorage.setItem('tasksDateRange', JSON.stringify(dateRange));
+    }
+  }, [dateRange, periodFilter]);
 
   useEffect(() => {
     if (user) {
@@ -213,13 +247,29 @@ const TasksPage = () => {
       );
 
       const taskDate = new Date(task.schedule_date);
-      const matchesDate =
-        (!dateRange.from || taskDate >= dateRange.from) &&
-        (!dateRange.to || taskDate <= dateRange.to);
+      const now = new Date();
+      
+      let matchesDate = true;
+
+      // Apply period filter
+      if (periodFilter === 'current_month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        matchesDate = taskDate >= startOfMonth && taskDate <= endOfMonth;
+      } else if (periodFilter === 'next_month') {
+        const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const endOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 2, 0, 23, 59, 59);
+        matchesDate = taskDate >= startOfNextMonth && taskDate <= endOfNextMonth;
+      } else if (periodFilter === 'custom') {
+        matchesDate =
+          (!dateRange.from || taskDate >= dateRange.from) &&
+          (!dateRange.to || taskDate <= dateRange.to);
+      }
+      // 'all' filter doesn't restrict by date
 
       return matchesSearch && matchesDate;
     });
-  }, [tasks, searchTerm, dateRange]);
+  }, [tasks, searchTerm, dateRange, periodFilter]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -476,17 +526,38 @@ const TasksPage = () => {
         </Button>
       </div>
 
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <Input
           placeholder="Buscar tarefas..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
         />
-        <DateRangePicker
-          date={{ from: dateRange.from, to: dateRange.to }}
-          onDateChange={(range) => setDateRange({ from: range?.from, to: range?.to })}
-        />
+        <Select 
+          value={periodFilter} 
+          onValueChange={(value: 'all' | 'current_month' | 'next_month' | 'custom') => {
+            setPeriodFilter(value);
+            if (value !== 'custom') {
+              setDateRange({});
+            }
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-[200px]">
+            <SelectValue placeholder="Filtrar por período" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="current_month">Mês Atual</SelectItem>
+            <SelectItem value="next_month">Próximo Mês</SelectItem>
+            <SelectItem value="custom">Período Personalizado</SelectItem>
+          </SelectContent>
+        </Select>
+        {periodFilter === 'custom' && (
+          <DateRangePicker
+            date={{ from: dateRange.from, to: dateRange.to }}
+            onDateChange={(range) => setDateRange({ from: range?.from, to: range?.to })}
+          />
+        )}
       </div>
 
       <div className="space-y-3">
