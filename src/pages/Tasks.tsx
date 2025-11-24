@@ -83,6 +83,39 @@ const TasksPage = () => {
 
   useTaskNotifications();
 
+  // Load saved period filter from localStorage
+  useEffect(() => {
+    const savedPeriodFilter = localStorage.getItem('tasksPeriodFilter');
+    const savedDateRange = localStorage.getItem('tasksDateRange');
+    
+    if (savedPeriodFilter) {
+      setPeriodFilter(savedPeriodFilter as 'all' | 'current_month' | 'next_month' | 'custom');
+    }
+    
+    if (savedDateRange) {
+      try {
+        const parsed = JSON.parse(savedDateRange);
+        if (parsed.from) parsed.from = new Date(parsed.from);
+        if (parsed.to) parsed.to = new Date(parsed.to);
+        setDateRange(parsed);
+      } catch (e) {
+        console.error('Error parsing saved date range:', e);
+      }
+    }
+  }, []);
+
+  // Save period filter to localStorage
+  useEffect(() => {
+    localStorage.setItem('tasksPeriodFilter', periodFilter);
+  }, [periodFilter]);
+
+  // Save date range to localStorage
+  useEffect(() => {
+    if (periodFilter === 'custom') {
+      localStorage.setItem('tasksDateRange', JSON.stringify(dateRange));
+    }
+  }, [dateRange, periodFilter]);
+
   useEffect(() => {
     if (user) {
       const abortController = new AbortController();
