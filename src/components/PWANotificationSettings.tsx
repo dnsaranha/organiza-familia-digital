@@ -70,11 +70,14 @@ export const PWANotificationSettings = () => {
                   id="push-notifications"
                   checked={isSubscribed}
                   onCheckedChange={(checked) => {
-                    if (checked) {
-                      subscribeToPush();
-                    } else {
-                      unsubscribeFromPush();
-                    }
+                    // Defer state update to prevent flushSync warning
+                    setTimeout(() => {
+                      if (checked) {
+                        subscribeToPush();
+                      } else {
+                        unsubscribeFromPush();
+                      }
+                    }, 0);
                   }}
                   disabled={isSubscriptionLoading || permission === 'denied'}
                 />
