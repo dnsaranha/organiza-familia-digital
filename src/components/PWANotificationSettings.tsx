@@ -1,38 +1,34 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Bell, BellOff, TestTube, Smartphone } from 'lucide-react';
-import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useNotifications } from '@/hooks/useNotifications';
+import { Bell, BellOff, Smartphone, Loader2 } from 'lucide-react';
+import { usePWA } from '@/hooks/usePWA';
 
 export const PWANotificationSettings = () => {
   const { 
-    isSupported: isPushSupported, 
-    isSubscribed: isPushSubscribed, 
-    isLoading: isPushLoading,
-    subscribeToPush, 
-    unsubscribeFromPush, 
-    sendTestNotification 
-  } = usePushNotifications();
-  
-  const { 
-    permission, 
-    requestPermission, 
-    sendNotification,
-    isSupported: isNotificationSupported 
-  } = useNotifications();
+    isSupported,
+    isSubscribed,
+    isSubscriptionLoading,
+    permission,
+    subscribeToPush,
+    unsubscribeFromPush,
+    requestPermission, // Assuming usePWA will expose this
+  } = usePWA();
 
-  const handleTestLocalNotification = () => {
-    sendNotification('🧪 Teste de Notificação Local', {
-      body: 'Esta é uma notificação local de teste do Organiza!',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-96x96.png',
-    });
+  // A simple handler for the local notification permission switch
+  const handlePermissionSwitch = async (checked: boolean) => {
+    if (checked) {
+      await requestPermission();
+    }
+    // Note: Browsers don't allow imperatively revoking permission.
+    // The user must do it manually in the browser settings.
   };
 
-  if (!isNotificationSupported && !isPushSupported) {
+  if (!isSupported) {
     return (
       <Card>
         <CardHeader>
@@ -41,7 +37,7 @@ export const PWANotificationSettings = () => {
             Notificações não suportadas
           </CardTitle>
           <CardDescription>
-            Seu navegador não suporta notificações. Tente usar um navegador mais recente.
+            Seu navegador ou dispositivo não suporta notificações web.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -50,76 +46,29 @@ export const PWANotificationSettings = () => {
 
   return (
     <div className="space-y-6">
-      {/* Basic Notifications */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
-            Notificações Locais
-          </CardTitle>
-          <CardDescription>
-            Notificações básicas do navegador para lembretes e alertas
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="basic-notifications">Permitir Notificações</Label>
-              <p className="text-sm text-muted-foreground">
-                Status atual: {permission === 'granted' ? 'Permitido' : permission === 'denied' ? 'Negado' : 'Não solicitado'}
-              </p>
-            </div>
-            <Switch
-              id="basic-notifications"
-              checked={permission === 'granted'}
-              onCheckedChange={requestPermission}
-              disabled={permission === 'denied'}
-            />
-          </div>
-          
-          <Separator />
-          
-          <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
-              onClick={handleTestLocalNotification}
-              disabled={permission !== 'granted'}
-            >
-              <TestTube className="h-4 w-4 mr-2" />
-              Testar Notificação Local
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Push Notifications */}
+      {/* PWA Push Notifications */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Smartphone className="h-5 w-5" />
-            Notificações Push (PWA)
+            Notificações Push
           </CardTitle>
           <CardDescription>
-            Notificações push avançadas para o app instalado (funciona mesmo com o app fechado)
+            Receba alertas importantes mesmo quando o aplicativo estiver fechado.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {!isPushSupported ? (
-            <div className="text-sm text-muted-foreground">
-              Notificações push não são suportadas neste navegador.
-            </div>
-          ) : (
-            <>
+            <> 
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="push-notifications">Ativar Push Notifications</Label>
+                  <Label htmlFor="push-notifications">Ativar Notificações Push</Label>
                   <p className="text-sm text-muted-foreground">
-                    Status: {isPushSubscribed ? 'Ativo' : 'Inativo'}
+                    Status: {isSubscribed ? 'Inscrito' : 'Não Inscrito'}
                   </p>
                 </div>
                 <Switch
                   id="push-notifications"
-                  checked={isPushSubscribed}
+                  checked={isSubscribed}
                   onCheckedChange={(checked) => {
                     if (checked) {
                       subscribeToPush();
@@ -127,55 +76,47 @@ export const PWANotificationSettings = () => {
                       unsubscribeFromPush();
                     }
                   }}
-                  disabled={isPushLoading}
+                  disabled={isSubscriptionLoading || permission === 'denied'}
                 />
               </div>
+
+              {permission === 'denied' && (
+                <p className="text-sm text-red-500">
+                  Você bloqueou as notificações. É necessário redefinir a permissão nas configurações do seu navegador.
+                </p>
+              )}
               
-              <Separator />
-              
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={sendTestNotification}
-                  disabled={!isPushSubscribed || isPushLoading}
-                >
-                  <TestTube className="h-4 w-4 mr-2" />
-                  Testar Push Notification
-                </Button>
-              </div>
+              {isSubscriptionLoading && (
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando sua inscrição...
+                </div>
+              )}
             </>
-          )}
         </CardContent>
       </Card>
 
-      {/* Notification Types */}
+      {/* Notification Types (UI only for now) */}
       <Card>
         <CardHeader>
           <CardTitle>Tipos de Notificação</CardTitle>
           <CardDescription>
-            Configure quais tipos de notificação você deseja receber
+            Configure quais tipos de notificação você deseja receber (funcionalidade em breve).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label htmlFor="task-reminders">Lembretes de Tarefas</Label>
-              <Switch id="task-reminders" defaultChecked />
+              <Label htmlFor="task-reminders" className="text-muted-foreground">Lembretes de Tarefas</Label>
+              <Switch id="task-reminders" disabled />
             </div>
-            
             <div className="flex items-center justify-between">
-              <Label htmlFor="budget-alerts">Alertas de Orçamento</Label>
-              <Switch id="budget-alerts" defaultChecked />
+              <Label htmlFor="budget-alerts" className="text-muted-foreground">Alertas de Orçamento</Label>
+              <Switch id="budget-alerts" disabled />
             </div>
-            
             <div className="flex items-center justify-between">
-              <Label htmlFor="account-updates">Atualizações de Conta</Label>
-              <Switch id="account-updates" />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="investment-updates">Atualizações de Investimentos</Label>
-              <Switch id="investment-updates" />
+              <Label htmlFor="investment-updates" className="text-muted-foreground">Atualizações de Investimentos</Label>
+              <Switch id="investment-updates" disabled />
             </div>
           </div>
         </CardContent>
