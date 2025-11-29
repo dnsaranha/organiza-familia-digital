@@ -133,9 +133,9 @@ export const usePWA = () => {
         return;
       }
 
-      const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
       if (!vapidPublicKey) {
-        throw new Error('VAPID public key não encontrada. A notificação não pode ser ativada.');
+        throw new Error('VAPID public key não encontrada. Verifique a configuração das variáveis de ambiente.');
       }
 
       const subscription = await registration.pushManager.subscribe({
